@@ -103,9 +103,13 @@ blast radius reviewable.
    `format: int64`. openapi-generator faithfully emits it as a C# `long` constant → `CS0221`
    compile error ×5 (fails closed — the only candidate that surfaced the defect; Go/TS/Kiota
    silently drop the constraint). Diagnostic regeneration from a corrected copy compiles
-   0 warnings / 0 errors, isolating the defect as the sole blocker. **Ask:** platform drops the
-   redundant `maximum` (or sets `9223372036854775807`) and publishes the next spec artifact;
-   the SDK pipeline picks it up as a normal artifact bump.
+   0 warnings / 0 errors, isolating the defect as the sole blocker. Root cause is upstream of
+   the source file: the schema source holds the *exact* int64 max, but the Node-based redocly
+   bundler parses YAML integers as IEEE-754 doubles and rounds anything past 2^53 — no literal
+   near 2^63 can survive bundling, so the constraint (vacuous for `format: int64`) is removed
+   rather than the value adjusted. **Fix filed: FlexPay-io/Backbone#241** (2026-07-14) — drops
+   `maximum` ×5, bumps spec to 2.1.2; on merge the platform publishes `spec/v2.1.2+<sha>` and
+   the SDK pipeline pins it as a normal artifact bump.
 2. **Vocabulary hygiene (next spec minor, non-blocking):** response-side *inline closed enums*
    remain in the artifact (`ErrorResponse.code`, `cardType`, `providerAuthDecision`, …) even
    after `transactionType` was widened (platform PR #240). Any new wire value breaks python
