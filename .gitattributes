@@ -1,0 +1,4 @@
+# Verbatim release-asset copies (ADR-SDK-006 pin evidence) — must stay byte-identical
+# to the published artifacts on every platform; never EOL-convert them.
+spec/openapi.bundled.yaml.sha256 -text
+spec/provenance.json -text
