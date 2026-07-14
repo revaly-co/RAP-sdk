@@ -1,7 +1,8 @@
 # RAP Integration SDK — Pipeline & Release Design
 
 **Source:** RFC-046 §3.1 ("the pipeline is the product"), §5.7, §7, §8 · ADR-SDK-006 (gated spec),
-013 (publish gate), 015 (GA order), 016 (monorepo), 019 (license), 022 (namespace)
+013 (publish gate), 015 (GA order), 016 (monorepo), 019 (license), 022 (namespace),
+023 (generator)
 
 ## 1. Principles
 
@@ -20,7 +21,7 @@
 | # | Stage | What it does | Failure means |
 | --- | --- | --- | --- |
 | 1 | **validate** | Re-lint + re-bundle the consumed spec artifact (defense in depth on top of platform gates); verify artifact checksum + provenance metadata | Bad/tampered input — nothing downstream runs |
-| 2 | **generate** | Generate all six language cores from the artifact (generator pinned per OQ-1 bake-off outcome); regeneration-diff check proves no hand edits | Generator/toolchain drift |
+| 2 | **generate** | Generate all six language cores from the artifact (generator pinned per ADR-SDK-023 — `pipeline/generator-pin.yaml`); regeneration-diff check proves no hand edits | Generator/toolchain drift |
 | 3 | **build + test** | Compile all six; unit tests (runtime + core); ecosystem linters (DX contract §a); log-capture scrub tests (ADR-SDK-020) | Any language red blocks the release for all |
 | 4 | **contract smoke** | Live smoke of all six SDKs against **Sandbox** (Enablement-issued CI key from Key Vault, ADR-SDK-014): charge, each error class where triggerable, reconcile both verdicts | Release blocked — the taxonomy is unproven against reality |
 | 5 | **package** | Version stamp (semver, §4), license + SCM metadata (Apache-2.0, ADR-SDK-019), SBOM per package, release notes with spec SHA | Metadata incomplete (Maven hard-fails without license/SCM) |
@@ -76,7 +77,7 @@ RFC:
 | Input | Source | Notes |
 | --- | --- | --- |
 | Gated spec artifact | Platform repo publication (platform ADR 016) | Pinned by committed reference; bumped by PR |
-| Generator toolchain | Pinned versions (OQ-1 outcome) | Checksum-pinned like any release tooling |
+| Generator toolchain | ADR-SDK-023 pin (`pipeline/generator-pin.yaml`) | Digest-pinned Docker image — checksum-pinned like any release tooling |
 | Sandbox CI key | Key Vault | Enablement-issued (ADR-SDK-014); never logged |
 | GPG keys (Maven) | Key Vault | Environment-scoped job access only |
 | Registry identities | OIDC trusted publishing | No long-lived registry tokens anywhere |

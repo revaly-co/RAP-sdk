@@ -1,8 +1,8 @@
 # OQ-1 Generator Bake-off — Evidence & Recommendation
 
-**Date:** 2026-07-14 · **Prepared for:** SC Eng (OQ-1 owner) · **Status:** Evidence complete —
-awaiting owner ratification (closure = new ADR + `open-items.md` update; this document decides
-nothing by itself, per repo rule "do not decide open items").
+**Date:** 2026-07-14 · **Prepared for:** SC Eng (OQ-1 owner) · **Status:** Ratified 2026-07-14
+→ **ADR-SDK-023** (OQ-1 closed; this document remains the evidence record — the ADR is the
+decision).
 **Question (RFC-046 §11 / `open-items.md` OQ-1):** openapi-generator vs commercial
 (Speakeasy / Fern / Stainless; Kiota for .NET) — quality-per-language vs license cost.
 **Acceptance criterion:** the DX contract §a idiomatic bar; a generator that cannot meet it
@@ -90,8 +90,8 @@ Uniform safety rule regardless of generator (restates `runtime-tdd.md` §3): **t
 classifies failures from the raw response it already holds — never from a core model enum** —
 so typed errors carry `code` verbatim even where a core enum collapses or nulls unknowns.
 
-**Closure mechanics when ratified:** new ADR ("Generator selection: OpenAPI Generator, pinned")
-recording this table + the pin (tag `v7.23.0` + image digest committed under `pipeline/`);
+**Closure executed 2026-07-14:** ADR-SDK-023 records this table + the pin (tag `v7.23.0` +
+image digest committed at `../pipeline/generator-pin.yaml`);
 `open-items.md` OQ-1 row → Decided; upgrades of the pin ride PRs where the regen-diff makes the
 blast radius reviewable.
 
