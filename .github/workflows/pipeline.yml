@@ -1,0 +1,173 @@
+name: Pipeline
+
+# Stage 1 — validate (docs/pipeline-and-release.md §2, ADR-SDK-006 defense in depth):
+# re-verify the pinned gated spec artifact before anything downstream runs. Fail-closed
+# (platform ADR 012 lesson): a missing input or tool failure refuses the run — "detector
+# fired" and "detector never ran" are never conflated.
+#
+# Stages 2–6 append here as jobs chained with `needs:` (stage 2 consumes
+# pipeline/generator-pin.yaml per ADR-SDK-023). Stages 5–6 (package/publish) additionally
+# require a release tag on main and the protected environment — publish is embargoed until
+# ADR-SDK-011/013/019/022 gates close (repo rule 3).
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REDOCLY_VERSION: 2.38.0
+
+jobs:
+  validate:
+    name: Stage 1 - Validate Spec Artifact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Read Pin (spec/pin.yaml)
+        id: pin
+        run: |
+          set -euo pipefail
+          for f in spec/pin.yaml spec/openapi.bundled.yaml.sha256 spec/provenance.json; do
+            if [ ! -f "$f" ]; then
+              echo "::error::$f is missing — the spec pin is incomplete (ADR-SDK-006)."
+              exit 1
+            fi
+          done
+          REPO=$(grep -m1 -E '^repo:' spec/pin.yaml | awk '{print $2}')
+          TAG=$(grep -m1 -E '^releaseTag:' spec/pin.yaml | awk '{print $2}')
+          SOURCE_COMMIT=$(grep -m1 -E '^sourceCommit:' spec/pin.yaml | awk '{print $2}')
+          SPEC_VERSION=$(grep -m1 -E '^specVersion:' spec/pin.yaml | awk '{print $2}')
+          PIN_SHA256=$(grep -m1 -E '^  openapi\.bundled\.yaml:' spec/pin.yaml | awk '{print $2}')
+          for v in "$REPO" "$TAG" "$SOURCE_COMMIT" "$SPEC_VERSION" "$PIN_SHA256"; do
+            if [ -z "$v" ]; then
+              echo "::error::spec/pin.yaml is missing a required field (repo/releaseTag/sourceCommit/specVersion/sha256)."
+              exit 1
+            fi
+          done
+          {
+            echo "repo=$REPO"
+            echo "tag=$TAG"
+            echo "source_commit=$SOURCE_COMMIT"
+            echo "spec_version=$SPEC_VERSION"
+            echo "sha256=$PIN_SHA256"
+          } >> "$GITHUB_OUTPUT"
+          echo "Pin: $REPO @ $TAG (spec $SPEC_VERSION, commit ${SOURCE_COMMIT:0:7})"
+
+      # The platform repo is private: the default GITHUB_TOKEN is scoped to THIS repo and
+      # cannot read its releases. SPEC_ARTIFACT_READ_TOKEN = fine-grained PAT (platform repo
+      # only, Contents: read-only) — see pipeline/README.md. Fail closed if absent.
+      - name: Download Pinned Artifact
+        env:
+          GH_TOKEN: ${{ secrets.SPEC_ARTIFACT_READ_TOKEN }}
+          PIN_REPO: ${{ steps.pin.outputs.repo }}
+          PIN_TAG: ${{ steps.pin.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret SPEC_ARTIFACT_READ_TOKEN is not set. Stage 1 downloads the pinned artifact from $PIN_REPO (private) — provision a fine-grained PAT (that repo only, Contents: read-only) and add it as a repo secret. See pipeline/README.md."
+            exit 1
+          fi
+          mkdir -p /tmp/artifact
+          gh release download "$PIN_TAG" --repo "$PIN_REPO" --dir /tmp/artifact
+          ls -la /tmp/artifact
+
+      - name: Verify Checksums and Committed Evidence Copies
+        env:
+          PIN_SHA256: ${{ steps.pin.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          cd /tmp/artifact
+          # bundle vs the release's own checksum file
+          sha256sum -c openapi.bundled.yaml.sha256
+          # bundle vs the committed pin
+          ACTUAL=$(sha256sum openapi.bundled.yaml | awk '{print $1}')
+          if [ "$ACTUAL" != "$PIN_SHA256" ]; then
+            echo "::error::openapi.bundled.yaml sha256 ($ACTUAL) does not match spec/pin.yaml ($PIN_SHA256)."
+            exit 1
+          fi
+          # committed evidence copies must be byte-identical to the release assets
+          diff "$GITHUB_WORKSPACE/spec/openapi.bundled.yaml.sha256" openapi.bundled.yaml.sha256
+          diff "$GITHUB_WORKSPACE/spec/provenance.json" provenance.json
+          echo "Checksums verified; committed evidence copies are byte-identical to the release assets."
+
+      - name: Verify Provenance Gates
+        env:
+          PIN_SHA256: ${{ steps.pin.outputs.sha256 }}
+          PIN_SOURCE_COMMIT: ${{ steps.pin.outputs.source_commit }}
+          PIN_TAG: ${{ steps.pin.outputs.tag }}
+          PIN_SPEC_VERSION: ${{ steps.pin.outputs.spec_version }}
+        run: |
+          set -euo pipefail
+          cd /tmp/artifact
+          for gate in lint bundle contractSuite; do
+            V=$(jq -r ".gates.${gate}" provenance.json)
+            if [ "$V" != "pass" ]; then
+              echo "::error::provenance gate '${gate}' is '${V}' (expected 'pass') — artifact refused."
+              exit 1
+            fi
+          done
+          B=$(jq -r '.gates.breaking' provenance.json)
+          case "$B" in
+            pass|allowlisted|first-artifact) ;;
+            *) echo "::error::provenance gate 'breaking' is '${B}' — artifact refused."; exit 1 ;;
+          esac
+          PROV_SHA=$(jq -r '.checksums["openapi.bundled.yaml"]' provenance.json)
+          if [ "$PROV_SHA" != "sha256:${PIN_SHA256}" ]; then
+            echo "::error::provenance checksum (${PROV_SHA}) does not match the pin (sha256:${PIN_SHA256})."
+            exit 1
+          fi
+          PROV_COMMIT=$(jq -r '.sourceCommit' provenance.json)
+          if [ "$PROV_COMMIT" != "$PIN_SOURCE_COMMIT" ]; then
+            echo "::error::provenance sourceCommit (${PROV_COMMIT}) does not match the pin (${PIN_SOURCE_COMMIT})."
+            exit 1
+          fi
+          case "$PIN_TAG" in
+            *"+${PROV_COMMIT:0:7}") ;;
+            *) echo "::error::release tag ${PIN_TAG} suffix does not match sourceCommit ${PROV_COMMIT:0:7}."; exit 1 ;;
+          esac
+          PROV_VERSION=$(jq -r '.specVersion' provenance.json)
+          if [ "$PROV_VERSION" != "$PIN_SPEC_VERSION" ]; then
+            echo "::error::provenance specVersion (${PROV_VERSION}) does not match the pin (${PIN_SPEC_VERSION})."
+            exit 1
+          fi
+          echo "Provenance verified: gates green; checksum/commit/version consistent with the pin."
+
+      # Same trust posture as the platform's publish job: npm ci from the committed lockfile
+      # verifies the pinned tarball's integrity hash; the version cross-check refuses drift.
+      - name: Install Spec Toolchain (lockfile-pinned)
+        run: |
+          set -euo pipefail
+          npm ci --prefix pipeline/spec-tooling --no-audit --no-fund
+          INSTALLED=$(pipeline/spec-tooling/node_modules/.bin/redocly --version)
+          if [ "$INSTALLED" != "$REDOCLY_VERSION" ]; then
+            echo "::error::Installed @redocly/cli ${INSTALLED} does not match pinned ${REDOCLY_VERSION}."
+            exit 1
+          fi
+
+      - name: Re-Lint and Re-Bundle (defense in depth)
+        env:
+          PIN_SPEC_VERSION: ${{ steps.pin.outputs.spec_version }}
+        run: |
+          set -euo pipefail
+          pipeline/spec-tooling/node_modules/.bin/redocly lint /tmp/artifact/openapi.bundled.yaml
+          pipeline/spec-tooling/node_modules/.bin/redocly bundle /tmp/artifact/openapi.bundled.yaml \
+            -o /tmp/artifact/rebundled.yaml
+          BUNDLE_VERSION=$(grep -m1 -E '^  version:' /tmp/artifact/openapi.bundled.yaml | awk '{print $2}' | tr -d '"' | tr -d "'")
+          if [ "$BUNDLE_VERSION" != "$PIN_SPEC_VERSION" ]; then
+            echo "::error::bundle info.version (${BUNDLE_VERSION}) does not match pin specVersion (${PIN_SPEC_VERSION})."
+            exit 1
+          fi
+          echo "Stage 1 green: artifact authentic, gated, lintable, bundle-stable, version-consistent."
