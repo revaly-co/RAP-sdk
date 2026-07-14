@@ -107,9 +107,9 @@ blast radius reviewable.
    the source file: the schema source holds the *exact* int64 max, but the Node-based redocly
    bundler parses YAML integers as IEEE-754 doubles and rounds anything past 2^53 — no literal
    near 2^63 can survive bundling, so the constraint (vacuous for `format: int64`) is removed
-   rather than the value adjusted. **Fix filed: FlexPay-io/Backbone#241** (2026-07-14) — drops
-   `maximum` ×5, bumps spec to 2.1.2; on merge the platform publishes `spec/v2.1.2+<sha>` and
-   the SDK pipeline pins it as a normal artifact bump.
+   rather than the value adjusted. **Fix merged: FlexPay-io/Backbone#241** (2026-07-14) — drops
+   `maximum` ×5, bumps spec to 2.1.2; published as `spec/v2.1.2+9af661b` (all four gates pass)
+   and pinned as the SDK's spec input (`../spec/pin.yaml`) the same day.
 2. **Vocabulary hygiene (next spec minor, non-blocking):** response-side *inline closed enums*
    remain in the artifact (`ErrorResponse.code`, `cardType`, `providerAuthDecision`, …) even
    after `transactionType` was widened (platform PR #240). Any new wire value breaks python
