@@ -1,0 +1,21 @@
+# Pinned gated spec artifact — the ONLY spec input to the SDK pipeline (ADR-SDK-006).
+# Bumped by PR only. Never point the generator at a branch checkout, a URL, or a local edit.
+# Pipeline stage 1 re-verifies: download the release assets from `repo` at `releaseTag`,
+# check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
+# copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
+repo: FlexPay-io/Backbone
+releaseTag: spec/v2.1.2+9af661b
+specVersion: 2.1.2
+sourceCommit: 9af661b426be337aa7289aad6e68d1925beee374
+assets:
+  spec: openapi.bundled.yaml
+  checksum: openapi.bundled.yaml.sha256
+  provenance: provenance.json
+sha256:
+  openapi.bundled.yaml: 85fe5a5e6383c4f7490055800f0e01a467651160694f1fc73bc530147897bf03
+pinnedAt: "2026-07-14"
+notes: >-
+  First pin. The first gated artifact (spec/v2.1.1+f5f9576) was never pinned: its five
+  amount-field `maximum` values exceed int64 max (the redocly bundler double-rounds integers
+  past 2^53) and block the .NET core compile. Fixed by Backbone PR #241 (drops the vacuous
+  maximum ×5, bumps spec to 2.1.2). Evidence: docs/generator-bakeoff.md §3.1.
