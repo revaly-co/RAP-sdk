@@ -9,9 +9,11 @@ embargoed** until its gates close (repo rule 3; ADR-SDK-011/013/019/022).
 
 | Piece | Purpose |
 | --- | --- |
-| `../.github/workflows/pipeline.yml` | **Stage 1 — validate**: re-verifies the pinned gated spec artifact (`../spec/pin.yaml`, ADR-SDK-006): download from the pinned release, bundle checksum vs pin + release assets, byte-identity of the committed evidence copies, provenance gates (lint / bundle / breaking / contractSuite), tag ↔ sourceCommit ↔ specVersion consistency, then redocly re-lint + re-bundle as defense in depth |
+| `../.github/workflows/pipeline.yml` | **Stage 1 — validate**: re-verifies the pinned gated spec artifact (`../spec/pin.yaml`, ADR-SDK-006): download from the pinned release, bundle checksum vs pin + release assets, byte-identity of the committed evidence copies, provenance gates (lint / bundle / breaking / contractSuite), tag ↔ sourceCommit ↔ specVersion consistency, then redocly re-lint + re-bundle as defense in depth. **Stage 2 — generate + regen-diff**: reruns `generate.sh` for all six languages and fails unless `../languages/*/core/` is byte-identical (ADR-SDK-001 enforcement) |
 | `spec-tooling/` | Lockfile-pinned `@redocly/cli` — `npm ci` verifies the pinned tarball's integrity hash; the workflow cross-checks the installed version against `REDOCLY_VERSION` and refuses drift |
 | `generator-pin.yaml` | Generator toolchain pin (ADR-SDK-023) — stage 2's input; upgrades are ADR revisions riding PRs where the regeneration diff makes the blast radius reviewable |
+| `generate.sh` | The only generation entry point (local and CI): downloads the pinned artifact (or takes `--spec`), **sha256-verifies it against `../spec/pin.yaml` before generating** (ADR-SDK-006), wipes each `core/` and regenerates it with the digest-pinned image — never a floating tag, never a local install |
+| `<language>/` (×6: `dotnet` `java` `php` `typescript` `python` `go`) | Per-language generation config (ADR-SDK-023 flag table): `config.yaml` (flags, [Proposed] OQ-3 package identities, explicit Apache-2.0 license fields per ADR-SDK-019), `.openapi-generator-ignore` (exclusions — note: patterns need a `**/` prefix, this matcher is narrower than gitignore), `templates/` (generated-code banner partial per ADR-SDK-016; python additionally forks `model_generic.mustache` to make enum validators open-vocabulary — re-diff forks against the embedded originals on any generator upgrade) |
 
 ## One-time CI provisioning: `SPEC_ARTIFACT_READ_TOKEN`
 
@@ -30,8 +32,8 @@ secret:
 
 ## Stage roadmap (build order)
 
-Stage 2 (generate ×6, per-language configs under `pipeline/<language>/`) → stage 3
-(build + test, any language red blocks all) → stage 4 (contract smoke vs Sandbox,
+Stage 2 (generate ×6 — **built 2026-07-15**, cores committed from `spec/v2.1.3+e75c71a`) →
+stage 3 (build + test, any language red blocks all) → stage 4 (contract smoke vs Sandbox,
 Enablement-issued key, ADR-SDK-014) → stages 5–6 (package / publish — embargoed; per-language
 release tags drive the matrix). Each stage appends a job to `pipeline.yml` chained with
 `needs:`.

@@ -1,0 +1,45 @@
+# Stage-2 generation config — Java core (normative flag set: ADR-SDK-023 table;
+# evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
+# digest-pinned generator container; spec/output/template paths are supplied by the script.
+generatorName: java
+library: native # JDK 11+ HttpClient + Jackson — leaner than the okhttp-gson default
+
+additionalProperties:
+  # Identity is the runtime-tdd.md §7 working scheme (group id co.revaly) — [Proposed]
+  # until OQ-3 registry provisioning; version is a placeholder (stage 5 stamps releases).
+  groupId: co.revaly
+  artifactId: revaly-sdk-core
+  artifactVersion: 0.0.0-SNAPSHOT
+  artifactDescription: RAP V2 API generated core (models + endpoint bindings)
+  artifactUrl: https://github.com/revaly-co/rap-sdk
+  invokerPackage: co.revaly.sdk.core
+  apiPackage: co.revaly.sdk.core.api
+  modelPackage: co.revaly.sdk.core.model
+  # Open-string safety on closed spec enums (bake-off §A3): without this, fromValue()
+  # throws IllegalArgumentException on any new wire value — on success paths. The runtime
+  # still classifies from the raw response, never from a core enum (ADR-SDK-023).
+  enumUnknownDefaultCase: true
+  # Java's default is false — timestamps would break the regeneration diff.
+  hideGenerationTimestamp: true
+  # pom defaults to Unlicense — always set explicitly (ADR-SDK-019: Apache-2.0 decided;
+  # Legal ratification gates publish, not build). Maven Central hard-requires license+SCM.
+  licenseName: Apache-2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  scmConnection: scm:git:git://github.com/revaly-co/rap-sdk.git
+  scmDeveloperConnection: scm:git:ssh://github.com:revaly-co/rap-sdk.git
+  scmUrl: https://github.com/revaly-co/rap-sdk
+  # [Proposed] contact metadata — replaces the generator's OpenAPITools defaults; finalize
+  # at the stage-5 package-metadata freeze (OQ-3 provisioning).
+  developerName: Revaly SC Eng
+  developerEmail: sdk@revaly.co
+  developerOrganization: Revaly
+  developerOrganizationUrl: https://revaly.co
+  # Replaces the generator-fingerprint default UA. The real ADR-SDK-005 grammar is enforced
+  # by the runtime at transport level; this placeholder only marks unwrapped-core misuse.
+  httpUserAgent: revaly-sdk-java/0.0.0-unwrapped-core
+
+globalProperties:
+  # Generated test stubs are not the product — hand-written tests live in
+  # languages/java/tests/ (ADR-SDK-016). Remaining test scaffolding is ignore-listed.
+  apiTests: "false"
+  modelTests: "false"

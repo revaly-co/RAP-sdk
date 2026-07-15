@@ -1,0 +1,22 @@
+# Stage-2 exclusions for the .NET core — applied via --ignore-file-override (generation
+# config, not hand-editing; ADR-SDK-023). Patterns are relative to languages/dotnet/core/.
+# NOTE: this generator build's matcher is narrower than gitignore — bare names and root
+# globs do not match; every rule needs a `**/` prefix (verified by dry-run, 2026-07-15).
+
+# Opt-in Polly retry/timeout/circuit-breaker helper extensions: the core's public surface
+# must not even offer retry machinery (failover-contract §5; bake-off §A5).
+**/IHttpClientBuilderExtensions.cs
+
+# Test scaffolding — product tests are hand-written under languages/dotnet/tests/.
+**/*.Test/**
+
+# Solution scaffolding: the language-level solution (core + runtime + tests) is a stage-3
+# deliverable; the core ships its csproj only.
+**/*.sln
+
+# A committed spec copy would sidestep the single-pin rule (ADR-SDK-006; spec/pin.yaml).
+**/api/openapi.yaml
+
+# Standalone-repo/CI scaffolding — meaningless inside the monorepo (ADR-SDK-016).
+**/appveyor.yml
+**/git_push.*

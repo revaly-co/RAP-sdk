@@ -1,0 +1,19 @@
+# Stage-2 exclusions for the Go core — applied via --ignore-file-override (generation
+# config, not hand-editing; ADR-SDK-023). Patterns are relative to languages/go/core/.
+# NOTE: this generator build's matcher is narrower than gitignore — bare names and root
+# globs do not match; every rule needs a `**/` prefix (verified by dry-run, 2026-07-15).
+
+# Test scaffolding — product tests are hand-written under languages/go/tests/.
+**/test/**
+
+# The module definition lives at languages/go/go.mod (ADR-SDK-016 subdir module); the
+# core is a package of that module, never its own (withGoMod=false; this is the belt).
+**/go.mod
+**/go.sum
+
+# A committed spec copy would sidestep the single-pin rule (ADR-SDK-006; spec/pin.yaml).
+**/api/openapi.yaml
+
+# Standalone-repo/CI scaffolding — meaningless inside the monorepo (ADR-SDK-016).
+**/.travis.yml
+**/git_push.sh

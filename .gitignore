@@ -1,2 +1,6 @@
 # Toolchain installs — lockfiles are committed, installs are not
 node_modules/
+
+# Stage-2 local cache of the downloaded (and sha256-verified) spec artifact — the pin in
+# spec/pin.yaml is the only committed spec reference (ADR-SDK-006)
+.spec-work/

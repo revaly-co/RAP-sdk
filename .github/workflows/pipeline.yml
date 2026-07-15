@@ -5,10 +5,14 @@ name: Pipeline
 # (platform ADR 012 lesson): a missing input or tool failure refuses the run — "detector
 # fired" and "detector never ran" are never conflated.
 #
-# Stages 2–6 append here as jobs chained with `needs:` (stage 2 consumes
-# pipeline/generator-pin.yaml per ADR-SDK-023). Stages 5–6 (package/publish) additionally
-# require a release tag on main and the protected environment — publish is embargoed until
-# ADR-SDK-011/013/019/022 gates close (repo rule 3).
+# Stage 2 — generate (ADR-SDK-023): regenerate all six languages/*/core/ from the pinned
+# artifact with the digest-pinned generator (pipeline/generate.sh), then fail unless the
+# committed cores are byte-identical — the ADR-SDK-001 "never hand-edit generated code"
+# enforcement.
+#
+# Stages 3–6 append here as jobs chained with `needs:`. Stages 5–6 (package/publish)
+# additionally require a release tag on main and the protected environment — publish is
+# embargoed until ADR-SDK-011/013/019/022 gates close (repo rule 3).
 
 permissions:
   contents: read
@@ -171,3 +175,40 @@ jobs:
             exit 1
           fi
           echo "Stage 1 green: artifact authentic, gated, lintable, bundle-stable, version-consistent."
+
+  generate:
+    name: Stage 2 - Generate Cores + Regen-Diff
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      # One job for all six languages deliberately: a single pull of the digest-pinned
+      # generator image (Docker Hub rate limits on shared runners), and "any language red
+      # blocks the release for all six" is the pipeline's stance anyway (§2/§3).
+      # generate.sh re-downloads the artifact and re-verifies its sha256 against
+      # spec/pin.yaml before generating — stage 2 stays fail-closed even standalone.
+      - name: Regenerate All Six Cores (pinned artifact, digest-pinned generator)
+        env:
+          GH_TOKEN: ${{ secrets.SPEC_ARTIFACT_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret SPEC_ARTIFACT_READ_TOKEN is not set. Stage 2 downloads the pinned artifact from the platform repo (private) — see pipeline/README.md."
+            exit 1
+          fi
+          bash pipeline/generate.sh
+
+      - name: Regeneration Diff (ADR-SDK-001 — generated code is never hand-edited)
+        run: |
+          set -euo pipefail
+          DRIFT=$(git status --porcelain -- 'languages/*/core')
+          if [ -n "$DRIFT" ]; then
+            echo "::error::languages/*/core is not byte-identical to a clean regeneration (pinned spec + pinned generator). Generated code is never hand-edited (ADR-SDK-001) — run pipeline/generate.sh and commit its output. Drift:"
+            echo "$DRIFT"
+            git --no-pager diff -- 'languages/*/core' | head -300
+            exit 1
+          fi
+          echo "Stage 2 green: committed cores are byte-identical to regeneration from the pinned artifact with the pinned generator."

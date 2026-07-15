@@ -1,0 +1,12 @@
+# Stage-2 generation config — TypeScript core (normative flag set: ADR-SDK-023 table;
+# evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
+# digest-pinned generator container; spec/output/template paths are supplied by the script.
+#
+# typescript-fetch needs no safety flags: zero runtime deps, strict tsc verified in the
+# bake-off, and unknown enum wire values pass through verbatim at runtime (§A3).
+#
+# Deliberately no npmName: without it the generator emits bare TypeScript source only —
+# no package.json/tsconfig scaffolding. The core is compiled inside the runtime's package
+# (one published package per language, runtime-tdd.md §2); the npm identity is [Proposed]
+# until OQ-3 and belongs to the runtime, not the core.
+generatorName: typescript-fetch

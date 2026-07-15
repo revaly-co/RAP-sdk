@@ -1,0 +1,30 @@
+# Stage-2 generation config — Python core (normative flag set: ADR-SDK-023 table;
+# evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
+# digest-pinned generator container; spec/output/template paths are supplied by the script.
+#
+# Python has no enumUnknownDefaultCase: open-string safety comes from the forked
+# templates/model_generic.mustache, which rewrites the emitted enum @field_validator to
+# pass unknown wire values through verbatim (stock validator raises ValueError on
+# success-path models — bake-off §A3). That fork plus the banner partial is this
+# language's entire maintained template surface (ADR-SDK-023 consequences); re-diff both
+# against the embedded originals on any generator upgrade.
+generatorName: python # default urllib3 library
+
+additionalProperties:
+  # Identity is the runtime-tdd.md §7 working scheme — [Proposed] until OQ-3 registry
+  # provisioning; version is a PEP 440 dev placeholder (stage 5 stamps releases).
+  packageName: revaly_sdk_core
+  projectName: revaly-sdk-core
+  packageVersion: 0.0.0.dev0
+  # pyproject license field (SPDX) — ADR-SDK-019: Apache-2.0 decided; Legal ratification
+  # gates publish, not build. Never let the generator default this field.
+  licenseInfo: Apache-2.0
+  # Replaces the generator-fingerprint default UA. The real ADR-SDK-005 grammar is enforced
+  # by the runtime at transport level; this placeholder only marks unwrapped-core misuse.
+  httpUserAgent: revaly-sdk-python/0.0.0-unwrapped-core
+
+globalProperties:
+  # Generated test stubs are not the product — hand-written tests live in
+  # languages/python/tests/ (ADR-SDK-016). Remaining test scaffolding is ignore-listed.
+  apiTests: "false"
+  modelTests: "false"

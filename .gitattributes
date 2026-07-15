@@ -2,3 +2,14 @@
 # to the published artifacts on every platform; never EOL-convert them.
 spec/openapi.bundled.yaml.sha256 -text
 spec/provenance.json -text
+
+# Stage-2 generation surface (ADR-SDK-001 regen-diff is byte-exact): generator output,
+# the templates mounted into the generator container, and the script CI executes must
+# round-trip identically between the Linux container, the index, and every checkout.
+languages/*/core/** -text
+languages/go/go.mod text eol=lf
+languages/go/go.sum text eol=lf
+pipeline/*/templates/** -text
+pipeline/*/.openapi-generator-ignore text eol=lf
+pipeline/*/config.yaml text eol=lf
+pipeline/generate.sh text eol=lf
