@@ -128,4 +128,4 @@ for LANG_ID in $LANGS; do
 done
 
 echo "==> Generation complete: $LANGS"
-echo "    Regeneration diff = 'git status --porcelain -- languages/*/core' (must be empty on a clean tree)."
+echo "    Regeneration diff = 'git status --porcelain -- languages/' (must be empty on a clean tree)."

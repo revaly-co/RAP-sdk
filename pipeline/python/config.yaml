@@ -5,9 +5,18 @@
 # Python has no enumUnknownDefaultCase: open-string safety comes from the forked
 # templates/model_generic.mustache, which rewrites the emitted enum @field_validator to
 # pass unknown wire values through verbatim (stock validator raises ValueError on
-# success-path models — bake-off §A3). That fork plus the banner partial is this
-# language's entire maintained template surface (ADR-SDK-023 consequences); re-diff both
-# against the embedded originals on any generator upgrade.
+# success-path models — bake-off §A3).
+#
+# Maintained template surface (re-diff all against the embedded originals on any
+# generator upgrade — upgrades are ADR-SDK-023 revisions):
+#   templates/partial_header.mustache  — generated-code banner (ADR-SDK-016)
+#   templates/model_generic.mustache   — the enum open-vocabulary override above
+#   templates/pyproject.mustache, requirements.mustache, setup.mustache — forked
+#     2026-07-15 solely to bump dependency floors flagged by Dependabot: urllib3
+#     >= 2.7.0 (GHSA-mf9v-mfxr-j63j, GHSA-qccp-gfcp-xxvc — high) in all three, and the
+#     dev-group pytest >= 9.0.3 (GHSA-6w46-j5rx-g56g). Dependency floors in generated
+#     manifests are fixed HERE, never by editing core/ (rule 1): a Dependabot PR against
+#     core/ can never pass the stage-2 regen-diff.
 generatorName: python # default urllib3 library
 
 additionalProperties:

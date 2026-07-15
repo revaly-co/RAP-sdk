@@ -201,14 +201,19 @@ jobs:
           fi
           bash pipeline/generate.sh
 
+      # Pathspec note: a plain directory prefix, deliberately. The glob 'languages/*/core'
+      # silently matches NOTHING in `git status` (verified 2026-07-15) — a false-green
+      # detector. The prefix also catches a generator writing outside core/, which would
+      # be a bug worth failing on. Hand-written files (go.mod/go.sum) are untouched by
+      # regeneration, so they can never appear in this diff.
       - name: Regeneration Diff (ADR-SDK-001 — generated code is never hand-edited)
         run: |
           set -euo pipefail
-          DRIFT=$(git status --porcelain -- 'languages/*/core')
+          DRIFT=$(git status --porcelain -- languages/)
           if [ -n "$DRIFT" ]; then
-            echo "::error::languages/*/core is not byte-identical to a clean regeneration (pinned spec + pinned generator). Generated code is never hand-edited (ADR-SDK-001) — run pipeline/generate.sh and commit its output. Drift:"
+            echo "::error::languages/ is not byte-identical to a clean regeneration (pinned spec + pinned generator). Generated code is never hand-edited (ADR-SDK-001) — run pipeline/generate.sh and commit its output. Drift:"
             echo "$DRIFT"
-            git --no-pager diff -- 'languages/*/core' | head -300
+            git --no-pager diff -- languages/ | head -300
             exit 1
           fi
           echo "Stage 2 green: committed cores are byte-identical to regeneration from the pinned artifact with the pinned generator."
