@@ -109,13 +109,29 @@ blast radius reviewable.
    near 2^63 can survive bundling, so the constraint (vacuous for `format: int64`) is removed
    rather than the value adjusted. **Fix merged: FlexPay-io/Backbone#241** (2026-07-14) — drops
    `maximum` ×5, bumps spec to 2.1.2; published as `spec/v2.1.2+9af661b` (all four gates pass)
-   and pinned as the SDK's spec input (`../spec/pin.yaml`) the same day.
+   and pinned as the SDK's spec input (`../spec/pin.yaml`) the same day — since superseded by
+   `spec/v2.1.3+e75c71a` (§3.3).
 2. **Vocabulary hygiene (next spec minor, non-blocking):** response-side *inline closed enums*
    remain in the artifact (`ErrorResponse.code`, `cardType`, `providerAuthDecision`, …) even
    after `transactionType` was widened (platform PR #240). Any new wire value breaks python
    deserialization (and java without our flag) on **success paths**. The SDK mitigations above
    contain it; recommend the platform apply the ADR-SDK-010 open-vocabulary stance to these
    fields at the next spec minor.
+3. **Orphan schema (fixed):** `components/schemas/PaymentMethodRequest` was defined but
+   referenced by no operation — the superseded ancestor of `CreatePaymentMethodRequest`
+   (same `paymentMethodType` enum and `PaymentMethod` `$ref`; Create added `customerId` and
+   relaxed `required`). Surfaced by `redocly lint` (`no-unused-components`) during pipeline
+   stage-1 bring-up, 2026-07-15. It matters because openapi-generator emits a model for **every**
+   `components/schemas` entry regardless of reachability, and `core/` is never hand-edited
+   (repo rule 1) — so it would have shipped as a public type in all six SDKs that no operation
+   accepts, with a shorter and more intuitive name than the one merchants actually need. Removing
+   a public type after 1.0 is a semver-major break, so this was pre-GA or never. **Fix merged:
+   FlexPay-io/Backbone#242** (2026-07-15) → `spec/v2.1.3+e75c71a`, pinned the same day; bundle
+   diff is exactly `info.version` + the 41-line schema removal. The remaining `redocly lint`
+   warning is `info-license`, which is **deliberately not fixed in the spec** — the API
+   description's license is not the SDK's license (ADR-SDK-019); instead set the license fields
+   explicitly per language in the stage-2 generator config (§2) rather than letting the generator
+   default them into published package metadata.
 
 ## Appendix A — hands-on evidence (2026-07-14, spec/v2.1.1+f5f9576)
 
