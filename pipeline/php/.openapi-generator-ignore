@@ -1,0 +1,16 @@
+# Stage-2 exclusions for the PHP core — applied via --ignore-file-override (generation
+# config, not hand-editing; ADR-SDK-023). Patterns are relative to languages/php/core/.
+# NOTE: this generator build's matcher is narrower than gitignore — bare names and root
+# globs do not match; every rule needs a `**/` prefix (verified by dry-run, 2026-07-15).
+
+# Test scaffolding — product tests are hand-written under languages/php/tests/.
+**/test/**
+**/phpunit.xml.dist
+
+# Style-fixer config for the generator's own workflow — the monorepo lints the runtime,
+# not the regenerated core (DX contract §a applies to the merchant-facing surface).
+**/.php-cs-fixer.dist.php
+
+# Standalone-repo/CI scaffolding — meaningless inside the monorepo (ADR-SDK-016).
+**/.travis.yml
+**/git_push.sh

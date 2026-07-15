@@ -1,0 +1,6 @@
+# Stage-2 exclusions for the TypeScript core — applied via --ignore-file-override
+# (generation config, not hand-editing; ADR-SDK-023). Patterns are relative to
+# languages/typescript/core/.
+#
+# Nothing excluded today: with no npmName set, typescript-fetch emits bare source only
+# (no package scaffolding, no test stubs, no CI files, no spec copy).

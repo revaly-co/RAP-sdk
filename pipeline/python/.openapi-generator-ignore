@@ -1,0 +1,16 @@
+# Stage-2 exclusions for the Python core — applied via --ignore-file-override (generation
+# config, not hand-editing; ADR-SDK-023). Patterns are relative to languages/python/core/.
+# NOTE: this generator build's matcher is narrower than gitignore — bare names and root
+# globs do not match; every rule needs a `**/` prefix (verified by dry-run, 2026-07-15).
+
+# Test scaffolding — product tests are hand-written under languages/python/tests/.
+**/test/**
+**/tox.ini
+**/test-requirements.txt
+
+# Standalone-repo/CI scaffolding — meaningless inside the monorepo (ADR-SDK-016); nested
+# workflow files must never look like live CI.
+**/.travis.yml
+**/.gitlab-ci.yml
+**/.github/**
+**/git_push.sh

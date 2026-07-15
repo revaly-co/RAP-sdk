@@ -1,0 +1,28 @@
+# Stage-2 generation config — Go core (normative flag set: ADR-SDK-023 table;
+# evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
+# digest-pinned generator container; spec/output/template paths are supplied by the script.
+# NOTE: the bake-off's "stdlib-only" observation does not hold on spec v2.1.3 — the two
+# anyOf response wrappers (GetTransactionBy*200Response) import gopkg.in/validator.v2,
+# pinned in the hand-written languages/go/go.mod + go.sum.
+generatorName: go
+
+additionalProperties:
+  # The core is a package of the single subdir module rooted at languages/go/go.mod
+  # (github.com/revaly-co/rap-sdk/languages/go — ADR-SDK-016/022); it must not carry its
+  # own module definition.
+  packageName: core
+  withGoMod: false
+  packageVersion: 0.0.0-dev # placeholder; Go release identity comes from tags (stage 5)
+  # Open-string safety on closed spec enums (bake-off §A3): named enums gain an unknown
+  # default member; inline property enums (incl. ErrorResponse.code) already emit as plain
+  # *string and pass unknown wire values through verbatim.
+  enumUnknownDefaultCase: true
+  # Replaces the generator-fingerprint default UA. The real ADR-SDK-005 grammar is enforced
+  # by the runtime at transport level; this placeholder only marks unwrapped-core misuse.
+  httpUserAgent: revaly-sdk-go/0.0.0-unwrapped-core
+
+globalProperties:
+  # Generated test stubs are not the product — hand-written tests live in
+  # languages/go/tests/ (ADR-SDK-016). Remaining test scaffolding is ignore-listed.
+  apiTests: "false"
+  modelTests: "false"

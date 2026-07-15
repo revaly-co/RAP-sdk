@@ -1,0 +1,26 @@
+# Stage-2 exclusions for the Java core — applied via --ignore-file-override (generation
+# config, not hand-editing; ADR-SDK-023). Patterns are relative to languages/java/core/.
+# NOTE: this generator build's matcher is narrower than gitignore — bare names and root
+# globs do not match; every rule needs a `**/` prefix (verified by dry-run, 2026-07-15).
+
+# Maven (pom.xml) is the core's single build definition; the parallel gradle/sbt
+# scaffolding and the opaque wrapper jar are not committed.
+**/build.gradle
+**/settings.gradle
+**/gradle.properties
+**/build.sbt
+**/gradle/**
+**/gradlew
+**/gradlew.bat
+
+# Test scaffolding — product tests are hand-written under languages/java/tests/.
+**/src/test/**
+
+# A committed spec copy would sidestep the single-pin rule (ADR-SDK-006; spec/pin.yaml).
+**/api/openapi.yaml
+
+# Standalone-repo/CI scaffolding — meaningless inside the monorepo (ADR-SDK-016); nested
+# workflow files must never look like live CI.
+**/.travis.yml
+**/.github/**
+**/git_push.sh
