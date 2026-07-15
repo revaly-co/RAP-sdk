@@ -1,6 +1,13 @@
 # Stage-2 generation config — PHP core (normative flag set: ADR-SDK-023 table;
 # evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
 # digest-pinned generator container; spec/output/template paths are supplied by the script.
+# Maintained template surface (re-diff against the embedded originals on any generator
+# upgrade — upgrades are ADR-SDK-023 revisions): templates/partial_header.mustache
+# (generated-code banner) and templates/php_doc_auth_partial.mustache — forked 2026-07-15
+# solely to fix auth guidance (this partial renders the auth block in the README and every
+# api doc): the stock example leaves the key prefix-less with a commented-out 'Bearer'
+# hint, but the RAP scheme requires `Authorization: ApiKey <key>` — the example now calls
+# setApiKeyPrefix('Authorization', 'ApiKey') unconditionally.
 generatorName: php # default guzzle library — the psr-18 library is still beta
 
 additionalProperties:

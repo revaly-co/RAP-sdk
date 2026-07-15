@@ -1,6 +1,15 @@
 # Stage-2 generation config — .NET core (normative flag set: ADR-SDK-023 table;
 # evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
 # digest-pinned generator container; spec/output/template paths are supplied by the script.
+# Maintained template surface (re-diff against the embedded originals on any generator
+# upgrade — upgrades are ADR-SDK-023 revisions): templates/partial_header.mustache
+# (generated-code banner) and templates/libraries/generichost/README.client.mustache —
+# forked 2026-07-15 solely to fix the README auth example: the RAP scheme is an API key
+# in the Authorization header with the required `ApiKey` prefix (spec securitySchemes
+# description), so the example now constructs ApiKeyToken with prefix "ApiKey " instead
+# of the stock BearerToken sample, which the API rejects. NOTE: the generated
+# ApiKeyToken's prefix parameter still defaults to "Bearer " — left untouched (code
+# behavior is upstream's); the stage-3 runtime owns ergonomic auth config.
 generatorName: csharp
 library: generichost # csharp default, kept explicit — `httpclient` library is officially Experimental
 

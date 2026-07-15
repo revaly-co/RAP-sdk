@@ -52,10 +52,11 @@ configuration = revaly_sdk_core.Configuration(
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKeyAuth
+# The API requires the `ApiKey` scheme prefix in the Authorization header:
+#   Authorization: ApiKey YOUR_API_KEY
+# api_key_prefix joins prefix and key with a space — both lines below are required.
 configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+configuration.api_key_prefix['ApiKeyAuth'] = 'ApiKey'
 
 # Enter a context with an instance of the API client
 with revaly_sdk_core.ApiClient(configuration) as api_client:
@@ -145,10 +146,11 @@ configuration = revaly_sdk_core.Configuration(
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKeyAuth
+# The API requires the `ApiKey` scheme prefix in the Authorization header:
+#   Authorization: ApiKey YOUR_API_KEY
+# api_key_prefix joins prefix and key with a space — both lines below are required.
 configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+configuration.api_key_prefix['ApiKeyAuth'] = 'ApiKey'
 
 # Enter a context with an instance of the API client
 with revaly_sdk_core.ApiClient(configuration) as api_client:
@@ -245,10 +247,11 @@ configuration = revaly_sdk_core.Configuration(
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKeyAuth
+# The API requires the `ApiKey` scheme prefix in the Authorization header:
+#   Authorization: ApiKey YOUR_API_KEY
+# api_key_prefix joins prefix and key with a space — both lines below are required.
 configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+configuration.api_key_prefix['ApiKeyAuth'] = 'ApiKey'
 
 # Enter a context with an instance of the API client
 with revaly_sdk_core.ApiClient(configuration) as api_client:
@@ -339,10 +342,11 @@ configuration = revaly_sdk_core.Configuration(
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKeyAuth
+# The API requires the `ApiKey` scheme prefix in the Authorization header:
+#   Authorization: ApiKey YOUR_API_KEY
+# api_key_prefix joins prefix and key with a space — both lines below are required.
 configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+configuration.api_key_prefix['ApiKeyAuth'] = 'ApiKey'
 
 # Enter a context with an instance of the API client
 with revaly_sdk_core.ApiClient(configuration) as api_client:
@@ -432,10 +436,11 @@ configuration = revaly_sdk_core.Configuration(
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKeyAuth
+# The API requires the `ApiKey` scheme prefix in the Authorization header:
+#   Authorization: ApiKey YOUR_API_KEY
+# api_key_prefix joins prefix and key with a space — both lines below are required.
 configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+configuration.api_key_prefix['ApiKeyAuth'] = 'ApiKey'
 
 # Enter a context with an instance of the API client
 with revaly_sdk_core.ApiClient(configuration) as api_client:
@@ -526,10 +531,11 @@ configuration = revaly_sdk_core.Configuration(
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKeyAuth
+# The API requires the `ApiKey` scheme prefix in the Authorization header:
+#   Authorization: ApiKey YOUR_API_KEY
+# api_key_prefix joins prefix and key with a space — both lines below are required.
 configuration.api_key['ApiKeyAuth'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+configuration.api_key_prefix['ApiKeyAuth'] = 'ApiKey'
 
 # Enter a context with an instance of the API client
 with revaly_sdk_core.ApiClient(configuration) as api_client:

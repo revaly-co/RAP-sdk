@@ -43,11 +43,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         CreatePaymentMethodRequest createPaymentMethodRequest = new CreatePaymentMethodRequest(); // CreatePaymentMethodRequest | 
@@ -124,11 +124,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         CreatePaymentMethodRequest createPaymentMethodRequest = new CreatePaymentMethodRequest(); // CreatePaymentMethodRequest | 
@@ -207,11 +207,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG434uyt"; // String | Unique identifier for the payment method
@@ -289,11 +289,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG434uyt"; // String | Unique identifier for the payment method
@@ -373,11 +373,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String xApiVersion = "2.0"; // String | Selects the RAP API version for this request. New integrations should pin `2.1` (identical to `2.0` today; future refinements land there). Omit to use the base version (`2.0`). A value naming an unsupported version — including an empty value — returns HTTP 400; if the header is sent, it must name a supported version. See the API description for the full version policy.
@@ -458,11 +458,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String xApiVersion = "2.0"; // String | Selects the RAP API version for this request. New integrations should pin `2.1` (identical to `2.0` today; future refinements land there). Omit to use the base version (`2.0`). A value naming an unsupported version — including an empty value — returns HTTP 400; if the header is sent, it must name a supported version. See the API description for the full version policy.
@@ -545,11 +545,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG4"; // String | Unique identifier for the payment method
@@ -628,11 +628,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG4"; // String | Unique identifier for the payment method
@@ -713,11 +713,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG4"; // String | Unique identifier for the payment method
@@ -794,11 +794,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG4"; // String | Unique identifier for the payment method
@@ -877,11 +877,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG4"; // String | Unique identifier for the payment method
@@ -960,11 +960,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         PaymentMethodsApi apiInstance = new PaymentMethodsApi(defaultClient);
         String paymentMethodId = "7DA6XQ33AIPUZLLDAGMXYHNTG4"; // String | Unique identifier for the payment method

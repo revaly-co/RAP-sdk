@@ -9,4 +9,11 @@
 # no package.json/tsconfig scaffolding. The core is compiled inside the runtime's package
 # (one published package per language, runtime-tdd.md §2); the npm identity is [Proposed]
 # until OQ-3 and belongs to the runtime, not the core.
+#
+# Maintained template surface (re-diff against the embedded originals on any generator
+# upgrade — upgrades are ADR-SDK-023 revisions): templates/licenseInfo.mustache (banner)
+# and templates/api_example.mustache — forked 2026-07-15 solely to fix auth guidance in
+# the generated api docs: typescript-fetch sends the configured apiKey value verbatim as
+# the Authorization header, and the RAP scheme requires the `ApiKey` prefix, so the
+# example value is now "ApiKey YOUR_API_KEY" instead of the bare key.
 generatorName: typescript-fetch

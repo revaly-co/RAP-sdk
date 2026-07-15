@@ -187,6 +187,9 @@ Authentication schemes defined for the API:
 
 Note, each API key must be added to a map of `map[string]APIKey` where the key is: ApiKeyAuth and passed in as the auth context for each request.
 
+The API requires the `ApiKey` scheme prefix in the Authorization header — set it via
+`Prefix` (joined with the key by a space): `Authorization: ApiKey API_KEY_STRING`.
+
 Example
 
 ```go
@@ -194,7 +197,7 @@ auth := context.WithValue(
 		context.Background(),
 		core.ContextAPIKeys,
 		map[string]core.APIKey{
-			"ApiKeyAuth": {Key: "API_KEY_STRING"},
+			"ApiKeyAuth": {Key: "API_KEY_STRING", Prefix: "ApiKey"},
 		},
 	)
 r, err := client.Service.Operation(auth, args)

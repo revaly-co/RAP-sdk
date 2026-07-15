@@ -17,6 +17,11 @@
 #     dev-group pytest >= 9.0.3 (GHSA-6w46-j5rx-g56g). Dependency floors in generated
 #     manifests are fixed HERE, never by editing core/ (rule 1): a Dependabot PR against
 #     core/ can never pass the stage-2 regen-diff.
+#   templates/python_doc_auth_partial.mustache — forked 2026-07-15 solely to fix auth
+#     guidance (this partial renders the auth block in the README and every api doc):
+#     the stock example leaves the key prefix-less with a commented-out 'Bearer' hint,
+#     but the RAP scheme requires `Authorization: ApiKey <key>` — the example now sets
+#     api_key_prefix['ApiKeyAuth'] = 'ApiKey' unconditionally.
 generatorName: python # default urllib3 library
 
 additionalProperties:

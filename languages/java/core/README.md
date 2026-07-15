@@ -111,6 +111,13 @@ public class NotifyApiExample {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         // Configure clients using the `defaultClient` object, such as
         // overriding the host and port, timeout, etc.
+        
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
+        
         NotifyApi apiInstance = new NotifyApi(defaultClient);
         NotifyRequest notifyRequest = new NotifyRequest(); // NotifyRequest | 
         String xApiVersion = "2.0"; // String | Selects the RAP API version for this request. New integrations should pin `2.1` (identical to `2.0` today; future refinements land there). Omit to use the base version (`2.0`). A value naming an unsupported version — including an empty value — returns HTTP 400; if the header is sent, it must name a supported version. See the API description for the full version policy.

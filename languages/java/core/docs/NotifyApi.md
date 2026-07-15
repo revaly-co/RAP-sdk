@@ -33,11 +33,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         NotifyApi apiInstance = new NotifyApi(defaultClient);
         NotifyRequest notifyRequest = new NotifyRequest(); // NotifyRequest | 
@@ -115,11 +115,11 @@ public class Example {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath("https://api.revaly.co");
         
-        // Configure API key authorization: ApiKeyAuth
-        ApiKeyAuth ApiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("ApiKeyAuth");
-        ApiKeyAuth.setApiKey("YOUR API KEY");
-        // Uncomment the following line to set a prefix for the API key, e.g. "Token" (defaults to null)
-        //ApiKeyAuth.setApiKeyPrefix("Token");
+        // Configure API key authorization: ApiKeyAuth — this `native`-library core has no
+        // auth helper classes; set the header on every request via the request interceptor.
+        // The API requires the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+        defaultClient.setRequestInterceptor(builder ->
+            builder.header("Authorization", "ApiKey " + System.getenv("RAP_API_KEY")));
 
         NotifyApi apiInstance = new NotifyApi(defaultClient);
         NotifyRequest notifyRequest = new NotifyRequest(); // NotifyRequest | 
