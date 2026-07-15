@@ -1,0 +1,8 @@
+{
+  "name": "rap-sdk-spec-tooling",
+  "private": true,
+  "description": "Lockfile-pinned spec toolchain for pipeline stage 1 (ADR-SDK-006 defense in depth). The @redocly/cli version here must match REDOCLY_VERSION in .github/workflows/pipeline.yml — the workflow cross-checks and refuses drift.",
+  "devDependencies": {
+    "@redocly/cli": "2.38.0"
+  }
+}
