@@ -3,7 +3,7 @@
 Six server-side SDKs (**.NET, Java, PHP, TypeScript, Python, Go**) for the **RAP V2 API**
 (RAP-core, `api.revaly.co`), per **RFC-046** (Approved 2026-07-10 v10; SC-215, Epic SC-234).
 One monorepo, one deterministic pipeline consuming only gated spec artifacts, one merchant-facing
-failover contract. `docs/` is the complete, self-contained design set (22 ADRs + 7 design docs) —
+failover contract. `docs/` is the complete, self-contained design set (23 ADRs + 8 design docs) —
 **docs are the source of truth; this file is the enforcement summary.**
 
 **Namespace:** canonical home is `revaly-co/rap-sdk` (ADR-SDK-022). Staged privately at
@@ -40,10 +40,11 @@ build stories.
    (ADR-SDK-019). Pre-1.0 betas count as publishing. Interim distribution = per-language
    **GitHub release artifacts** from this repo (model: the platform's `spec/v*` releases —
    asset + `.sha256` + `provenance.json`).
-4. **Do not decide open items.** OQ-1 (generator choice), OQ-2 (full error-code taxonomy),
-   OQ-3 (registry ownership/namespaces), OQ-6 (deadline defaults — telemetry-derived, do not
-   invent numbers), OQ-11 (AFD/WAF edge behaviour) have owners and gates in `docs/open-items.md`.
-   Where code needs the answer, leave an explicit marker referencing the OQ.
+4. **Do not decide open items.** OQ-2 (full error-code taxonomy), OQ-3 (registry
+   ownership/namespaces), OQ-6 (deadline defaults — telemetry-derived, do not invent numbers),
+   OQ-11 (AFD/WAF edge behaviour) have owners and gates in `docs/open-items.md`. Where code
+   needs the answer, leave an explicit marker referencing the OQ. (OQ-1 is decided —
+   ADR-SDK-023; generator changes are ADR revisions, never quiet pipeline edits.)
 5. **Safety-contract invariants** (`failover-contract.md` §2/§5; ADR-SDK-002/003/004/007/009):
    classify failures only by the normative algorithm — never from `error` message text, latency,
    or wait heuristics; `ErrorResponse.code` and `transactionType` are **open strings**, never
