@@ -1,33 +1,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>co.revaly</groupId>
-    <artifactId>revaly-sdk-core</artifactId>
+    <groupId>{{groupId}}</groupId>
+    <artifactId>{{artifactId}}</artifactId>
     <packaging>jar</packaging>
-    <name>revaly-sdk-core</name>
-    <version>0.0.0-SNAPSHOT</version>
-    <url>https://github.com/revaly-co/rap-sdk</url>
-    <description>RAP V2 API generated core (models + endpoint bindings)</description>
+    <name>{{artifactId}}</name>
+    <version>{{artifactVersion}}</version>
+    <url>{{artifactUrl}}</url>
+    <description>{{artifactDescription}}</description>
     <scm>
-        <connection>scm:git:git://github.com/revaly-co/rap-sdk.git</connection>
-        <developerConnection>scm:git:ssh://github.com:revaly-co/rap-sdk.git</developerConnection>
-        <url>https://github.com/revaly-co/rap-sdk</url>
+        <connection>{{scmConnection}}</connection>
+        <developerConnection>{{scmDeveloperConnection}}</developerConnection>
+        <url>{{scmUrl}}</url>
     </scm>
+{{#parentOverridden}}
+    <parent>
+        <groupId>{{{parentGroupId}}}</groupId>
+        <artifactId>{{{parentArtifactId}}}</artifactId>
+        <version>{{{parentVersion}}}</version>
+    </parent>
+{{/parentOverridden}}
 
     <licenses>
         <license>
-            <name>Apache-2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <name>{{licenseName}}</name>
+            <url>{{licenseUrl}}</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
 
     <developers>
         <developer>
-            <name>Revaly SC Eng</name>
-            <email>sdk@revaly.co</email>
-            <organization>Revaly</organization>
-            <organizationUrl>https://revaly.co</organizationUrl>
+            <name>{{developerName}}</name>
+            <email>{{developerEmail}}</email>
+            <organization>{{developerOrganization}}</organization>
+            <organizationUrl>{{developerOrganizationUrl}}</organizationUrl>
         </developer>
     </developers>
 
@@ -194,8 +201,23 @@
     </profiles>
 
     <dependencies>
+        {{#swagger1AnnotationLibrary}}
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${swagger-annotations-version}</version>
+        </dependency>
+        {{/swagger1AnnotationLibrary}}
+        {{#swagger2AnnotationLibrary}}
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${swagger-annotations-version}</version>
+        </dependency>
+        {{/swagger2AnnotationLibrary}}
 
         <!-- JSON processing: jackson -->
+        {{^useJackson3}}
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -221,6 +243,31 @@
             <artifactId>jackson-databind-nullable</artifactId>
             <version>${jackson-databind-nullable-version}</version>
         </dependency>
+        {{/useJackson3}}
+        {{#useJackson3}}
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson3-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson-annotations-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson3-version}</version>
+        </dependency>
+        <!-- Note: jackson-datatype-jsr310 is included in jackson-databind for Jackson 3 -->
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>${jackson-databind-nullable-version}</version>
+        </dependency>
+        {{/useJackson3}}
+        {{^useJspecify}}
 
         <!-- @Nullable annotation -->
         <dependency>
@@ -228,12 +275,44 @@
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
         </dependency>
+        {{/useJspecify}}
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>${jakarta-annotation-version}</version>
             <scope>provided</scope>
         </dependency>
+        {{#useBeanValidation}}
+        <!-- Bean Validation API support -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${beanvalidation-version}</version>
+            <scope>provided</scope>
+        </dependency>
+        {{/useBeanValidation}}
+        {{#hasFormParamsInSpec}}
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>${httpmime-version}</version>
+        </dependency>
+        {{/hasFormParamsInSpec}}
+        {{#useReflectionEqualsHashCode}}
+        <!-- For equals and hashCode using reflection -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3-version}</version>
+        </dependency>
+        {{/useReflectionEqualsHashCode}}
+        {{#useJspecify}}
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        {{/useJspecify}}
 
         <!-- test dependencies -->
         <dependency>
@@ -246,13 +325,44 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        {{#swagger1AnnotationLibrary}}
+        <swagger-annotations-version>1.6.9</swagger-annotations-version>
+        {{/swagger1AnnotationLibrary}}
+        {{#swagger2AnnotationLibrary}}
+        <swagger-annotations-version>2.2.15</swagger-annotations-version>
+        {{/swagger2AnnotationLibrary}}
+        {{^useJackson3}}
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        {{/useJackson3}}
+        {{#useJackson3}}
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        {{/useJackson3}}
+        {{^useJackson3}}
         <jackson-version>2.21.5</jackson-version>
         <jackson-annotations-version>2.21</jackson-annotations-version>
         <jackson-databind-nullable-version>0.2.10</jackson-databind-nullable-version>
+        {{/useJackson3}}
+        {{#useJackson3}}
+        <jackson3-version>3.1.1</jackson3-version>
+        <jackson-annotations-version>2.21</jackson-annotations-version>
+        <jackson-databind-nullable-version>0.2.10</jackson-databind-nullable-version>
+        {{/useJackson3}}
+        {{#useJakartaEe}}
+        <jakarta-annotation-version>2.1.1</jakarta-annotation-version>
+        <beanvalidation-version>3.0.2</beanvalidation-version>
+        {{/useJakartaEe}}
+        {{^useJakartaEe}}
         <jakarta-annotation-version>1.3.5</jakarta-annotation-version>
         <beanvalidation-version>2.0.2</beanvalidation-version>
+        {{/useJakartaEe}}
+        {{#hasFormParamsInSpec}}
+        <httpmime-version>4.5.14</httpmime-version>
+        {{/hasFormParamsInSpec}}
+        {{#useReflectionEqualsHashCode}}
+        <commons-lang3-version>3.17.0</commons-lang3-version>
+        {{/useReflectionEqualsHashCode}}
         <junit-version>5.10.2</junit-version>
         <spotless.version>2.27.2</spotless.version>
     </properties>

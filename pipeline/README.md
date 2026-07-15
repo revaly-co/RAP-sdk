@@ -30,6 +30,20 @@ secret:
   silently skipped verification would conflate "gate passed" with "gate never ran".
 - Rotate on expiry; replace when the platform repo changes org (ADR-SDK-022 rename).
 
+## Dependency hygiene for generated manifests
+
+The generated cores carry dependency manifests (pom.xml, pyproject.toml/setup.py/
+requirements.txt, composer.json, csproj, go.mod ranges) whose versions come from the pinned
+generator's templates. **Dependabot alerts are the detector; the fix vehicle is always the
+generation config** — bump the floor in a template fork (or flag) under `pipeline/<language>/`
+and regenerate. A Dependabot (or human) PR that edits `languages/*/core/` directly can never
+merge: stage 2 regenerates and rejects any byte drift (ADR-SDK-001). For that reason
+Dependabot's *automated security-fix PRs* are disabled repo-wide while *alerts stay enabled*;
+`languages/go/go.mod`/`go.sum` are the one hand-maintained manifest pair (bump directly).
+First applied 2026-07-15: jackson-databind 2.21.5 (java pom fork), urllib3 ≥ 2.7.0 + dev-group
+pytest ≥ 9.0.3 (python manifest forks) — 11 of 12 launch alerts cleared, the 12th (filelock,
+dev-scope transitive) tracked for dismissal.
+
 ## Stage roadmap (build order)
 
 Stage 2 (generate ×6 — **built 2026-07-15**, cores committed from `spec/v2.1.3+e75c71a`) →
