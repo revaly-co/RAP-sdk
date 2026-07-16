@@ -288,6 +288,20 @@ jobs:
       - name: Compile Core
         run: mvn -B -ntp -f languages/java/core/pom.xml compile
 
+      # Full reactor (core + runtime + tests) via the hand-written aggregator pom. Runs
+      # the runtime suite, including the ADR-SDK-020 log-capture tests (values-free
+      # default, scrubbed debug), the failover-contract §2 classification table, and the
+      # core oneOf/optional-enum regression probes.
+      - name: Build + Test Runtime
+        run: mvn -B -ntp -f languages/java/pom.xml test
+
+      # DX contract §a: ecosystem-standard lint, scoped to the hand-written modules via
+      # -pl (NEVER the generated core — ADR-SDK-001; formatting core would trip the
+      # stage-2 regen diff). Spotless/google-java-format is [Proposed] pending the
+      # idiomatic-reviewer sign-off.
+      - name: Format Check (runtime + tests only)
+        run: mvn -B -ntp -f languages/java/pom.xml -pl runtime,tests spotless:check
+
   build-php:
     name: Stage 3 - Build + Test (php)
     runs-on: ubuntu-latest

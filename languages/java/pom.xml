@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written reactor aggregator for the Java SDK (ADR-SDK-016 layout: core / runtime /
+  tests — the java analogue of dotnet's Revaly.Sdk.slnx). Aggregation only, deliberately
+  NOT a parent: core/pom.xml is generator output (ADR-SDK-001) and must stay standalone —
+  it declares no <parent> and is never edited by hand.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>co.revaly</groupId>
+    <artifactId>revaly-sdk-java-aggregator</artifactId>
+    <version>0.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>revaly-sdk-java-aggregator</name>
+    <description>Reactor build for the RAP Java SDK: generated core, hand-written runtime, tests</description>
+
+    <modules>
+        <module>core</module>
+        <module>runtime</module>
+        <module>tests</module>
+    </modules>
+</project>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written runtime module (runtime-tdd.md §§1-9) — the merchant-facing product layer
+  wrapping the generated core. Registry identity co.revaly:revaly-sdk is the runtime-tdd §7
+  working scheme, [Proposed] until OQ-3 registry provisioning; the version is a placeholder
+  (stage 5 stamps releases). Publish is embargoed (repo rule 3).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>co.revaly</groupId>
+    <artifactId>revaly-sdk</artifactId>
+    <version>0.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>revaly-sdk</name>
+    <description>RAP V2 Java SDK — hand-written runtime over the generated core (failover contract, reconcile helper, values-free logging, mock transport)</description>
+    <url>https://github.com/revaly-co/rap-sdk</url>
+
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/revaly-co/rap-sdk.git</connection>
+        <developerConnection>scm:git:ssh://github.com:revaly-co/rap-sdk.git</developerConnection>
+        <url>https://github.com/revaly-co/rap-sdk</url>
+    </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- release (not source/target) so JDK-21 CI builds cannot leak post-11 APIs. -->
+        <maven.compiler.release>11</maven.compiler.release>
+        <!-- Jackson floor matches the core's pinned 2.21.5 (pipeline/java/config.yaml
+             pom.mustache fork rationale — Dependabot advisories). -->
+        <jackson-version>2.21.5</jackson-version>
+        <slf4j-version>2.0.17</slf4j-version>
+        <!-- Ecosystem linter for the hand-written modules (DX contract §a). Spotless +
+             google-java-format is [Proposed] pending the idiomatic-reviewer sign-off;
+             checkstyle is the alternative. Never applied to core/ (ADR-SDK-001). -->
+        <spotless-version>2.43.0</spotless-version>
+        <google-java-format-version>1.17.0</google-java-format-version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>co.revaly</groupId>
+            <artifactId>revaly-sdk-core</artifactId>
+            <version>0.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+        <!-- Ecosystem-native logging abstraction (runtime-tdd §6): the SDK logs through
+             SLF4J and never binds an implementation — the merchant's binding decides. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>${google-java-format-version}</version>
+                            <style>AOSP</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hand-written test module (ADR-SDK-016: tests live beside runtime, never inside core).
+  Never deployed — test scope only. Carries the ADR-SDK-020 log-capture tests, the
+  failover-contract §2 classification table, and the core-defect regression probes.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>co.revaly</groupId>
+    <artifactId>revaly-sdk-tests</artifactId>
+    <version>0.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>revaly-sdk-tests</name>
+    <description>RAP Java SDK runtime test suite (not a published artifact)</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>11</maven.compiler.release>
+        <junit-version>5.10.2</junit-version>
+        <!-- logback 1.4.x: java 11 floor, SLF4J 2.x — test-only binding for log capture. -->
+        <logback-version>1.4.14</logback-version>
+        <spotless-version>2.43.0</spotless-version>
+        <google-java-format-version>1.17.0</google-java-format-version>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>co.revaly</groupId>
+            <artifactId>revaly-sdk</artifactId>
+            <version>0.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback-version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>${google-java-format-version}</version>
+                            <style>AOSP</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
