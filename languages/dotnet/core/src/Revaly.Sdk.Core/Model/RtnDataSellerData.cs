@@ -788,13 +788,20 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataSellerData.SellerPostalCodeOption.IsSet)
                 writer.WriteString("sellerPostalCode", rtnDataSellerData.SellerPostalCode);
 
-            var sellerRegionRawValue = RtnDataSellerData.SellerRegionEnumToJsonValue(rtnDataSellerData.SellerRegionOption.Value!.Value);
-            writer.WriteString("sellerRegion", sellerRegionRawValue);
+            if (rtnDataSellerData.SellerRegionOption.IsSet)
+            {
+                var sellerRegionRawValue = RtnDataSellerData.SellerRegionEnumToJsonValue(rtnDataSellerData.SellerRegionOption.Value!.Value);
+                writer.WriteString("sellerRegion", sellerRegionRawValue);
+            }
+
             if (rtnDataSellerData.SellerCountryCodeOption.IsSet)
                 writer.WriteString("sellerCountryCode", rtnDataSellerData.SellerCountryCode);
 
-            var transactionTypeIndicatorRawValue = RtnDataSellerData.TransactionTypeIndicatorEnumToJsonValue(rtnDataSellerData.TransactionTypeIndicatorOption.Value!.Value);
-            writer.WriteString("transactionTypeIndicator", transactionTypeIndicatorRawValue);
+            if (rtnDataSellerData.TransactionTypeIndicatorOption.IsSet)
+            {
+                var transactionTypeIndicatorRawValue = RtnDataSellerData.TransactionTypeIndicatorEnumToJsonValue(rtnDataSellerData.TransactionTypeIndicatorOption.Value!.Value);
+                writer.WriteString("transactionTypeIndicator", transactionTypeIndicatorRawValue);
+            }
         }
     }
 }

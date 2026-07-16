@@ -1041,8 +1041,12 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataDeviceData.DeviceLatitudeOption.IsSet)
                 writer.WriteString("deviceLatitude", rtnDataDeviceData.DeviceLatitude);
 
-            var channelRawValue = RtnDataDeviceData.ChannelEnumToJsonValue(rtnDataDeviceData.ChannelOption.Value!.Value);
-            writer.WriteString("channel", channelRawValue);
+            if (rtnDataDeviceData.ChannelOption.IsSet)
+            {
+                var channelRawValue = RtnDataDeviceData.ChannelEnumToJsonValue(rtnDataDeviceData.ChannelOption.Value!.Value);
+                writer.WriteString("channel", channelRawValue);
+            }
+
             if (rtnDataDeviceData.DigitalWalletProviderIdOption.IsSet)
                 writer.WriteString("digitalWalletProviderId", rtnDataDeviceData.DigitalWalletProviderId);
 
@@ -1052,8 +1056,12 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataDeviceData.IsKnownDeviceOption.IsSet)
                 writer.WriteBoolean("isKnownDevice", rtnDataDeviceData.IsKnownDeviceOption.Value!.Value);
 
-            var deviceTypeRawValue = RtnDataDeviceData.DeviceTypeEnumToJsonValue(rtnDataDeviceData.DeviceTypeOption.Value!.Value);
-            writer.WriteString("deviceType", deviceTypeRawValue);
+            if (rtnDataDeviceData.DeviceTypeOption.IsSet)
+            {
+                var deviceTypeRawValue = RtnDataDeviceData.DeviceTypeEnumToJsonValue(rtnDataDeviceData.DeviceTypeOption.Value!.Value);
+                writer.WriteString("deviceType", deviceTypeRawValue);
+            }
+
             if (rtnDataDeviceData.BrowserTimezoneOffsetOption.IsSet)
                 writer.WriteString("browserTimezoneOffset", rtnDataDeviceData.BrowserTimezoneOffset);
 

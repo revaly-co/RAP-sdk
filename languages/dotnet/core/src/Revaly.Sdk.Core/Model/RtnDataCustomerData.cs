@@ -2276,21 +2276,33 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataCustomerData.AccountOpenedDateOption.IsSet)
                 writer.WriteString("accountOpenedDate", rtnDataCustomerData.AccountOpenedDate);
 
-            var accountAgeIndicatorRawValue = RtnDataCustomerData.AccountAgeIndicatorEnumToJsonValue(rtnDataCustomerData.AccountAgeIndicatorOption.Value!.Value);
-            writer.WriteString("accountAgeIndicator", accountAgeIndicatorRawValue);
+            if (rtnDataCustomerData.AccountAgeIndicatorOption.IsSet)
+            {
+                var accountAgeIndicatorRawValue = RtnDataCustomerData.AccountAgeIndicatorEnumToJsonValue(rtnDataCustomerData.AccountAgeIndicatorOption.Value!.Value);
+                writer.WriteString("accountAgeIndicator", accountAgeIndicatorRawValue);
+            }
+
             if (rtnDataCustomerData.IsFreeAccountOption.IsSet)
                 writer.WriteBoolean("isFreeAccount", rtnDataCustomerData.IsFreeAccountOption.Value!.Value);
 
             if (rtnDataCustomerData.AccountLastChangedDateOption.IsSet)
                 writer.WriteString("accountLastChangedDate", rtnDataCustomerData.AccountLastChangedDate);
 
-            var accountChangeIndicatorRawValue = RtnDataCustomerData.AccountChangeIndicatorEnumToJsonValue(rtnDataCustomerData.AccountChangeIndicatorOption.Value!.Value);
-            writer.WriteString("accountChangeIndicator", accountChangeIndicatorRawValue);
+            if (rtnDataCustomerData.AccountChangeIndicatorOption.IsSet)
+            {
+                var accountChangeIndicatorRawValue = RtnDataCustomerData.AccountChangeIndicatorEnumToJsonValue(rtnDataCustomerData.AccountChangeIndicatorOption.Value!.Value);
+                writer.WriteString("accountChangeIndicator", accountChangeIndicatorRawValue);
+            }
+
             if (rtnDataCustomerData.PasswordLastChangedDateOption.IsSet)
                 writer.WriteString("passwordLastChangedDate", rtnDataCustomerData.PasswordLastChangedDate);
 
-            var passwordChangeIndicatorRawValue = RtnDataCustomerData.PasswordChangeIndicatorEnumToJsonValue(rtnDataCustomerData.PasswordChangeIndicatorOption.Value!.Value);
-            writer.WriteString("passwordChangeIndicator", passwordChangeIndicatorRawValue);
+            if (rtnDataCustomerData.PasswordChangeIndicatorOption.IsSet)
+            {
+                var passwordChangeIndicatorRawValue = RtnDataCustomerData.PasswordChangeIndicatorEnumToJsonValue(rtnDataCustomerData.PasswordChangeIndicatorOption.Value!.Value);
+                writer.WriteString("passwordChangeIndicator", passwordChangeIndicatorRawValue);
+            }
+
             if (rtnDataCustomerData.TransactionSuccessfulCountLastSixMonthsOption.IsSet)
                 writer.WriteNumber("transactionSuccessfulCountLastSixMonths", rtnDataCustomerData.TransactionSuccessfulCountLastSixMonthsOption.Value!.Value);
 
@@ -2303,8 +2315,12 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataCustomerData.PaymentMethodAddedDateOption.IsSet)
                 writer.WriteString("paymentMethodAddedDate", rtnDataCustomerData.PaymentMethodAddedDate);
 
-            var paymentMethodAgeIndicatorRawValue = RtnDataCustomerData.PaymentMethodAgeIndicatorEnumToJsonValue(rtnDataCustomerData.PaymentMethodAgeIndicatorOption.Value!.Value);
-            writer.WriteString("paymentMethodAgeIndicator", paymentMethodAgeIndicatorRawValue);
+            if (rtnDataCustomerData.PaymentMethodAgeIndicatorOption.IsSet)
+            {
+                var paymentMethodAgeIndicatorRawValue = RtnDataCustomerData.PaymentMethodAgeIndicatorEnumToJsonValue(rtnDataCustomerData.PaymentMethodAgeIndicatorOption.Value!.Value);
+                writer.WriteString("paymentMethodAgeIndicator", paymentMethodAgeIndicatorRawValue);
+            }
+
             if (rtnDataCustomerData.PaymentMethodAddAttemptCountLast24HoursOption.IsSet)
                 writer.WriteNumber("paymentMethodAddAttemptCountLast24Hours", rtnDataCustomerData.PaymentMethodAddAttemptCountLast24HoursOption.Value!.Value);
 
@@ -2317,18 +2333,30 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataCustomerData.CustomerIdOption.IsSet)
                 writer.WriteString("customerId", rtnDataCustomerData.CustomerId);
 
-            var accountAuthenticationMethodRawValue = RtnDataCustomerData.AccountAuthenticationMethodEnumToJsonValue(rtnDataCustomerData.AccountAuthenticationMethodOption.Value!.Value);
-            writer.WriteString("accountAuthenticationMethod", accountAuthenticationMethodRawValue);
+            if (rtnDataCustomerData.AccountAuthenticationMethodOption.IsSet)
+            {
+                var accountAuthenticationMethodRawValue = RtnDataCustomerData.AccountAuthenticationMethodEnumToJsonValue(rtnDataCustomerData.AccountAuthenticationMethodOption.Value!.Value);
+                writer.WriteString("accountAuthenticationMethod", accountAuthenticationMethodRawValue);
+            }
+
             if (rtnDataCustomerData.IsTenuredCustomerOption.IsSet)
                 writer.WriteBoolean("isTenuredCustomer", rtnDataCustomerData.IsTenuredCustomerOption.Value!.Value);
 
             if (rtnDataCustomerData.IsEmailKnownToCustomerOption.IsSet)
                 writer.WriteBoolean("isEmailKnownToCustomer", rtnDataCustomerData.IsEmailKnownToCustomerOption.Value!.Value);
 
-            var isRegisteredCustomerRawValue = RtnDataCustomerData.IsRegisteredCustomerEnumToJsonValue(rtnDataCustomerData.IsRegisteredCustomerOption.Value!.Value);
-            writer.WriteString("isRegisteredCustomer", isRegisteredCustomerRawValue);
-            var isRegistrationUpdatedRawValue = RtnDataCustomerData.IsRegistrationUpdatedEnumToJsonValue(rtnDataCustomerData.IsRegistrationUpdatedOption.Value!.Value);
-            writer.WriteString("isRegistrationUpdated", isRegistrationUpdatedRawValue);
+            if (rtnDataCustomerData.IsRegisteredCustomerOption.IsSet)
+            {
+                var isRegisteredCustomerRawValue = RtnDataCustomerData.IsRegisteredCustomerEnumToJsonValue(rtnDataCustomerData.IsRegisteredCustomerOption.Value!.Value);
+                writer.WriteString("isRegisteredCustomer", isRegisteredCustomerRawValue);
+            }
+
+            if (rtnDataCustomerData.IsRegistrationUpdatedOption.IsSet)
+            {
+                var isRegistrationUpdatedRawValue = RtnDataCustomerData.IsRegistrationUpdatedEnumToJsonValue(rtnDataCustomerData.IsRegistrationUpdatedOption.Value!.Value);
+                writer.WriteString("isRegistrationUpdated", isRegistrationUpdatedRawValue);
+            }
+
             if (rtnDataCustomerData.RegisteredAccountTenureOption.IsSet)
                 writer.WriteNumber("registeredAccountTenure", rtnDataCustomerData.RegisteredAccountTenureOption.Value!.Value);
 

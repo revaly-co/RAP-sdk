@@ -835,11 +835,19 @@ namespace Revaly.Sdk.Core.Model
 
             writer.WriteString("merchantTransactionId", authorizeRequest.MerchantTransactionId);
 
-            var paymentMethodTypeRawValue = AuthorizeRequest.PaymentMethodTypeEnumToJsonValue(authorizeRequest.PaymentMethodTypeOption.Value!.Value);
-            if (paymentMethodTypeRawValue != null)
-                writer.WriteString("paymentMethodType", paymentMethodTypeRawValue);
-            else
-                writer.WriteNull("paymentMethodType");
+            if (authorizeRequest.PaymentMethodTypeOption.IsSet)
+            {
+                if (authorizeRequest.PaymentMethodTypeOption!.Value != null)
+                {
+                    var paymentMethodTypeRawValue = AuthorizeRequest.PaymentMethodTypeEnumToJsonValue(authorizeRequest.PaymentMethodTypeOption.Value!.Value);
+                    if (paymentMethodTypeRawValue != null)
+                        writer.WriteString("paymentMethodType", paymentMethodTypeRawValue);
+                    else
+                        writer.WriteNull("paymentMethodType");
+                }
+                else
+                    writer.WriteNull("paymentMethodType");
+            }
 
             if (authorizeRequest.GatewayRoutingIdOption.IsSet)
                 if (authorizeRequest.GatewayRoutingIdOption.Value != null)

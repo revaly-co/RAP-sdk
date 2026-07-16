@@ -804,23 +804,47 @@ namespace Revaly.Sdk.Core.Model
                 else
                     writer.WriteNull("cavvAlgorithm");
 
-            var directoryStatusRawValue = ThreeDS.DirectoryStatusEnumToJsonValue(threeDS.DirectoryStatusOption.Value!.Value);
-            if (directoryStatusRawValue != null)
-                writer.WriteString("directoryStatus", directoryStatusRawValue);
-            else
-                writer.WriteNull("directoryStatus");
+            if (threeDS.DirectoryStatusOption.IsSet)
+            {
+                if (threeDS.DirectoryStatusOption!.Value != null)
+                {
+                    var directoryStatusRawValue = ThreeDS.DirectoryStatusEnumToJsonValue(threeDS.DirectoryStatusOption.Value!.Value);
+                    if (directoryStatusRawValue != null)
+                        writer.WriteString("directoryStatus", directoryStatusRawValue);
+                    else
+                        writer.WriteNull("directoryStatus");
+                }
+                else
+                    writer.WriteNull("directoryStatus");
+            }
 
-            var authenticationStatusRawValue = ThreeDS.AuthenticationStatusEnumToJsonValue(threeDS.AuthenticationStatusOption.Value!.Value);
-            if (authenticationStatusRawValue != null)
-                writer.WriteString("authenticationStatus", authenticationStatusRawValue);
-            else
-                writer.WriteNull("authenticationStatus");
+            if (threeDS.AuthenticationStatusOption.IsSet)
+            {
+                if (threeDS.AuthenticationStatusOption!.Value != null)
+                {
+                    var authenticationStatusRawValue = ThreeDS.AuthenticationStatusEnumToJsonValue(threeDS.AuthenticationStatusOption.Value!.Value);
+                    if (authenticationStatusRawValue != null)
+                        writer.WriteString("authenticationStatus", authenticationStatusRawValue);
+                    else
+                        writer.WriteNull("authenticationStatus");
+                }
+                else
+                    writer.WriteNull("authenticationStatus");
+            }
 
-            var enrolledStatusRawValue = ThreeDS.EnrolledStatusEnumToJsonValue(threeDS.EnrolledStatusOption.Value!.Value);
-            if (enrolledStatusRawValue != null)
-                writer.WriteString("enrolledStatus", enrolledStatusRawValue);
-            else
-                writer.WriteNull("enrolledStatus");
+            if (threeDS.EnrolledStatusOption.IsSet)
+            {
+                if (threeDS.EnrolledStatusOption!.Value != null)
+                {
+                    var enrolledStatusRawValue = ThreeDS.EnrolledStatusEnumToJsonValue(threeDS.EnrolledStatusOption.Value!.Value);
+                    if (enrolledStatusRawValue != null)
+                        writer.WriteString("enrolledStatus", enrolledStatusRawValue);
+                    else
+                        writer.WriteNull("enrolledStatus");
+                }
+                else
+                    writer.WriteNull("enrolledStatus");
+            }
 
             if (threeDS.ServerTransIdOption.IsSet)
                 if (threeDS.ServerTransIdOption.Value != null)

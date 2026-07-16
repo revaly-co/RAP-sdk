@@ -1303,27 +1303,51 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataAdditionalTransactionData.DpanOption.IsSet && rtnDataAdditionalTransactionData.Dpan == null)
                 throw new ArgumentNullException(nameof(rtnDataAdditionalTransactionData.Dpan), "Property is required for class RtnDataAdditionalTransactionData.");
 
-            var providerAuthDecisionRawValue = RtnDataAdditionalTransactionData.ProviderAuthDecisionEnumToJsonValue(rtnDataAdditionalTransactionData.ProviderAuthDecisionOption.Value!.Value);
-            writer.WriteString("providerAuthDecision", providerAuthDecisionRawValue);
+            if (rtnDataAdditionalTransactionData.ProviderAuthDecisionOption.IsSet)
+            {
+                var providerAuthDecisionRawValue = RtnDataAdditionalTransactionData.ProviderAuthDecisionEnumToJsonValue(rtnDataAdditionalTransactionData.ProviderAuthDecisionOption.Value!.Value);
+                writer.WriteString("providerAuthDecision", providerAuthDecisionRawValue);
+            }
+
             if (rtnDataAdditionalTransactionData.ProviderAuthDecisionCodeOption.IsSet)
                 writer.WriteString("providerAuthDecisionCode", rtnDataAdditionalTransactionData.ProviderAuthDecisionCode);
 
-            var paymentRailRawValue = RtnDataAdditionalTransactionData.PaymentRailEnumToJsonValue(rtnDataAdditionalTransactionData.PaymentRailOption.Value!.Value);
-            writer.WriteString("paymentRail", paymentRailRawValue);
-            var posEntryModeRawValue = RtnDataAdditionalTransactionData.PosEntryModeEnumToJsonValue(rtnDataAdditionalTransactionData.PosEntryModeOption.Value!.Value);
-            writer.WriteString("posEntryMode", posEntryModeRawValue);
+            if (rtnDataAdditionalTransactionData.PaymentRailOption.IsSet)
+            {
+                var paymentRailRawValue = RtnDataAdditionalTransactionData.PaymentRailEnumToJsonValue(rtnDataAdditionalTransactionData.PaymentRailOption.Value!.Value);
+                writer.WriteString("paymentRail", paymentRailRawValue);
+            }
+
+            if (rtnDataAdditionalTransactionData.PosEntryModeOption.IsSet)
+            {
+                var posEntryModeRawValue = RtnDataAdditionalTransactionData.PosEntryModeEnumToJsonValue(rtnDataAdditionalTransactionData.PosEntryModeOption.Value!.Value);
+                writer.WriteString("posEntryMode", posEntryModeRawValue);
+            }
+
             if (rtnDataAdditionalTransactionData.RetrievalReferenceNumberOption.IsSet)
                 writer.WriteString("retrievalReferenceNumber", rtnDataAdditionalTransactionData.RetrievalReferenceNumber);
 
-            var merchantTrustLevelRawValue = RtnDataAdditionalTransactionData.MerchantTrustLevelEnumToJsonValue(rtnDataAdditionalTransactionData.MerchantTrustLevelOption.Value!.Value);
-            writer.WriteString("merchantTrustLevel", merchantTrustLevelRawValue);
+            if (rtnDataAdditionalTransactionData.MerchantTrustLevelOption.IsSet)
+            {
+                var merchantTrustLevelRawValue = RtnDataAdditionalTransactionData.MerchantTrustLevelEnumToJsonValue(rtnDataAdditionalTransactionData.MerchantTrustLevelOption.Value!.Value);
+                writer.WriteString("merchantTrustLevel", merchantTrustLevelRawValue);
+            }
+
             if (rtnDataAdditionalTransactionData.MerchantTrustDataOption.IsSet)
                 writer.WriteString("merchantTrustData", rtnDataAdditionalTransactionData.MerchantTrustData);
 
-            var cardBrandRawValue = RtnDataAdditionalTransactionData.CardBrandEnumToJsonValue(rtnDataAdditionalTransactionData.CardBrandOption.Value!.Value);
-            writer.WriteString("cardBrand", cardBrandRawValue);
-            var messageCategoryRawValue = RtnDataAdditionalTransactionData.MessageCategoryEnumToJsonValue(rtnDataAdditionalTransactionData.MessageCategoryOption.Value!.Value);
-            writer.WriteString("messageCategory", messageCategoryRawValue);
+            if (rtnDataAdditionalTransactionData.CardBrandOption.IsSet)
+            {
+                var cardBrandRawValue = RtnDataAdditionalTransactionData.CardBrandEnumToJsonValue(rtnDataAdditionalTransactionData.CardBrandOption.Value!.Value);
+                writer.WriteString("cardBrand", cardBrandRawValue);
+            }
+
+            if (rtnDataAdditionalTransactionData.MessageCategoryOption.IsSet)
+            {
+                var messageCategoryRawValue = RtnDataAdditionalTransactionData.MessageCategoryEnumToJsonValue(rtnDataAdditionalTransactionData.MessageCategoryOption.Value!.Value);
+                writer.WriteString("messageCategory", messageCategoryRawValue);
+            }
+
             if (rtnDataAdditionalTransactionData.FullPanOption.IsSet)
                 writer.WriteString("fullPan", rtnDataAdditionalTransactionData.FullPan);
 

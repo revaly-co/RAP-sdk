@@ -509,8 +509,12 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataMerchantData.MerchantNameOption.IsSet)
                 writer.WriteString("merchantName", rtnDataMerchantData.MerchantName);
 
-            var merchantAccountAgeIndicatorRawValue = RtnDataMerchantData.MerchantAccountAgeIndicatorEnumToJsonValue(rtnDataMerchantData.MerchantAccountAgeIndicatorOption.Value!.Value);
-            writer.WriteString("merchantAccountAgeIndicator", merchantAccountAgeIndicatorRawValue);
+            if (rtnDataMerchantData.MerchantAccountAgeIndicatorOption.IsSet)
+            {
+                var merchantAccountAgeIndicatorRawValue = RtnDataMerchantData.MerchantAccountAgeIndicatorEnumToJsonValue(rtnDataMerchantData.MerchantAccountAgeIndicatorOption.Value!.Value);
+                writer.WriteString("merchantAccountAgeIndicator", merchantAccountAgeIndicatorRawValue);
+            }
+
             if (rtnDataMerchantData.MerchantAccountOpenedDateOption.IsSet)
                 writer.WriteString("merchantAccountOpenedDate", rtnDataMerchantData.MerchantAccountOpenedDate);
 

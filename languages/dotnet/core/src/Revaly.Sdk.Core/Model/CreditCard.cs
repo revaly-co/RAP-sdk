@@ -496,11 +496,19 @@ namespace Revaly.Sdk.Core.Model
                 else
                     writer.WriteNull("company");
 
-            var cardTypeRawValue = CreditCard.CardTypeEnumToJsonValue(creditCard.CardTypeOption.Value!.Value);
-            if (cardTypeRawValue != null)
-                writer.WriteString("cardType", cardTypeRawValue);
-            else
-                writer.WriteNull("cardType");
+            if (creditCard.CardTypeOption.IsSet)
+            {
+                if (creditCard.CardTypeOption!.Value != null)
+                {
+                    var cardTypeRawValue = CreditCard.CardTypeEnumToJsonValue(creditCard.CardTypeOption.Value!.Value);
+                    if (cardTypeRawValue != null)
+                        writer.WriteString("cardType", cardTypeRawValue);
+                    else
+                        writer.WriteNull("cardType");
+                }
+                else
+                    writer.WriteNull("cardType");
+            }
         }
     }
 }
