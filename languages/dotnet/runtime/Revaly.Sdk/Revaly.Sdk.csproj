@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Revaly.Sdk</RootNamespace>
+    <AssemblyName>Revaly.Sdk</AssemblyName>
+    <!-- Package identity per runtime-tdd.md §7 working scheme — [Proposed] until OQ-3
+         registry provisioning; nothing publishes before then (repo rule 3). Version is a
+         placeholder: stage 5 stamps real versions from per-language release tags. -->
+    <PackageId>Revaly.Sdk</PackageId>
+    <Version>0.0.0-dev</Version>
+    <Description>Revaly RAP V2 server-side SDK for .NET — hand-written runtime over the generated core (ADR-SDK-001). Failover-safe typed errors, reconcile helper, values-free logging, mock transport.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/revaly-co/rap-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The generated core (ADR-SDK-001: regenerated only, never hand-edited). How the
+         core ships inside the one merchant-facing package (runtime-tdd.md §2) is a
+         stage-5 packaging decision — [Proposed] until OQ-3. -->
+    <ProjectReference Include="..\..\core\src\Revaly.Sdk.Core\Revaly.Sdk.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Versions aligned with the core's Microsoft.Extensions.* 10.0.1 set. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/core/" />
+  <Folder Name="/core/src/">
+    <Project Path="core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj" />
+  </Folder>
+  <Folder Name="/runtime/">
+    <Project Path="runtime/Revaly.Sdk/Revaly.Sdk.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Revaly.Sdk.Tests/Revaly.Sdk.Tests.csproj" />
+  </Folder>
+</Solution>
