@@ -91,14 +91,14 @@ public class Example {
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment authorized successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment authorized successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 ## authorizePaymentWithHttpInfo
 
@@ -175,14 +175,14 @@ ApiResponse<[**TransactionResponse**](TransactionResponse.md)>
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment authorized successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment authorized successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 
 ## capturePayment
@@ -259,13 +259,13 @@ public class Example {
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment captured successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment captured successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 ## capturePaymentWithHttpInfo
 
@@ -344,13 +344,13 @@ ApiResponse<[**TransactionResponse**](TransactionResponse.md)>
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment captured successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment captured successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 
 ## chargePayment
@@ -425,14 +425,14 @@ public class Example {
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment processed successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment processed successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 ## chargePaymentWithHttpInfo
 
@@ -509,14 +509,14 @@ ApiResponse<[**TransactionResponse**](TransactionResponse.md)>
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment processed successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment processed successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 
 ## refundCancelPaymentByMerchantTransactionId
@@ -593,13 +593,13 @@ public class Example {
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Refund or cancellation processed successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Refund or cancellation processed successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 ## refundCancelPaymentByMerchantTransactionIdWithHttpInfo
 
@@ -678,13 +678,13 @@ ApiResponse<[**TransactionResponse**](TransactionResponse.md)>
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Refund or cancellation processed successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Refund or cancellation processed successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 
 ## refundPayment
@@ -761,13 +761,13 @@ public class Example {
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Refund processed successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Refund processed successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 ## refundPaymentWithHttpInfo
 
@@ -846,13 +846,13 @@ ApiResponse<[**TransactionResponse**](TransactionResponse.md)>
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Refund processed successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Refund processed successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 
 ## voidPayment
@@ -929,13 +929,13 @@ public class Example {
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment voided successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment voided successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 ## voidPaymentWithHttpInfo
 
@@ -1014,11 +1014,11 @@ ApiResponse<[**TransactionResponse**](TransactionResponse.md)>
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Payment voided successfully |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Payment voided successfully |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 

@@ -97,13 +97,13 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Payment method successfully created |  -  |
-**400** | Bad request - invalid parameters or request body |  -  |
-**401** | Unauthorized - invalid or missing API key |  -  |
-**403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-**500** | Internal server error |  -  |
-**503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+**200** | Payment method successfully created |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+**403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+**500** | Internal server error |  * X-Correlation-ID -  <br>  |
+**503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -188,14 +188,14 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Successfully retrieved payment method details |  -  |
-**400** | Bad request - invalid parameters or request body |  -  |
-**401** | Unauthorized - invalid or missing API key |  -  |
-**403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-**404** | Resource not found |  -  |
-**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-**500** | Internal server error |  -  |
-**503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+**200** | Successfully retrieved payment method details |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+**403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+**404** | Resource not found |  * X-Correlation-ID -  <br>  |
+**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+**500** | Internal server error |  * X-Correlation-ID -  <br>  |
+**503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -285,13 +285,13 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Successfully retrieved payment methods |  -  |
-**400** | Bad request - invalid parameters or request body |  -  |
-**401** | Unauthorized - invalid or missing API key |  -  |
-**403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-**500** | Internal server error |  -  |
-**503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+**200** | Successfully retrieved payment methods |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+**403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+**500** | Internal server error |  * X-Correlation-ID -  <br>  |
+**503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -377,13 +377,13 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Payment method recached successfully |  -  |
-**400** | Bad request - invalid parameters or request body |  -  |
-**401** | Unauthorized - invalid or missing API key |  -  |
-**403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-**500** | Internal server error |  -  |
-**503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+**200** | Payment method recached successfully |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+**403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+**500** | Internal server error |  * X-Correlation-ID -  <br>  |
+**503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -470,13 +470,13 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Payment method redacted successfully |  -  |
-**400** | Bad request - invalid parameters or request body |  -  |
-**401** | Unauthorized - invalid or missing API key |  -  |
-**403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-**500** | Internal server error |  -  |
-**503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+**200** | Payment method redacted successfully |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+**403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+**500** | Internal server error |  * X-Correlation-ID -  <br>  |
+**503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -565,13 +565,13 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Payment method updated successfully |  -  |
-**400** | Bad request - invalid parameters or request body |  -  |
-**401** | Unauthorized - invalid or missing API key |  -  |
-**403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-**500** | Internal server error |  -  |
-**503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+**200** | Payment method updated successfully |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+**403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+**422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+**500** | Internal server error |  * X-Correlation-ID -  <br>  |
+**503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

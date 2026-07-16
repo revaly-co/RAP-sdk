@@ -2,7 +2,7 @@
 
 Revaly
 
-- API version: 2.2.0
+- API version: 2.2.1
 
 - Generator version: 7.23.0
 
@@ -33,6 +33,14 @@ stable, pinned contract while existing integrations keep working unchanged.
   refinements will land — pinning it now means you never migrate the
   header. `2.0` is the frozen launch contract and remains the binding for
   requests that send no version header.
+
+## Request tracing
+
+Every API response — success and error alike — carries an
+`X-Correlation-ID` header. Send your own value (any non-empty string) and
+it is echoed back verbatim; omit it and the platform generates one. Quote
+the id when contacting support: it joins the request directly to platform
+telemetry. Treat it as an opaque string.
 
 
 
