@@ -4,3 +4,15 @@ node_modules/
 # Stage-2 local cache of the downloaded (and sha256-verified) spec artifact — the pin in
 # spec/pin.yaml is the only committed spec reference (ADR-SDK-006)
 .spec-work/
+
+# Stage-3 build outputs — ephemeral in CI, disposable locally; nothing here is committed.
+# composer.lock included: core/ is wiped on every regeneration (ADR-SDK-001), so a lockfile
+# inside it could never survive — dependency floors live in the generated manifests
+# (fixed via the pipeline template forks, never by editing core/).
+languages/dotnet/**/bin/
+languages/dotnet/**/obj/
+languages/java/core/target/
+languages/php/core/vendor/
+languages/php/core/composer.lock
+languages/python/core/build/
+languages/python/core/*.egg-info/
