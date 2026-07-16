@@ -1,11 +1,11 @@
 {
-  "specVersion": "2.2.0",
-  "sourceCommit": "1e59620a5527fe396a0fab86274afb3e0b10d0c8",
+  "specVersion": "2.2.1",
+  "sourceCommit": "c4000e9715bd2f6a2f2f486c338659c9c77c6fc5",
   "sourceRef": "refs/heads/main",
   "bundlerVersion": "@redocly/cli@2.38.0",
   "oasdiffVersion": "1.22.0",
-  "ciRunId": "29505465308",
-  "ciRunUrl": "https://github.com/FlexPay-io/Backbone/actions/runs/29505465308",
+  "ciRunId": "29529926459",
+  "ciRunUrl": "https://github.com/FlexPay-io/Backbone/actions/runs/29529926459",
   "gates": {
     "lint": "pass",
     "bundle": "pass",
@@ -13,6 +13,6 @@
     "contractSuite": "pass"
   },
   "checksums": {
-    "openapi.bundled.yaml": "sha256:7e568e4d617fe52de7bc94355bc2ebfaea20f661d5ea8b7b3bbcd2bae64d5e9b"
+    "openapi.bundled.yaml": "sha256:efc78066a4724b96e6401f6b08ca32b31c1952c6746aab9143f506aa615acbdf"
   }
 }

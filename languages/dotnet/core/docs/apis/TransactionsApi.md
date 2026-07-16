@@ -42,14 +42,14 @@ Retrieve detailed information about a specific transaction by its ID.  This endp
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;.  |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **404** | Resource not found |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;.  |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **404** | Resource not found |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
 
@@ -87,14 +87,14 @@ Retrieve detailed information about a specific transaction by its merchant trans
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;. Returns a &#x60;PendingTransactionResponse&#x60; (&#x60;state: pending&#x60;) when the payment intent was accepted but no transaction record is visible yet.  |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **404** | Resource not found |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;. Returns a &#x60;PendingTransactionResponse&#x60; (&#x60;state: pending&#x60;) when the payment intent was accepted but no transaction record is visible yet.  |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **404** | Resource not found |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
 
@@ -137,13 +137,13 @@ Retrieve a paginated list of transactions for the authenticated account.  This e
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Successfully retrieved transactions |  -  |
-| **400** | Bad request - invalid parameters or request body |  -  |
-| **401** | Unauthorized - invalid or missing API key |  -  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  -  |
-| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  -  |
-| **500** | Internal server error |  -  |
-| **503** | Service unavailable - upstream dependency temporarily unavailable |  -  |
+| **200** | Successfully retrieved transactions |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
+| **500** | Internal server error |  * X-Correlation-ID -  <br>  |
+| **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
 
 [[Back to top]](#) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to Model list]](../../README.md#documentation-for-models) [[Back to README]](../../README.md)
 

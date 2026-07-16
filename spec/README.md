@@ -9,17 +9,18 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.2.0+1e59620`](https://github.com/FlexPay-io/Backbone/releases/tag/spec%2Fv2.2.0%2B1e59620) (platform repo) |
-| Spec version | 2.2.0 |
-| Source commit | `1e59620a5527fe396a0fab86274afb3e0b10d0c8` |
+| Release | [`spec/v2.2.1+c4000e9`](https://github.com/FlexPay-io/Backbone/releases/tag/spec%2Fv2.2.1%2Bc4000e9) (platform repo) |
+| Spec version | 2.2.1 |
+| Source commit | `c4000e9715bd2f6a2f2f486c338659c9c77c6fc5` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `7e568e4d617fe52de7bc94355bc2ebfaea20f661d5ea8b7b3bbcd2bae64d5e9b` |
+| sha256 (`openapi.bundled.yaml`) | `efc78066a4724b96e6401f6b08ca32b31c1952c6746aab9143f506aa615acbdf` |
 | Pinned | 2026-07-16 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
 → `v2.2.0+1e59620` (2026-07-16 — additive `statementDescriptor` on charge request/response,
-Backbone STR-108 / PR #228).
+Backbone STR-108 / PR #228) → `v2.2.1+c4000e9` (2026-07-16 — `X-Correlation-ID` response
+header documented on every response, Backbone PR #247).
 
 [`openapi.bundled.yaml.sha256`](openapi.bundled.yaml.sha256) and
 [`provenance.json`](provenance.json) are verbatim copies of the release assets, committed as
@@ -30,7 +31,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.2.0+1e59620" -R FlexPay-io/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.2.1+c4000e9" -R FlexPay-io/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json
