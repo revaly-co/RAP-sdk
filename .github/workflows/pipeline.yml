@@ -250,8 +250,22 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
 
-      - name: Build Core (Release)
-        run: dotnet build languages/dotnet/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj -c Release
+      - name: Build Solution (core + runtime + tests, Release)
+        run: dotnet build languages/dotnet/Revaly.Sdk.slnx -c Release
+
+      # Runs the full runtime suite, including the ADR-SDK-020 log-capture tests
+      # (values-free default, scrubbed debug) and the failover-contract §2
+      # classification table.
+      - name: Test Runtime
+        run: dotnet test languages/dotnet/Revaly.Sdk.slnx -c Release --no-build
+
+      # DX contract §a: ecosystem-standard lint, scoped to the hand-written projects —
+      # the generated core is never formatted (ADR-SDK-001).
+      - name: Format Check (runtime + tests only)
+        run: |
+          set -euo pipefail
+          dotnet format languages/dotnet/runtime/Revaly.Sdk/Revaly.Sdk.csproj --verify-no-changes
+          dotnet format languages/dotnet/tests/Revaly.Sdk.Tests/Revaly.Sdk.Tests.csproj --verify-no-changes
 
   build-java:
     name: Stage 3 - Build + Test (java)
