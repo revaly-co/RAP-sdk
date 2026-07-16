@@ -24,6 +24,7 @@ Name | Type
 `gatewayFields` | { [key: string]: any; }
 `rtnData` | [RtnData](RtnData.md)
 `description` | string
+`statementDescriptor` | string
 `threeDS` | [ThreeDS](ThreeDS.md)
 `paymentPlanData` | [PaymentPlanData](PaymentPlanData.md)
 `recovery` | [Recovery](Recovery.md)
@@ -54,6 +55,7 @@ const example = {
   "gatewayFields": {"processor_id":"12345","merchant_category_code":"5999"},
   "rtnData": null,
   "description": Payment for online purchase,
+  "statementDescriptor": ACME* ONLINE STORE,
   "threeDS": null,
   "paymentPlanData": null,
   "recovery": null,

@@ -27,6 +27,7 @@ Name | Type
 `mitStoredTransactionId` | string
 `storedCredential` | [StoredCredentialResponse](StoredCredentialResponse.md)
 `orderId` | string
+`statementDescriptor` | string
 `customerIp` | string
 `engagedRecoveryState` | number
 `description` | string
@@ -69,6 +70,7 @@ const example = {
   "mitStoredTransactionId": mit_1234567890abcdef,
   "storedCredential": null,
   "orderId": order_67890,
+  "statementDescriptor": ACME* SUBSCRIPTION,
   "customerIp": 192.168.1.100,
   "engagedRecoveryState": 0,
   "description": Payment for premium subscription,

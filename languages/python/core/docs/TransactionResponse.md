@@ -27,6 +27,7 @@ Name | Type | Description | Notes
 **mit_stored_transaction_id** | **str** | Merchant-initiated transaction stored credential ID | [optional] 
 **stored_credential** | [**StoredCredentialResponse**](StoredCredentialResponse.md) |  | [optional] 
 **order_id** | **str** | Order identifier from the merchant system | [optional] 
+**statement_descriptor** | **str** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. | [optional] 
 **customer_ip** | **str** | Customer&#39;s IP address at time of transaction | [optional] 
 **engaged_recovery_state** | **int** | Recovery state indicator (0 &#x3D; not engaged, 1+ &#x3D; recovery level) | [optional] 
 **description** | **str** | Transaction description or notes | [optional] 

@@ -26,6 +26,7 @@ Name | Type | Description | Notes
 **MerchantAccountReferenceId** | Pointer to **NullableString** | Merchant account reference identifier | [optional] 
 **CustomerId** | Pointer to **NullableString** | Customer identifier associated with the transaction | [optional] 
 **OrderId** | Pointer to **NullableString** | Order identifier from the merchant system | [optional] 
+**StatementDescriptor** | Pointer to **NullableString** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. | [optional] 
 **PaymentMethodId** | Pointer to **NullableString** | Payment method identifier used for the transaction | [optional] 
 **PaymentMethodStorageState** | Pointer to **NullableString** | Storage state of the payment method | [optional] 
 **PaymentMethodType** | Pointer to **NullableString** | Type of payment method used | [optional] 
@@ -805,6 +806,41 @@ HasOrderId returns a boolean if a field has been set.
 `func (o *TransactionListItem) UnsetOrderId()`
 
 UnsetOrderId ensures that no value is present for OrderId, not even an explicit nil
+### GetStatementDescriptor
+
+`func (o *TransactionListItem) GetStatementDescriptor() string`
+
+GetStatementDescriptor returns the StatementDescriptor field if non-nil, zero value otherwise.
+
+### GetStatementDescriptorOk
+
+`func (o *TransactionListItem) GetStatementDescriptorOk() (*string, bool)`
+
+GetStatementDescriptorOk returns a tuple with the StatementDescriptor field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStatementDescriptor
+
+`func (o *TransactionListItem) SetStatementDescriptor(v string)`
+
+SetStatementDescriptor sets StatementDescriptor field to given value.
+
+### HasStatementDescriptor
+
+`func (o *TransactionListItem) HasStatementDescriptor() bool`
+
+HasStatementDescriptor returns a boolean if a field has been set.
+
+### SetStatementDescriptorNil
+
+`func (o *TransactionListItem) SetStatementDescriptorNil(b bool)`
+
+ SetStatementDescriptorNil sets the value for StatementDescriptor to be an explicit nil
+
+### UnsetStatementDescriptor
+`func (o *TransactionListItem) UnsetStatementDescriptor()`
+
+UnsetStatementDescriptor ensures that no value is present for StatementDescriptor, not even an explicit nil
 ### GetPaymentMethodId
 
 `func (o *TransactionListItem) GetPaymentMethodId() string`

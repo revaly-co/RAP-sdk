@@ -25,6 +25,7 @@ Name | Type | Description | Notes
 **MitStoredTransactionId** | Pointer to **NullableString** | Merchant-initiated transaction stored credential ID | [optional] 
 **StoredCredential** | Pointer to [**NullableStoredCredentialResponse**](StoredCredentialResponse.md) |  | [optional] 
 **OrderId** | Pointer to **NullableString** | Order identifier from the merchant system | [optional] 
+**StatementDescriptor** | Pointer to **NullableString** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. | [optional] 
 **CustomerIp** | Pointer to **NullableString** | Customer&#39;s IP address at time of transaction | [optional] 
 **EngagedRecoveryState** | Pointer to **NullableInt32** | Recovery state indicator (0 &#x3D; not engaged, 1+ &#x3D; recovery level) | [optional] 
 **Description** | Pointer to **NullableString** | Transaction description or notes | [optional] 
@@ -789,6 +790,41 @@ HasOrderId returns a boolean if a field has been set.
 `func (o *TransactionResponse) UnsetOrderId()`
 
 UnsetOrderId ensures that no value is present for OrderId, not even an explicit nil
+### GetStatementDescriptor
+
+`func (o *TransactionResponse) GetStatementDescriptor() string`
+
+GetStatementDescriptor returns the StatementDescriptor field if non-nil, zero value otherwise.
+
+### GetStatementDescriptorOk
+
+`func (o *TransactionResponse) GetStatementDescriptorOk() (*string, bool)`
+
+GetStatementDescriptorOk returns a tuple with the StatementDescriptor field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStatementDescriptor
+
+`func (o *TransactionResponse) SetStatementDescriptor(v string)`
+
+SetStatementDescriptor sets StatementDescriptor field to given value.
+
+### HasStatementDescriptor
+
+`func (o *TransactionResponse) HasStatementDescriptor() bool`
+
+HasStatementDescriptor returns a boolean if a field has been set.
+
+### SetStatementDescriptorNil
+
+`func (o *TransactionResponse) SetStatementDescriptorNil(b bool)`
+
+ SetStatementDescriptorNil sets the value for StatementDescriptor to be an explicit nil
+
+### UnsetStatementDescriptor
+`func (o *TransactionResponse) UnsetStatementDescriptor()`
+
+UnsetStatementDescriptor ensures that no value is present for StatementDescriptor, not even an explicit nil
 ### GetCustomerIp
 
 `func (o *TransactionResponse) GetCustomerIp() string`

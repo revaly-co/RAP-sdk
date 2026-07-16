@@ -29,6 +29,7 @@ Name | Type
 `merchantAccountReferenceId` | string
 `customerId` | string
 `orderId` | string
+`statementDescriptor` | string
 `paymentMethodId` | string
 `paymentMethodStorageState` | string
 `paymentMethodType` | string
@@ -68,6 +69,7 @@ const example = {
   "merchantAccountReferenceId": 0417560,
   "customerId": 24530178,
   "orderId": ABC123-000519,
+  "statementDescriptor": ACME* SUBSCRIPTION,
   "paymentMethodId": WMJZ363LQLVUZEPZAGNN7BOYSA,
   "paymentMethodStorageState": Cached,
   "paymentMethodType": GatewayPaymentMethodId,

@@ -22,6 +22,7 @@ Name | Type | Description | Notes
 **GatewayFields** | **Dictionary&lt;string, Object&gt;** | Additional gateway-specific fields | [optional] 
 **RtnData** | [**RtnData**](RtnData.md) |  | [optional] 
 **Description** | **string** | Authorization description | [optional] 
+**StatementDescriptor** | **string** | Merchant-supplied text intended to appear on the customer&#39;s bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge. | [optional] 
 **ThreeDS** | [**ThreeDS**](ThreeDS.md) |  | [optional] 
 **PaymentPlanData** | [**PaymentPlanData**](PaymentPlanData.md) |  | [optional] 
 **Recovery** | [**Recovery**](Recovery.md) |  | [optional] 

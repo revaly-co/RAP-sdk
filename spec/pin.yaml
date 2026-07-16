@@ -4,24 +4,22 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: FlexPay-io/Backbone
-releaseTag: spec/v2.1.3+e75c71a
-specVersion: 2.1.3
-sourceCommit: e75c71aa6df63f82247140868c40f1651d7b901e
+releaseTag: spec/v2.2.0+1e59620
+specVersion: 2.2.0
+sourceCommit: 1e59620a5527fe396a0fab86274afb3e0b10d0c8
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: feea52f901255a720af90c21d7d9cb0569bed773867f5bb197e52d6eb0f6462d
-pinnedAt: "2026-07-15"
+  openapi.bundled.yaml: 7e568e4d617fe52de7bc94355bc2ebfaea20f661d5ea8b7b3bbcd2bae64d5e9b
+pinnedAt: "2026-07-16"
 notes: >-
-  Second pin (was spec/v2.1.2+9af661b). Backbone PR #242 drops the orphan
-  `components/schemas/PaymentMethodRequest` — a superseded ancestor of CreatePaymentMethodRequest
-  that no operation referenced. openapi-generator emits a model for every components/schemas
-  entry regardless of reachability, and core/ is never hand-edited (repo rule 1), so the orphan
-  would have shipped as an unusable public type in all six SDKs whose name shadows the correct
-  one. Removing a public type post-1.0 is a semver-major break, so it had to land pre-GA.
-  Bundle diff v2.1.2 -> v2.1.3 is exactly info.version + the 41-line schema removal.
-  Prior pin history: v2.1.1+f5f9576 was never pinned (five amount-field `maximum` values exceed
-  int64 max — the redocly bundler double-rounds integers past 2^53 — blocking the .NET core
-  compile); fixed by Backbone PR #241 -> v2.1.2. Evidence: docs/generator-bakeoff.md §3.1.
+  Third pin (was spec/v2.1.3+e75c71a). Backbone STR-108 (PR #228) adds optional nullable
+  `statementDescriptor` (string, maxLength 255) to the Revaly API 2.0 charge request and
+  response schemas — merchant-supplied statement text, adapted per gateway at submission and
+  never blocking the charge. Purely additive, hence the minor bump 2.1.3 -> 2.2.0; bundle diff
+  is exactly info.version + the four schema insertions and their examples. All four platform
+  gates pass (lint, bundle, breaking, contract suite); provenance ciRunId 29505465308.
+  Prior pin history: v2.1.2+9af661b (first pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan
+  PaymentMethodRequest schema dropped). Evidence: docs/generator-bakeoff.md §3.1.
