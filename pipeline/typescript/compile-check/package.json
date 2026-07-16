@@ -1,0 +1,8 @@
+{
+  "name": "rap-sdk-typescript-compile-check",
+  "private": true,
+  "description": "Stage-3 compile check for languages/typescript/core — strict tsc, no emit. The core is generated without package scaffolding (no npmName, pipeline/typescript/config.yaml) because it ships inside the runtime's package (runtime-tdd.md §2, one published package per language); this harness only proves the generated source compiles standalone. Not a publishable package and never becomes one — the npm identity is [Proposed] until OQ-3 and belongs to the runtime.",
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

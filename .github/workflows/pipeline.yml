@@ -10,7 +10,13 @@ name: Pipeline
 # committed cores are byte-identical — the ADR-SDK-001 "never hand-edit generated code"
 # enforcement.
 #
-# Stages 3–6 append here as jobs chained with `needs:`. Stages 5–6 (package/publish)
+# Stage 3 — build + test ×6 (§2 row 3): compile every committed core with a pinned
+# toolchain, one job per language — any language red blocks all six. First increment
+# is compile-only: the hand-written runtime does not exist yet, so unit tests,
+# ecosystem linters (dx-contract.md §a) and the ADR-SDK-020 log-capture scrub tests
+# attach to these jobs when languages/*/runtime/ lands (runtime-tdd.md §§1–9).
+#
+# Stages 4–6 append here as jobs chained with `needs:`. Stages 5–6 (package/publish)
 # additionally require a release tag on main and the protected environment — publish is
 # embargoed until ADR-SDK-011/013/019/022 gates close (repo rule 3).
 
@@ -30,6 +36,18 @@ concurrency:
 
 env:
   REDOCLY_VERSION: 2.38.0
+  # Stage-3 toolchains: minor-pinned, patch-floating. Unlike the spec artifact and the
+  # generator image (hard-pinned — they determine committed bytes), stage 3 emits no
+  # committed artifacts, so patch drift cannot change repo content, and floating patches
+  # keep compiler security fixes flowing. Floors set by the generated manifests: csproj
+  # targets net10.0; pom targets source/target 11; composer requires php ^8.1; pyproject
+  # requires-python >=3.9; go.mod directive is 1.21.
+  DOTNET_SDK_VERSION: 10.0.x
+  JDK_VERSION: "21"
+  PHP_VERSION: "8.3"
+  NODE_VERSION: "24"
+  PYTHON_VERSION: "3.12"
+  GO_VERSION: 1.26.x
 
 jobs:
   validate:
@@ -217,3 +235,154 @@ jobs:
             exit 1
           fi
           echo "Stage 2 green: committed cores are byte-identical to regeneration from the pinned artifact with the pinned generator."
+
+  build-dotnet:
+    name: Stage 3 - Build + Test (dotnet)
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+
+      - name: Build Core (Release)
+        run: dotnet build languages/dotnet/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj -c Release
+
+  build-java:
+    name: Stage 3 - Build + Test (java)
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup JDK
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
+        with:
+          distribution: temurin
+          java-version: ${{ env.JDK_VERSION }}
+          cache: maven
+
+      # Maven itself is the runner-preinstalled 3.9.x — acceptable float for a compile
+      # check, same rationale as the patch-floating toolchain pins above.
+      - name: Compile Core
+        run: mvn -B -ntp -f languages/java/core/pom.xml compile
+
+  build-php:
+    name: Stage 3 - Build + Test (php)
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: curl, mbstring
+          coverage: none
+
+      # PHP has no compile step — the equivalent bar: manifest valid, dependency ranges
+      # resolvable, every file parses, and the PSR-4 map is strict-consistent (optimized
+      # classmap generation parses every class file a consumer would autoload).
+      - name: Validate Composer Manifest
+        working-directory: languages/php/core
+        run: composer validate --no-check-lock
+
+      - name: Install Dependencies
+        working-directory: languages/php/core
+        run: composer install --no-interaction --no-progress
+
+      - name: Syntax Lint (php -l over lib/)
+        working-directory: languages/php/core
+        run: |
+          set -euo pipefail
+          find lib -name '*.php' -print0 | xargs -0 -n1 -P"$(nproc)" php -l > /dev/null
+          echo "php -l clean over lib/"
+
+      - name: PSR-4 Autoload Conformance (strict)
+        working-directory: languages/php/core
+        run: composer dump-autoload --optimize --strict-psr
+
+  build-typescript:
+    name: Stage 3 - Build + Test (typescript)
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: pipeline/typescript/compile-check/package-lock.json
+
+      # The core is generated without package scaffolding (pipeline/typescript/config.yaml:
+      # deliberately no npmName) — it ships inside the runtime's package (runtime-tdd.md §2).
+      # Until the runtime lands, pipeline/typescript/compile-check/ is the compile harness:
+      # strict tsc, no emit, lockfile-pinned like pipeline/spec-tooling.
+      - name: Install Compile-Check Toolchain (lockfile-pinned)
+        run: npm ci --prefix pipeline/typescript/compile-check --no-audit --no-fund
+
+      - name: Strict tsc over the Core
+        run: pipeline/typescript/compile-check/node_modules/.bin/tsc -p pipeline/typescript/compile-check/tsconfig.json
+
+  build-python:
+    name: Stage 3 - Build + Test (python)
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Byte-Compile Every Module
+        run: python -m compileall -q languages/python/core/revaly_sdk_core
+
+      - name: Install Core Package
+        run: python -m pip install --quiet ./languages/python/core
+
+      # Importing the package executes every model module (the package __init__ re-exports
+      # all of them), so pydantic class construction is exercised — the closest thing
+      # interpreted Python has to a compile gate.
+      - name: Import Package
+        run: python -c "import revaly_sdk_core; print(revaly_sdk_core.__name__, 'imports clean')"
+
+  build-go:
+    name: Stage 3 - Build + Test (go)
+    runs-on: ubuntu-latest
+    needs: generate
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: languages/go/go.sum
+
+      - name: Build Module (all packages)
+        working-directory: languages/go
+        run: go build ./...
+
+      - name: Vet Module (all packages)
+        working-directory: languages/go
+        run: go vet ./...
