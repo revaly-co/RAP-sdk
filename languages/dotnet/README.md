@@ -52,14 +52,11 @@ var merchantTransactionId = $"order-{Guid.NewGuid():N}"; // YOUR id — required
 var request = new PaymentRequest(
     amount: 1999,                                        // minor units
     merchantTransactionId: merchantTransactionId,
-    paymentMethodType: new Option<PaymentRequest.PaymentMethodTypeEnum?>(
-        PaymentRequest.PaymentMethodTypeEnum.CreditCard), // set explicitly (see note below)
     currency: new Option<string?>("USD"),
     paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
         creditCard: new Option<CreditCard?>(new CreditCard(
             "4111111111111111", "12", "2030",             // sandbox test card
-            cardVerificationCode: new Option<string?>("123"),
-            cardType: new Option<CreditCard.CardTypeEnum?>(CreditCard.CardTypeEnum.Visa))))));
+            cardVerificationCode: new Option<string?>("123"))))));
 
 try
 {
@@ -87,10 +84,6 @@ catch (OutcomeUnknownException ex)
     await ReconcileBeforeActing(rap, merchantTransactionId);
 }
 ```
-
-> Note: set `paymentMethodType` and `cardType` explicitly as shown — omitting these
-> optional enums trips a known serializer defect in the current generated core (fix
-> tracked in the generation pipeline).
 
 ## 3. Reconcile — the OutcomeUnknown procedure
 

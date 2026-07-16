@@ -302,8 +302,11 @@ namespace Revaly.Sdk.Core.Model
                 }
                 else
                     writer.WriteNull("details");
-            var codeRawValue = ErrorResponse.CodeEnumToJsonValue(errorResponse.CodeOption.Value!.Value);
-            writer.WriteString("code", codeRawValue);
+            if (errorResponse.CodeOption.IsSet)
+            {
+                var codeRawValue = ErrorResponse.CodeEnumToJsonValue(errorResponse.CodeOption.Value!.Value);
+                writer.WriteString("code", codeRawValue);
+            }
         }
     }
 }

@@ -29,21 +29,18 @@ public static class TestClient
     }
 
     /// <summary>
-    /// A minimal valid charge request carrying the synthetic test card.
-    /// paymentMethodType is set explicitly: the generated PaymentRequest serializer
-    /// dereferences the optional enum without an IsSet guard (core defect, tracked for a
-    /// pipeline template-fork fix), so omitting it crashes before the wire.
+    /// A minimal valid charge request carrying the synthetic test card. Optional enums
+    /// (paymentMethodType, cardType) are deliberately omitted — the forked
+    /// JsonConverter template guards them with Option.IsSet, and
+    /// ModelSerializationTests keeps that guard regression-tested.
     /// </summary>
     public static PaymentRequest ChargeRequest(string merchantTransactionId = SyntheticData.MerchantTransactionId)
         => new(
             amount: 1999,
             merchantTransactionId: merchantTransactionId,
-            paymentMethodType: new Option<PaymentRequest.PaymentMethodTypeEnum?>(
-                PaymentRequest.PaymentMethodTypeEnum.CreditCard),
             currency: new Option<string?>("USD"),
             paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
                 creditCard: new Option<CreditCard?>(new CreditCard(
                     SyntheticData.TestPan, "12", "2030",
-                    cardVerificationCode: new Option<string?>(SyntheticData.TestCvv),
-                    cardType: new Option<CreditCard.CardTypeEnum?>(CreditCard.CardTypeEnum.Visa))))));
+                    cardVerificationCode: new Option<string?>(SyntheticData.TestCvv))))));
 }

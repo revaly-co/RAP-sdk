@@ -966,8 +966,12 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataOrderData.RecurringEndDateOption.IsSet)
                 writer.WriteString("recurringEndDate", rtnDataOrderData.RecurringEndDate);
 
-            var alternatePaymentIndicatorRawValue = RtnDataOrderData.AlternatePaymentIndicatorEnumToJsonValue(rtnDataOrderData.AlternatePaymentIndicatorOption.Value!.Value);
-            writer.WriteString("alternatePaymentIndicator", alternatePaymentIndicatorRawValue);
+            if (rtnDataOrderData.AlternatePaymentIndicatorOption.IsSet)
+            {
+                var alternatePaymentIndicatorRawValue = RtnDataOrderData.AlternatePaymentIndicatorEnumToJsonValue(rtnDataOrderData.AlternatePaymentIndicatorOption.Value!.Value);
+                writer.WriteString("alternatePaymentIndicator", alternatePaymentIndicatorRawValue);
+            }
+
             if (rtnDataOrderData.GiftCardCountOption.IsSet)
                 writer.WriteNumber("giftCardCount", rtnDataOrderData.GiftCardCountOption.Value!.Value);
 
@@ -986,8 +990,11 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataOrderData.HighestPriceItemSkuOption.IsSet)
                 writer.WriteString("highestPriceItemSku", rtnDataOrderData.HighestPriceItemSku);
 
-            var isCouponUsedRawValue = RtnDataOrderData.IsCouponUsedEnumToJsonValue(rtnDataOrderData.IsCouponUsedOption.Value!.Value);
-            writer.WriteString("isCouponUsed", isCouponUsedRawValue);
+            if (rtnDataOrderData.IsCouponUsedOption.IsSet)
+            {
+                var isCouponUsedRawValue = RtnDataOrderData.IsCouponUsedEnumToJsonValue(rtnDataOrderData.IsCouponUsedOption.Value!.Value);
+                writer.WriteString("isCouponUsed", isCouponUsedRawValue);
+            }
         }
     }
 }

@@ -10,6 +10,12 @@
 # of the stock BearerToken sample, which the API rejects. NOTE: the generated
 # ApiKeyToken's prefix parameter still defaults to "Bearer " — left untouched (code
 # behavior is upstream's); the stage-3 runtime owns ergonomic auth config.
+# templates/libraries/generichost/JsonConverter.mustache — forked 2026-07-16 solely to
+# guard OPTIONAL inner-enum serialization with Option.IsSet (stock template dereferences
+# the unset Option: constructing e.g. PaymentRequest without paymentMethodType, or
+# CreditCard without cardType, threw InvalidOperationException client-side before the
+# request reached the wire — found by the stage-3 runtime test suite). Required-property
+# output is byte-identical to stock; only the {{^required}} inner-enum legs changed.
 generatorName: csharp
 library: generichost # csharp default, kept explicit — `httpclient` library is officially Experimental
 

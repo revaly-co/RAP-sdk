@@ -1094,8 +1094,12 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataShippingData.ShippingPhoneOption.IsSet && rtnDataShippingData.ShippingPhone == null)
                 throw new ArgumentNullException(nameof(rtnDataShippingData.ShippingPhone), "Property is required for class RtnDataShippingData.");
 
-            var shippingIndicatorRawValue = RtnDataShippingData.ShippingIndicatorEnumToJsonValue(rtnDataShippingData.ShippingIndicatorOption.Value!.Value);
-            writer.WriteString("shippingIndicator", shippingIndicatorRawValue);
+            if (rtnDataShippingData.ShippingIndicatorOption.IsSet)
+            {
+                var shippingIndicatorRawValue = RtnDataShippingData.ShippingIndicatorEnumToJsonValue(rtnDataShippingData.ShippingIndicatorOption.Value!.Value);
+                writer.WriteString("shippingIndicator", shippingIndicatorRawValue);
+            }
+
             if (rtnDataShippingData.AddressLine1Option.IsSet)
                 writer.WriteString("addressLine1", rtnDataShippingData.AddressLine1);
 
@@ -1120,16 +1124,24 @@ namespace Revaly.Sdk.Core.Model
             if (rtnDataShippingData.AddressFirstUsedDateOption.IsSet)
                 writer.WriteString("addressFirstUsedDate", rtnDataShippingData.AddressFirstUsedDate);
 
-            var addressFirstUsedIndicatorRawValue = RtnDataShippingData.AddressFirstUsedIndicatorEnumToJsonValue(rtnDataShippingData.AddressFirstUsedIndicatorOption.Value!.Value);
-            writer.WriteString("addressFirstUsedIndicator", addressFirstUsedIndicatorRawValue);
+            if (rtnDataShippingData.AddressFirstUsedIndicatorOption.IsSet)
+            {
+                var addressFirstUsedIndicatorRawValue = RtnDataShippingData.AddressFirstUsedIndicatorEnumToJsonValue(rtnDataShippingData.AddressFirstUsedIndicatorOption.Value!.Value);
+                writer.WriteString("addressFirstUsedIndicator", addressFirstUsedIndicatorRawValue);
+            }
+
             if (rtnDataShippingData.IsShippingNameMatchOption.IsSet)
                 writer.WriteBoolean("isShippingNameMatch", rtnDataShippingData.IsShippingNameMatchOption.Value!.Value);
 
             if (rtnDataShippingData.DeliveryEmailAddressOption.IsSet)
                 writer.WriteString("deliveryEmailAddress", rtnDataShippingData.DeliveryEmailAddress);
 
-            var deliveryTimeframeIndicatorRawValue = RtnDataShippingData.DeliveryTimeframeIndicatorEnumToJsonValue(rtnDataShippingData.DeliveryTimeframeIndicatorOption.Value!.Value);
-            writer.WriteString("deliveryTimeframeIndicator", deliveryTimeframeIndicatorRawValue);
+            if (rtnDataShippingData.DeliveryTimeframeIndicatorOption.IsSet)
+            {
+                var deliveryTimeframeIndicatorRawValue = RtnDataShippingData.DeliveryTimeframeIndicatorEnumToJsonValue(rtnDataShippingData.DeliveryTimeframeIndicatorOption.Value!.Value);
+                writer.WriteString("deliveryTimeframeIndicator", deliveryTimeframeIndicatorRawValue);
+            }
+
             if (rtnDataShippingData.ShippingFirstNameOption.IsSet)
                 writer.WriteString("shippingFirstName", rtnDataShippingData.ShippingFirstName);
 
