@@ -26,6 +26,7 @@ Name | Type | Description | Notes
 **merchant_account_reference_id** | **string** | Merchant account reference identifier | [optional]
 **customer_id** | **string** | Customer identifier associated with the transaction | [optional]
 **order_id** | **string** | Order identifier from the merchant system | [optional]
+**statement_descriptor** | **string** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. | [optional]
 **payment_method_id** | **string** | Payment method identifier used for the transaction | [optional]
 **payment_method_storage_state** | **string** | Storage state of the payment method | [optional]
 **payment_method_type** | **string** | Type of payment method used | [optional]

@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header. 
 
-API version: 2.1.3
+API version: 2.2.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -65,6 +65,8 @@ type TransactionResponse struct {
 	StoredCredential NullableStoredCredentialResponse `json:"storedCredential,omitempty"`
 	// Order identifier from the merchant system
 	OrderId NullableString `json:"orderId,omitempty"`
+	// Merchant-supplied text intended for the customer's card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge.
+	StatementDescriptor NullableString `json:"statementDescriptor,omitempty"`
 	// Customer's IP address at time of transaction
 	CustomerIp NullableString `json:"customerIp,omitempty"`
 	// Recovery state indicator (0 = not engaged, 1+ = recovery level)
@@ -980,6 +982,48 @@ func (o *TransactionResponse) UnsetOrderId() {
 	o.OrderId.Unset()
 }
 
+// GetStatementDescriptor returns the StatementDescriptor field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *TransactionResponse) GetStatementDescriptor() string {
+	if o == nil || IsNil(o.StatementDescriptor.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.StatementDescriptor.Get()
+}
+
+// GetStatementDescriptorOk returns a tuple with the StatementDescriptor field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *TransactionResponse) GetStatementDescriptorOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.StatementDescriptor.Get(), o.StatementDescriptor.IsSet()
+}
+
+// HasStatementDescriptor returns a boolean if a field has been set.
+func (o *TransactionResponse) HasStatementDescriptor() bool {
+	if o != nil && o.StatementDescriptor.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetStatementDescriptor gets a reference to the given NullableString and assigns it to the StatementDescriptor field.
+func (o *TransactionResponse) SetStatementDescriptor(v string) {
+	o.StatementDescriptor.Set(&v)
+}
+// SetStatementDescriptorNil sets the value for StatementDescriptor to be an explicit nil
+func (o *TransactionResponse) SetStatementDescriptorNil() {
+	o.StatementDescriptor.Set(nil)
+}
+
+// UnsetStatementDescriptor ensures that no value is present for StatementDescriptor, not even an explicit nil
+func (o *TransactionResponse) UnsetStatementDescriptor() {
+	o.StatementDescriptor.Unset()
+}
+
 // GetCustomerIp returns the CustomerIp field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *TransactionResponse) GetCustomerIp() string {
 	if o == nil || IsNil(o.CustomerIp.Get()) {
@@ -1412,6 +1456,9 @@ func (o TransactionResponse) ToMap() (map[string]interface{}, error) {
 	}
 	if o.OrderId.IsSet() {
 		toSerialize["orderId"] = o.OrderId.Get()
+	}
+	if o.StatementDescriptor.IsSet() {
+		toSerialize["statementDescriptor"] = o.StatementDescriptor.Get()
 	}
 	if o.CustomerIp.IsSet() {
 		toSerialize["customerIp"] = o.CustomerIp.Get()

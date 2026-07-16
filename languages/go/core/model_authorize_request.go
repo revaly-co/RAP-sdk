@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header. 
 
-API version: 2.1.3
+API version: 2.2.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -55,6 +55,8 @@ type AuthorizeRequest struct {
 	RtnData *RtnData `json:"rtnData,omitempty"`
 	// Authorization description
 	Description NullableString `json:"description,omitempty"`
+	// Merchant-supplied text intended to appear on the customer's bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge.
+	StatementDescriptor NullableString `json:"statementDescriptor,omitempty"`
 	ThreeDS NullableThreeDS `json:"threeDS,omitempty"`
 	PaymentPlanData *PaymentPlanData `json:"paymentPlanData,omitempty"`
 	Recovery *Recovery `json:"recovery,omitempty"`
@@ -716,6 +718,48 @@ func (o *AuthorizeRequest) UnsetDescription() {
 	o.Description.Unset()
 }
 
+// GetStatementDescriptor returns the StatementDescriptor field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *AuthorizeRequest) GetStatementDescriptor() string {
+	if o == nil || IsNil(o.StatementDescriptor.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.StatementDescriptor.Get()
+}
+
+// GetStatementDescriptorOk returns a tuple with the StatementDescriptor field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *AuthorizeRequest) GetStatementDescriptorOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.StatementDescriptor.Get(), o.StatementDescriptor.IsSet()
+}
+
+// HasStatementDescriptor returns a boolean if a field has been set.
+func (o *AuthorizeRequest) HasStatementDescriptor() bool {
+	if o != nil && o.StatementDescriptor.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetStatementDescriptor gets a reference to the given NullableString and assigns it to the StatementDescriptor field.
+func (o *AuthorizeRequest) SetStatementDescriptor(v string) {
+	o.StatementDescriptor.Set(&v)
+}
+// SetStatementDescriptorNil sets the value for StatementDescriptor to be an explicit nil
+func (o *AuthorizeRequest) SetStatementDescriptorNil() {
+	o.StatementDescriptor.Set(nil)
+}
+
+// UnsetStatementDescriptor ensures that no value is present for StatementDescriptor, not even an explicit nil
+func (o *AuthorizeRequest) UnsetStatementDescriptor() {
+	o.StatementDescriptor.Unset()
+}
+
 // GetThreeDS returns the ThreeDS field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *AuthorizeRequest) GetThreeDS() ThreeDS {
 	if o == nil || IsNil(o.ThreeDS.Get()) {
@@ -942,6 +986,9 @@ func (o AuthorizeRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if o.Description.IsSet() {
 		toSerialize["description"] = o.Description.Get()
+	}
+	if o.StatementDescriptor.IsSet() {
+		toSerialize["statementDescriptor"] = o.StatementDescriptor.Get()
 	}
 	if o.ThreeDS.IsSet() {
 		toSerialize["threeDS"] = o.ThreeDS.Get()

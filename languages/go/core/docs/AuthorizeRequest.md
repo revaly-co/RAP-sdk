@@ -21,6 +21,7 @@ Name | Type | Description | Notes
 **GatewayFields** | Pointer to **map[string]interface{}** | Additional gateway-specific fields | [optional] 
 **RtnData** | Pointer to [**RtnData**](RtnData.md) |  | [optional] 
 **Description** | Pointer to **NullableString** | Authorization description | [optional] 
+**StatementDescriptor** | Pointer to **NullableString** | Merchant-supplied text intended to appear on the customer&#39;s bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge. | [optional] 
 **ThreeDS** | Pointer to [**NullableThreeDS**](ThreeDS.md) |  | [optional] 
 **PaymentPlanData** | Pointer to [**PaymentPlanData**](PaymentPlanData.md) |  | [optional] 
 **Recovery** | Pointer to [**Recovery**](Recovery.md) |  | [optional] 
@@ -571,6 +572,41 @@ HasDescription returns a boolean if a field has been set.
 `func (o *AuthorizeRequest) UnsetDescription()`
 
 UnsetDescription ensures that no value is present for Description, not even an explicit nil
+### GetStatementDescriptor
+
+`func (o *AuthorizeRequest) GetStatementDescriptor() string`
+
+GetStatementDescriptor returns the StatementDescriptor field if non-nil, zero value otherwise.
+
+### GetStatementDescriptorOk
+
+`func (o *AuthorizeRequest) GetStatementDescriptorOk() (*string, bool)`
+
+GetStatementDescriptorOk returns a tuple with the StatementDescriptor field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetStatementDescriptor
+
+`func (o *AuthorizeRequest) SetStatementDescriptor(v string)`
+
+SetStatementDescriptor sets StatementDescriptor field to given value.
+
+### HasStatementDescriptor
+
+`func (o *AuthorizeRequest) HasStatementDescriptor() bool`
+
+HasStatementDescriptor returns a boolean if a field has been set.
+
+### SetStatementDescriptorNil
+
+`func (o *AuthorizeRequest) SetStatementDescriptorNil(b bool)`
+
+ SetStatementDescriptorNil sets the value for StatementDescriptor to be an explicit nil
+
+### UnsetStatementDescriptor
+`func (o *AuthorizeRequest) UnsetStatementDescriptor()`
+
+UnsetStatementDescriptor ensures that no value is present for StatementDescriptor, not even an explicit nil
 ### GetThreeDS
 
 `func (o *AuthorizeRequest) GetThreeDS() ThreeDS`

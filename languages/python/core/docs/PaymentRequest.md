@@ -23,6 +23,7 @@ Name | Type | Description | Notes
 **gateway_fields** | **Dict[str, object]** | Additional gateway-specific fields | [optional] 
 **rtn_data** | [**RtnData**](RtnData.md) |  | [optional] 
 **description** | **str** | Transaction description | [optional] 
+**statement_descriptor** | **str** | Merchant-supplied text intended to appear on the customer&#39;s bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge. | [optional] 
 **three_ds** | [**ThreeDS**](ThreeDS.md) |  | [optional] 
 **payment_plan_data** | [**PaymentPlanData**](PaymentPlanData.md) |  | [optional] 
 **recovery** | [**Recovery**](Recovery.md) |  | [optional] 

@@ -30,6 +30,7 @@ Transaction item returned from the list transactions endpoint. In simplified mod
 |**merchantAccountReferenceId** | **String** | Merchant account reference identifier |  [optional] |
 |**customerId** | **String** | Customer identifier associated with the transaction |  [optional] |
 |**orderId** | **String** | Order identifier from the merchant system |  [optional] |
+|**statementDescriptor** | **String** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. |  [optional] |
 |**paymentMethodId** | **String** | Payment method identifier used for the transaction |  [optional] |
 |**paymentMethodStorageState** | **String** | Storage state of the payment method |  [optional] |
 |**paymentMethodType** | **String** | Type of payment method used |  [optional] |
