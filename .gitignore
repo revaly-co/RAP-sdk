@@ -12,6 +12,8 @@ node_modules/
 languages/dotnet/**/bin/
 languages/dotnet/**/obj/
 languages/java/core/target/
+languages/java/runtime/target/
+languages/java/tests/target/
 languages/php/core/vendor/
 languages/php/core/composer.lock
 languages/python/core/build/
