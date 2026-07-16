@@ -1,0 +1,25 @@
+{{#hasAuthMethods}}{{#authMethods}}
+{{#isBasic}}
+{{#isBasicBasic}}
+// Configure HTTP basic authorization: {{{name}}}
+$config = {{{invokerPackage}}}\Configuration::getDefaultConfiguration()
+              ->setUsername('YOUR_USERNAME')
+              ->setPassword('YOUR_PASSWORD');
+{{/isBasicBasic}}
+{{#isBasicBearer}}
+// Configure Bearer{{#bearerFormat}} ({{{.}}}){{/bearerFormat}} authorization: {{{name}}}
+$config = {{{invokerPackage}}}\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+{{/isBasicBearer}}
+{{/isBasic}}
+{{#isApiKey}}
+// Configure API key authorization: {{{name}}}
+// The API requires the `ApiKey` scheme prefix in the {{{keyParamName}}} header:
+//   {{{keyParamName}}}: ApiKey YOUR_API_KEY
+// setApiKeyPrefix joins prefix and key with a space — both calls below are required.
+$config = {{{invokerPackage}}}\Configuration::getDefaultConfiguration()->setApiKey('{{{keyParamName}}}', 'YOUR_API_KEY');
+$config = {{{invokerPackage}}}\Configuration::getDefaultConfiguration()->setApiKeyPrefix('{{{keyParamName}}}', 'ApiKey');
+{{/isApiKey}}
+{{#isOAuth}}
+// Configure OAuth2 access token for authorization: {{{name}}}
+$config = {{{invokerPackage}}}\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+{{/isOAuth}}{{/authMethods}}{{/hasAuthMethods}}

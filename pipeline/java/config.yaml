@@ -8,6 +8,12 @@
 # jackson-databind advisories, e.g. GHSA-j3rv-43j4-c7qm/GHSA-rmj7-2vxq-3g9f). Dependency
 # floors in generated manifests are fixed HERE, never by editing core/ (rule 1): a
 # Dependabot PR against core/ can never pass the stage-2 regen-diff.
+# templates/libraries/native/api_doc.mustache + README.mustache — forked 2026-07-15
+# solely to fix auth guidance: the stock java api_doc emits okhttp-gson-style
+# `ApiKeyAuth`/`setApiKeyPrefix` snippets that DO NOT COMPILE against the `native`
+# library (it generates no auth helper classes), and the stock native README shows no
+# auth at all. Both now show the native mechanism — a request interceptor sending
+# `Authorization: ApiKey <key>` (the RAP scheme's required prefix).
 generatorName: java
 library: native # JDK 11+ HttpClient + Jackson — leaner than the okhttp-gson default
 

@@ -34,7 +34,9 @@ async function example() {
   console.log("🚀 Testing  SDK...");
   const config = new Configuration({ 
     // To configure API key authorization: ApiKeyAuth
-    apiKey: "YOUR API KEY",
+    // The value is sent verbatim as the Authorization header — the API requires
+    // the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+    apiKey: "ApiKey YOUR_API_KEY",
   });
   const api = new PaymentMethodsApi(config);
 
@@ -114,7 +116,9 @@ async function example() {
   console.log("🚀 Testing  SDK...");
   const config = new Configuration({ 
     // To configure API key authorization: ApiKeyAuth
-    apiKey: "YOUR API KEY",
+    // The value is sent verbatim as the Authorization header — the API requires
+    // the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+    apiKey: "ApiKey YOUR_API_KEY",
   });
   const api = new PaymentMethodsApi(config);
 
@@ -195,7 +199,9 @@ async function example() {
   console.log("🚀 Testing  SDK...");
   const config = new Configuration({ 
     // To configure API key authorization: ApiKeyAuth
-    apiKey: "YOUR API KEY",
+    // The value is sent verbatim as the Authorization header — the API requires
+    // the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+    apiKey: "ApiKey YOUR_API_KEY",
   });
   const api = new PaymentMethodsApi(config);
 
@@ -281,7 +287,9 @@ async function example() {
   console.log("🚀 Testing  SDK...");
   const config = new Configuration({ 
     // To configure API key authorization: ApiKeyAuth
-    apiKey: "YOUR API KEY",
+    // The value is sent verbatim as the Authorization header — the API requires
+    // the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+    apiKey: "ApiKey YOUR_API_KEY",
   });
   const api = new PaymentMethodsApi(config);
 
@@ -364,7 +372,9 @@ async function example() {
   console.log("🚀 Testing  SDK...");
   const config = new Configuration({ 
     // To configure API key authorization: ApiKeyAuth
-    apiKey: "YOUR API KEY",
+    // The value is sent verbatim as the Authorization header — the API requires
+    // the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+    apiKey: "ApiKey YOUR_API_KEY",
   });
   const api = new PaymentMethodsApi(config);
 
@@ -444,7 +454,9 @@ async function example() {
   console.log("🚀 Testing  SDK...");
   const config = new Configuration({ 
     // To configure API key authorization: ApiKeyAuth
-    apiKey: "YOUR API KEY",
+    // The value is sent verbatim as the Authorization header — the API requires
+    // the `ApiKey` scheme prefix:  Authorization: ApiKey YOUR_API_KEY
+    apiKey: "ApiKey YOUR_API_KEY",
   });
   const api = new PaymentMethodsApi(config);
 
