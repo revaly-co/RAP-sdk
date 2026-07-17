@@ -81,7 +81,16 @@ export interface PaymentPlanData {
  * Check if a given object implements the PaymentPlanData interface.
  */
 export function instanceOfPaymentPlanData(value: object): value is PaymentPlanData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('sku' in value && value['sku'] !== undefined)
+        || ('category' in value && value['category'] !== undefined)
+        || ('billingPlan' in value && value['billingPlan'] !== undefined)
+        || ('subscriptionId' in value && value['subscriptionId'] !== undefined)
+        || ('billingCycle' in value && value['billingCycle'] !== undefined)
+        || ('paymentModel' in value && value['paymentModel'] !== undefined)
+        || ('productDisplayName' in value && value['productDisplayName'] !== undefined);
 }
 
 export function PaymentPlanDataFromJSON(json: any): PaymentPlanData {

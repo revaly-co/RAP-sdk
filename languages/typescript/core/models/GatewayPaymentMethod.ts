@@ -59,7 +59,14 @@ export interface GatewayPaymentMethod {
  * Check if a given object implements the GatewayPaymentMethod interface.
  */
 export function instanceOfGatewayPaymentMethod(value: object): value is GatewayPaymentMethod {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('gatewayPaymentMethodId' in value && value['gatewayPaymentMethodId'] !== undefined)
+        || ('bin' in value && value['bin'] !== undefined)
+        || ('lastFourDigits' in value && value['lastFourDigits'] !== undefined)
+        || ('expiryYear' in value && value['expiryYear'] !== undefined)
+        || ('expiryMonth' in value && value['expiryMonth'] !== undefined);
 }
 
 export function GatewayPaymentMethodFromJSON(json: any): GatewayPaymentMethod {

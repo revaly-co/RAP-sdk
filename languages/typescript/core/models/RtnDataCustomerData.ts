@@ -367,7 +367,52 @@ export type RtnDataCustomerDataIsRegistrationUpdatedEnum = typeof RtnDataCustome
  * Check if a given object implements the RtnDataCustomerData interface.
  */
 export function instanceOfRtnDataCustomerData(value: object): value is RtnDataCustomerData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('firstName' in value && value['firstName'] !== undefined)
+        || ('lastName' in value && value['lastName'] !== undefined)
+        || ('email' in value && value['email'] !== undefined)
+        || ('homePhone' in value && value['homePhone'] !== undefined)
+        || ('mobilePhone' in value && value['mobilePhone'] !== undefined)
+        || ('workPhone' in value && value['workPhone'] !== undefined)
+        || ('accountOpenedDate' in value && value['accountOpenedDate'] !== undefined)
+        || ('accountAgeIndicator' in value && value['accountAgeIndicator'] !== undefined)
+        || ('isFreeAccount' in value && value['isFreeAccount'] !== undefined)
+        || ('accountLastChangedDate' in value && value['accountLastChangedDate'] !== undefined)
+        || ('accountChangeIndicator' in value && value['accountChangeIndicator'] !== undefined)
+        || ('passwordLastChangedDate' in value && value['passwordLastChangedDate'] !== undefined)
+        || ('passwordChangeIndicator' in value && value['passwordChangeIndicator'] !== undefined)
+        || ('transactionSuccessfulCountLastSixMonths' in value && value['transactionSuccessfulCountLastSixMonths'] !== undefined)
+        || ('transactionAttemptedCountLast24Hours' in value && value['transactionAttemptedCountLast24Hours'] !== undefined)
+        || ('transactionAttemptedCountLastYear' in value && value['transactionAttemptedCountLastYear'] !== undefined)
+        || ('paymentMethodAddedDate' in value && value['paymentMethodAddedDate'] !== undefined)
+        || ('paymentMethodAgeIndicator' in value && value['paymentMethodAgeIndicator'] !== undefined)
+        || ('paymentMethodAddAttemptCountLast24Hours' in value && value['paymentMethodAddAttemptCountLast24Hours'] !== undefined)
+        || ('isPaymentMethodOnFile' in value && value['isPaymentMethodOnFile'] !== undefined)
+        || ('isAccountSuspicious' in value && value['isAccountSuspicious'] !== undefined)
+        || ('customerId' in value && value['customerId'] !== undefined)
+        || ('accountAuthenticationMethod' in value && value['accountAuthenticationMethod'] !== undefined)
+        || ('isTenuredCustomer' in value && value['isTenuredCustomer'] !== undefined)
+        || ('isEmailKnownToCustomer' in value && value['isEmailKnownToCustomer'] !== undefined)
+        || ('isRegisteredCustomer' in value && value['isRegisteredCustomer'] !== undefined)
+        || ('isRegistrationUpdated' in value && value['isRegistrationUpdated'] !== undefined)
+        || ('registeredAccountTenure' in value && value['registeredAccountTenure'] !== undefined)
+        || ('registeredName' in value && value['registeredName'] !== undefined)
+        || ('registeredEmail' in value && value['registeredEmail'] !== undefined)
+        || ('registeredPostalCode' in value && value['registeredPostalCode'] !== undefined)
+        || ('registeredAddress' in value && value['registeredAddress'] !== undefined)
+        || ('registeredPhone' in value && value['registeredPhone'] !== undefined)
+        || ('daysSinceNameChange' in value && value['daysSinceNameChange'] !== undefined)
+        || ('daysSinceEmailChange' in value && value['daysSinceEmailChange'] !== undefined)
+        || ('daysSincePasswordChange' in value && value['daysSincePasswordChange'] !== undefined)
+        || ('daysSincePostalCodeChange' in value && value['daysSincePostalCodeChange'] !== undefined)
+        || ('daysSinceAddressChange' in value && value['daysSinceAddressChange'] !== undefined)
+        || ('daysSincePhoneChange' in value && value['daysSincePhoneChange'] !== undefined)
+        || ('daysSinceShipToNameChange' in value && value['daysSinceShipToNameChange'] !== undefined)
+        || ('customerAni' in value && value['customerAni'] !== undefined)
+        || ('customerAniDigits' in value && value['customerAniDigits'] !== undefined)
+        || ('isEmailAssociatedWithFraud' in value && value['isEmailAssociatedWithFraud'] !== undefined);
 }
 
 export function RtnDataCustomerDataFromJSON(json: any): RtnDataCustomerData {

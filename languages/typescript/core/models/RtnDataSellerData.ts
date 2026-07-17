@@ -131,7 +131,22 @@ export type RtnDataSellerDataTransactionTypeIndicatorEnum = typeof RtnDataSeller
  * Check if a given object implements the RtnDataSellerData interface.
  */
 export function instanceOfRtnDataSellerData(value: object): value is RtnDataSellerData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('sellerId' in value && value['sellerId'] !== undefined)
+        || ('sellerBusinessName' in value && value['sellerBusinessName'] !== undefined)
+        || ('sellerOwnerName' in value && value['sellerOwnerName'] !== undefined)
+        || ('sellerTenure' in value && value['sellerTenure'] !== undefined)
+        || ('sellerLatitude' in value && value['sellerLatitude'] !== undefined)
+        || ('sellerLongitude' in value && value['sellerLongitude'] !== undefined)
+        || ('sellerAddress' in value && value['sellerAddress'] !== undefined)
+        || ('sellerPhone' in value && value['sellerPhone'] !== undefined)
+        || ('sellerEmail' in value && value['sellerEmail'] !== undefined)
+        || ('sellerPostalCode' in value && value['sellerPostalCode'] !== undefined)
+        || ('sellerRegion' in value && value['sellerRegion'] !== undefined)
+        || ('sellerCountryCode' in value && value['sellerCountryCode'] !== undefined)
+        || ('transactionTypeIndicator' in value && value['transactionTypeIndicator'] !== undefined);
 }
 
 export function RtnDataSellerDataFromJSON(json: any): RtnDataSellerData {

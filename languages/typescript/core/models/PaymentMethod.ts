@@ -130,7 +130,21 @@ export interface PaymentMethod {
  * Check if a given object implements the PaymentMethod interface.
  */
 export function instanceOfPaymentMethod(value: object): value is PaymentMethod {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('firstName' in value && value['firstName'] !== undefined)
+        || ('lastName' in value && value['lastName'] !== undefined)
+        || ('fullName' in value && value['fullName'] !== undefined)
+        || ('email' in value && value['email'] !== undefined)
+        || ('merchantAccountReferenceId' in value && value['merchantAccountReferenceId'] !== undefined)
+        || ('paymentMethodId' in value && value['paymentMethodId'] !== undefined)
+        || ('issuerIdentificationNumber' in value && value['issuerIdentificationNumber'] !== undefined)
+        || ('billingAddress' in value && value['billingAddress'] !== undefined)
+        || ('shippingAddress' in value && value['shippingAddress'] !== undefined)
+        || ('creditCard' in value && value['creditCard'] !== undefined)
+        || ('gatewayPaymentMethod' in value && value['gatewayPaymentMethod'] !== undefined)
+        || ('vaultPaymentMethod' in value && value['vaultPaymentMethod'] !== undefined);
 }
 
 export function PaymentMethodFromJSON(json: any): PaymentMethod {

@@ -160,7 +160,19 @@ export interface RtnData {
  * Check if a given object implements the RtnData interface.
  */
 export function instanceOfRtnData(value: object): value is RtnData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('additionalTransactionData' in value && value['additionalTransactionData'] !== undefined)
+        || ('billingData' in value && value['billingData'] !== undefined)
+        || ('customData' in value && value['customData'] !== undefined)
+        || ('customerData' in value && value['customerData'] !== undefined)
+        || ('deviceData' in value && value['deviceData'] !== undefined)
+        || ('merchantData' in value && value['merchantData'] !== undefined)
+        || ('orderData' in value && value['orderData'] !== undefined)
+        || ('partnerRiskData' in value && value['partnerRiskData'] !== undefined)
+        || ('shippingData' in value && value['shippingData'] !== undefined)
+        || ('sellerData' in value && value['sellerData'] !== undefined);
 }
 
 export function RtnDataFromJSON(json: any): RtnData {

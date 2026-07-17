@@ -69,7 +69,14 @@ export interface StoredCredentialResponse {
  * Check if a given object implements the StoredCredentialResponse interface.
  */
 export function instanceOfStoredCredentialResponse(value: object): value is StoredCredentialResponse {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('reasonType' in value && value['reasonType'] !== undefined)
+        || ('initialNetworkTransactionId' in value && value['initialNetworkTransactionId'] !== undefined)
+        || ('latestNetworkTransactionId' in value && value['latestNetworkTransactionId'] !== undefined)
+        || ('gatewayInitialTransactionId' in value && value['gatewayInitialTransactionId'] !== undefined)
+        || ('gatewayLatestTransactionId' in value && value['gatewayLatestTransactionId'] !== undefined);
 }
 
 export function StoredCredentialResponseFromJSON(json: any): StoredCredentialResponse {

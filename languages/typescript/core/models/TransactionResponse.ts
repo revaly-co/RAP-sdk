@@ -251,7 +251,40 @@ export interface TransactionResponse {
  * Check if a given object implements the TransactionResponse interface.
  */
 export function instanceOfTransactionResponse(value: object): value is TransactionResponse {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transactionId' in value && value['transactionId'] !== undefined)
+        || ('transactionDate' in value && value['transactionDate'] !== undefined)
+        || ('transactionStatus' in value && value['transactionStatus'] !== undefined)
+        || ('message' in value && value['message'] !== undefined)
+        || ('responseCode' in value && value['responseCode'] !== undefined)
+        || ('transactionType' in value && value['transactionType'] !== undefined)
+        || ('merchantTransactionId' in value && value['merchantTransactionId'] !== undefined)
+        || ('customerId' in value && value['customerId'] !== undefined)
+        || ('gatewayRoutingId' in value && value['gatewayRoutingId'] !== undefined)
+        || ('currency' in value && value['currency'] !== undefined)
+        || ('amount' in value && value['amount'] !== undefined)
+        || ('gatewayType' in value && value['gatewayType'] !== undefined)
+        || ('gatewayTransactionId' in value && value['gatewayTransactionId'] !== undefined)
+        || ('acquirerAuthCode' in value && value['acquirerAuthCode'] !== undefined)
+        || ('inlineRetryPreviousTransactionId' in value && value['inlineRetryPreviousTransactionId'] !== undefined)
+        || ('inlineRetryPreviousMerchantTransactionId' in value && value['inlineRetryPreviousMerchantTransactionId'] !== undefined)
+        || ('isInlineRetry' in value && value['isInlineRetry'] !== undefined)
+        || ('retryDate' in value && value['retryDate'] !== undefined)
+        || ('mitStoredTransactionId' in value && value['mitStoredTransactionId'] !== undefined)
+        || ('storedCredential' in value && value['storedCredential'] !== undefined)
+        || ('orderId' in value && value['orderId'] !== undefined)
+        || ('statementDescriptor' in value && value['statementDescriptor'] !== undefined)
+        || ('customerIp' in value && value['customerIp'] !== undefined)
+        || ('engagedRecoveryState' in value && value['engagedRecoveryState'] !== undefined)
+        || ('description' in value && value['description'] !== undefined)
+        || ('gatewayFields' in value && value['gatewayFields'] !== undefined)
+        || ('gatewaySpecificResponseFields' in value && value['gatewaySpecificResponseFields'] !== undefined)
+        || ('paymentPlanData' in value && value['paymentPlanData'] !== undefined)
+        || ('recovery' in value && value['recovery'] !== undefined)
+        || ('response' in value && value['response'] !== undefined)
+        || ('paymentMethod' in value && value['paymentMethod'] !== undefined);
 }
 
 export function TransactionResponseFromJSON(json: any): TransactionResponse {

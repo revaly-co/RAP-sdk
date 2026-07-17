@@ -53,7 +53,13 @@ export interface TransactionGateway {
  * Check if a given object implements the TransactionGateway interface.
  */
 export function instanceOfTransactionGateway(value: object): value is TransactionGateway {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('token' in value && value['token'] !== undefined)
+        || ('gatewayType' in value && value['gatewayType'] !== undefined)
+        || ('name' in value && value['name'] !== undefined)
+        || ('referenceId' in value && value['referenceId'] !== undefined);
 }
 
 export function TransactionGatewayFromJSON(json: any): TransactionGateway {

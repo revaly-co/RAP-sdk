@@ -176,7 +176,31 @@ export interface PaymentMethodWriteResponse {
  * Check if a given object implements the PaymentMethodWriteResponse interface.
  */
 export function instanceOfPaymentMethodWriteResponse(value: object): value is PaymentMethodWriteResponse {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transaction' in value && value['transaction'] !== undefined)
+        || ('paymentMethodId' in value && value['paymentMethodId'] !== undefined)
+        || ('creditCardNumber' in value && value['creditCardNumber'] !== undefined)
+        || ('expiryMonth' in value && value['expiryMonth'] !== undefined)
+        || ('expiryYear' in value && value['expiryYear'] !== undefined)
+        || ('cvv' in value && value['cvv'] !== undefined)
+        || ('firstName' in value && value['firstName'] !== undefined)
+        || ('lastName' in value && value['lastName'] !== undefined)
+        || ('fullName' in value && value['fullName'] !== undefined)
+        || ('customerId' in value && value['customerId'] !== undefined)
+        || ('billingAddress' in value && value['billingAddress'] !== undefined)
+        || ('shippingAddress' in value && value['shippingAddress'] !== undefined)
+        || ('email' in value && value['email'] !== undefined)
+        || ('phoneNumber' in value && value['phoneNumber'] !== undefined)
+        || ('paymentMethodType' in value && value['paymentMethodType'] !== undefined)
+        || ('fingerprint' in value && value['fingerprint'] !== undefined)
+        || ('lastFourDigits' in value && value['lastFourDigits'] !== undefined)
+        || ('firstSixDigits' in value && value['firstSixDigits'] !== undefined)
+        || ('cardType' in value && value['cardType'] !== undefined)
+        || ('dateCreated' in value && value['dateCreated'] !== undefined)
+        || ('storageState' in value && value['storageState'] !== undefined)
+        || ('bin' in value && value['bin'] !== undefined);
 }
 
 export function PaymentMethodWriteResponseFromJSON(json: any): PaymentMethodWriteResponse {

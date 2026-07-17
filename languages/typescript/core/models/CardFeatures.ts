@@ -47,7 +47,12 @@ export interface CardFeatures {
  * Check if a given object implements the CardFeatures interface.
  */
 export function instanceOfCardFeatures(value: object): value is CardFeatures {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('acceptCreditCard' in value && value['acceptCreditCard'] !== undefined)
+        || ('acceptPrepaidCard' in value && value['acceptPrepaidCard'] !== undefined)
+        || ('acceptDebitCard' in value && value['acceptDebitCard'] !== undefined);
 }
 
 export function CardFeaturesFromJSON(json: any): CardFeatures {

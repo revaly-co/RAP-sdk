@@ -62,7 +62,14 @@ export interface VaultPaymentMethod {
  * Check if a given object implements the VaultPaymentMethod interface.
  */
 export function instanceOfVaultPaymentMethod(value: object): value is VaultPaymentMethod {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('vaultToken' in value && value['vaultToken'] !== undefined)
+        || ('bin' in value && value['bin'] !== undefined)
+        || ('lastFourDigits' in value && value['lastFourDigits'] !== undefined)
+        || ('expiryYear' in value && value['expiryYear'] !== undefined)
+        || ('expiryMonth' in value && value['expiryMonth'] !== undefined);
 }
 
 export function VaultPaymentMethodFromJSON(json: any): VaultPaymentMethod {

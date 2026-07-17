@@ -79,7 +79,16 @@ export interface AcceptedCards {
  * Check if a given object implements the AcceptedCards interface.
  */
 export function instanceOfAcceptedCards(value: object): value is AcceptedCards {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('visa' in value && value['visa'] !== undefined)
+        || ('masterCard' in value && value['masterCard'] !== undefined)
+        || ('amex' in value && value['amex'] !== undefined)
+        || ('discover' in value && value['discover'] !== undefined)
+        || ('dinersClub' in value && value['dinersClub'] !== undefined)
+        || ('jcb' in value && value['jcb'] !== undefined)
+        || ('maestro' in value && value['maestro'] !== undefined);
 }
 
 export function AcceptedCardsFromJSON(json: any): AcceptedCards {

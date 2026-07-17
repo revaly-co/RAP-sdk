@@ -71,7 +71,16 @@ export interface RtnDataBillingData {
  * Check if a given object implements the RtnDataBillingData interface.
  */
 export function instanceOfRtnDataBillingData(value: object): value is RtnDataBillingData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('addressLine1' in value && value['addressLine1'] !== undefined)
+        || ('addressLine2' in value && value['addressLine2'] !== undefined)
+        || ('addressLine3' in value && value['addressLine3'] !== undefined)
+        || ('city' in value && value['city'] !== undefined)
+        || ('region' in value && value['region'] !== undefined)
+        || ('postalCode' in value && value['postalCode'] !== undefined)
+        || ('country' in value && value['country'] !== undefined);
 }
 
 export function RtnDataBillingDataFromJSON(json: any): RtnDataBillingData {

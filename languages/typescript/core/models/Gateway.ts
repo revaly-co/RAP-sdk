@@ -115,7 +115,22 @@ export interface Gateway {
  * Check if a given object implements the Gateway interface.
  */
 export function instanceOfGateway(value: object): value is Gateway {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('name' in value && value['name'] !== undefined)
+        || ('bankTypeCode' in value && value['bankTypeCode'] !== undefined)
+        || ('merchantAccountReferenceId' in value && value['merchantAccountReferenceId'] !== undefined)
+        || ('gatewayType' in value && value['gatewayType'] !== undefined)
+        || ('currencyCode' in value && value['currencyCode'] !== undefined)
+        || ('acceptedCurrencyCodes' in value && value['acceptedCurrencyCodes'] !== undefined)
+        || ('acceptedCards' in value && value['acceptedCards'] !== undefined)
+        || ('acceptRetries' in value && value['acceptRetries'] !== undefined)
+        || ('cvvRequired' in value && value['cvvRequired'] !== undefined)
+        || ('approvedChargeOrCaptureRateFee' in value && value['approvedChargeOrCaptureRateFee'] !== undefined)
+        || ('approvedChargeOrCaptureFlatFee' in value && value['approvedChargeOrCaptureFlatFee'] !== undefined)
+        || ('otherTransactionFlatFee' in value && value['otherTransactionFlatFee'] !== undefined)
+        || ('issueRefundsThroughCredit' in value && value['issueRefundsThroughCredit'] !== undefined);
 }
 
 export function GatewayFromJSON(json: any): Gateway {

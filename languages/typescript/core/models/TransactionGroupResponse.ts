@@ -54,7 +54,11 @@ export interface TransactionGroupResponse {
  * Check if a given object implements the TransactionGroupResponse interface.
  */
 export function instanceOfTransactionGroupResponse(value: object): value is TransactionGroupResponse {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transaction' in value && value['transaction'] !== undefined)
+        || ('transactions' in value && value['transactions'] !== undefined);
 }
 
 export function TransactionGroupResponseFromJSON(json: any): TransactionGroupResponse {

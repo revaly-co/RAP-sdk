@@ -71,7 +71,16 @@ export interface Address {
  * Check if a given object implements the Address interface.
  */
 export function instanceOfAddress(value: object): value is Address {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('address1' in value && value['address1'] !== undefined)
+        || ('address2' in value && value['address2'] !== undefined)
+        || ('city' in value && value['city'] !== undefined)
+        || ('state' in value && value['state'] !== undefined)
+        || ('zip' in value && value['zip'] !== undefined)
+        || ('country' in value && value['country'] !== undefined)
+        || ('phoneNumber' in value && value['phoneNumber'] !== undefined);
 }
 
 export function AddressFromJSON(json: any): Address {
