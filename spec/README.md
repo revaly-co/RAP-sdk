@@ -9,7 +9,7 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.2.1+c4000e9`](https://github.com/FlexPay-io/Backbone/releases/tag/spec%2Fv2.2.1%2Bc4000e9) (platform repo) |
+| Release | [`spec/v2.2.1+c4000e9`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.2.1%2Bc4000e9) (platform repo) |
 | Spec version | 2.2.1 |
 | Source commit | `c4000e9715bd2f6a2f2f486c338659c9c77c6fc5` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
@@ -31,7 +31,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.2.1+c4000e9" -R FlexPay-io/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.2.1+c4000e9" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

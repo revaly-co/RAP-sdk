@@ -6,9 +6,11 @@ One monorepo, one deterministic pipeline consuming only gated spec artifacts, on
 failover contract. `docs/` is the complete, self-contained design set (23 ADRs + 8 design docs) —
 **docs are the source of truth; this file is the enforcement summary.**
 
-**Namespace:** canonical home is `revaly-co/rap-sdk` (ADR-SDK-022). Staged privately at
-`FlexPay-io/RAP-sdk` meanwhile; the org/namespace question is **parked until publish-readiness**.
-Nothing publishes from the interim location.
+**Namespace:** the repo lives at **`revaly-co/RAP-sdk`** — the org migration landed 2026-07-17
+(fleet-wide transfer; `FlexPay-io` is parked with redirects alive, per ADR-SDK-022). The
+namespace publish-gate is satisfied; every other publish gate (OQ-3 registry provisioning,
+protected publish environment, ADR-SDK-019 Legal ratification) still stands — **publish remains
+embargoed** (rule 3).
 
 **Current phase:** see `docs/README.md` § Status snapshot (dated facts live there, not here).
 Standing build sequencing: global rules → repo bootstrap → pipeline stages 1–4 → per-language

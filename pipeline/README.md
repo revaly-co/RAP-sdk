@@ -25,11 +25,16 @@ secret:
 - **Name:** `SPEC_ARTIFACT_READ_TOKEN`
 - **Value:** a fine-grained PAT — resource: the platform repo (`repo:` in `../spec/pin.yaml`)
   **only**; permissions: **Contents: read-only** (+ implicit Metadata). Nothing else.
-- **Set:** `gh secret set SPEC_ARTIFACT_READ_TOKEN -R FlexPay-io/RAP-sdk`
+- **Set:** `gh secret set SPEC_ARTIFACT_READ_TOKEN -R revaly-co/RAP-sdk`
   (or repo Settings → Secrets and variables → Actions).
 - Until it exists, stage 1 **fails closed** with a provisioning message — deliberately: a
   silently skipped verification would conflate "gate passed" with "gate never ran".
 - Rotate on expiry; replace when the platform repo changes org (ADR-SDK-022 rename).
+  **The 2026-07-17 org migration is exactly this event**: fine-grained PATs are
+  resource-owner-scoped and do not follow a repo across orgs, so the token must be
+  re-provisioned under `revaly-co` (resource: `revaly-co/Backbone` only, Contents:
+  read-only). Until then, downloads may ride the old grant + redirect — working today is
+  not proof it survives the old org's parking.
 
 ## Dependency hygiene for generated manifests
 
