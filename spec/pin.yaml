@@ -3,7 +3,7 @@
 # Pipeline stage 1 re-verifies: download the release assets from `repo` at `releaseTag`,
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
-repo: FlexPay-io/Backbone
+repo: revaly-co/Backbone
 releaseTag: spec/v2.2.1+c4000e9
 specVersion: 2.2.1
 sourceCommit: c4000e9715bd2f6a2f2f486c338659c9c77c6fc5
@@ -26,3 +26,5 @@ notes: >-
   gates pass; provenance ciRunId 29529926459. Prior pin history: v2.1.2+9af661b (first pin,
   int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
   v2.2.0+1e59620 (additive statementDescriptor, STR-108).
+  Repo pointer updated 2026-07-17 for the org migration (FlexPay-io -> revaly-co transfer);
+  releaseTag, checksums and provenance unchanged — same artifact, new owner slug.

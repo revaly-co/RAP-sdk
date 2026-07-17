@@ -1,6 +1,7 @@
 # ADR-SDK-022 — GitHub Namespace: Create `rap-sdk` Under the Existing `revaly-co` Org; Park `FlexPay-io` Permanently
 
-**Status:** Accepted — decided 2026-07-10 (OQ-15); ratified with RFC-046 approval 2026-07-10
+**Status:** Accepted — decided 2026-07-10 (OQ-15); ratified with RFC-046 approval 2026-07-10;
+**namespace landed 2026-07-17** (see Implementation status below)
 **Source:** RFC-046 §7 (namespace sequencing) / §11 OQ-15 / dependency map · blocking footer review thread 2026-07-08 + reply 2026-07-09
 **Owner:** DevOps (SC squad, per ADR-SDK-018) + Leadership
 
@@ -77,3 +78,20 @@ namespace that is about to change — without coupling the SDK schedule to the f
   ADR-SDK-011) before repo creation.
 - If the wider org migration later consolidates other repos into `revaly-co`, nothing here
   changes — that was the point of decoupling.
+
+## Implementation status (dated addendum, 2026-07-17)
+
+The wider org migration landed 2026-07-17: the fleet — this repo included — was **transferred**
+into `revaly-co`, and `FlexPay-io` is parked with redirects alive, exactly the consequence the
+decision anticipated. "Namespace final" is therefore satisfied via the transfer route rather
+than a fresh create; OQ-3 executes against `revaly-co` as planned. Two operational notes:
+
+- **Repo slug casing:** the transfer preserved the `RAP-sdk` slug; this ADR's checklist named
+  lowercase `rap-sdk`. GitHub treats owner/repo slugs case-insensitively, so the Go module path
+  `github.com/revaly-co/rap-sdk/languages/go` (declared in `languages/go/go.mod`) resolves
+  regardless. Whether to rename the slug to lowercase is a cosmetic call to make **with OQ-3
+  execution, before any Go publish** — module identity is the one surface where the canonical
+  string is forever.
+- **Spec-read token:** fine-grained PATs are resource-owner-scoped and do not follow a repo
+  across orgs — `SPEC_ARTIFACT_READ_TOKEN` must be re-provisioned under `revaly-co`
+  (`pipeline/README.md` prescribed exactly this replacement at rename time).
