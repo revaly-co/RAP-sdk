@@ -18,8 +18,9 @@ public sealed class RapClientOptions
     public required string ApiKey { get; init; }
 
     /// <summary>
-    /// The API base URL. Defaults to production (<c>https://api.revaly.co</c>); point it
-    /// at the Sandbox URL for testing.
+    /// The API base URL. Defaults to <c>https://api.revaly.co</c> — sandbox and live
+    /// share this URL; the environment is selected by your API key's scope, not the URL.
+    /// Override only for internal/pre-release targets.
     /// </summary>
     public Uri BaseUrl { get; init; } = new("https://api.revaly.co");
 

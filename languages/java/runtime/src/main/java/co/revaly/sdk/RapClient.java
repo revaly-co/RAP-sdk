@@ -455,8 +455,9 @@ public final class RapClient {
         }
 
         /**
-         * The API base URL. Defaults to production ({@code https://api.revaly.co}); point it at the
-         * Sandbox URL for testing.
+         * The API base URL. Defaults to {@code https://api.revaly.co} — sandbox and live share this
+         * URL; the environment is selected by your API key's scope, not the URL. Override only for
+         * internal/pre-release targets.
          */
         public Builder baseUrl(String baseUrl) {
             this.baseUrl = baseUrl;

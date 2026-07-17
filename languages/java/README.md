@@ -44,8 +44,9 @@ import java.time.Duration;
 public class Quickstart {
     public static void main(String[] args) throws Exception {
         RapClient client = RapClient.builder()
-                .apiKey(System.getenv("REVALY_API_KEY"))   // Enablement-issued sandbox key
-                .baseUrl("https://api.sandbox.revaly.co")   // sandbox; default is production
+                // Enablement-issued sandbox-scoped key. Sandbox and live share the same
+                // URL — your key's scope selects the environment (no separate sandbox host).
+                .apiKey(System.getenv("REVALY_API_KEY"))
                 .connectTimeout(Duration.ofSeconds(2))      // your call — see OQ-6 note below
                 .overallDeadline(Duration.ofSeconds(10))    // expiry AFTER send = OutcomeUnknown
                 .build();

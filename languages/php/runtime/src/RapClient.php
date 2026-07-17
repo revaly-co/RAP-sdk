@@ -72,8 +72,9 @@ final class RapClient
      * @param string $apiKey the merchant API key (required). Sent as
      *        `Authorization: ApiKey <key>` on every request; never persisted, never
      *        logged, never present in exception messages (ADR-SDK-020).
-     * @param string $baseUrl the API base URL. Defaults to production
-     *        (`https://api.revaly.co`); point it at the Sandbox URL for testing.
+     * @param string $baseUrl the API base URL. Defaults to `https://api.revaly.co` —
+     *        sandbox and live share this URL; the environment is selected by your API
+     *        key's scope, not the URL. Override only for internal/pre-release targets.
      * @param string $apiVersion the API contract version, pinned via `X-Api-Version` on
      *        every request. Default "2.1"; "2.0" is selectable. Behavioural difference
      *        on "2.0": the `ErrorResponse.code` field is not part of the 2.0 documented

@@ -14,7 +14,7 @@ TDD-level design to finalize in Epic SC-234 build stories without re-opening dec
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `apiKey` | — required | Merchant-held; injected per request; never persisted/logged (ADR-SDK-020) |
-| `baseUrl` | `https://api.revaly.co` | Sandbox URL for testing |
+| `baseUrl` | `https://api.revaly.co` | Sandbox and live share this URL — the environment is selected by the API key's scope, not the URL (ADR-SDK-024); override only for internal/pre-release targets |
 | `apiVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request; `"2.0"` selectable |
 | `connectTimeout` | from OQ-6 | Telemetry-derived defaults, set before Wave-1 GA — do not invent |
 | `overallDeadline` | from OQ-6 | Expiry **after send** classifies as OutcomeUnknown, never TransientFailure |
