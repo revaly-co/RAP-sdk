@@ -20,8 +20,9 @@ using Revaly.Sdk;
 
 using var rap = new RapClient(new RapClientOptions
 {
-    ApiKey = Environment.GetEnvironmentVariable("RAP_API_KEY")!, // Enablement-issued sandbox key
-    BaseUrl = new Uri("https://sandbox.api.revaly.co"),          // your issued sandbox URL
+    // Enablement-issued sandbox-scoped key. Sandbox and live share the same URL —
+    // your key's scope selects the environment (there is no separate sandbox host).
+    ApiKey = Environment.GetEnvironmentVariable("RAP_API_KEY")!,
     // ApiVersion defaults to "2.1". Selecting "2.0" narrows fast failover: without the
     // ErrorResponse.code contract, a 503 + not_processed classifies OutcomeUnknown
     // (reconcile) instead of TransientFailure (immediate failover). Keep 2.1.

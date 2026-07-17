@@ -52,8 +52,10 @@ use Revaly\Sdk\Reconcile\RapTransactionOutcome;
 use Revaly\Sdk\Reconcile\ReconcilePolicy;
 
 $client = new RapClient(
-    apiKey: getenv('REVALY_API_KEY'),          // sent as `Authorization: ApiKey <key>`
-    baseUrl: 'https://sandbox.api.revaly.co',  // your Enablement-issued sandbox URL
+    // Enablement-issued sandbox-scoped key, sent as `Authorization: ApiKey <key>`.
+    // Sandbox and live share the same URL — your key's scope selects the environment
+    // (there is no separate sandbox host).
+    apiKey: getenv('REVALY_API_KEY'),
 );
 
 $request = new PaymentRequest();
