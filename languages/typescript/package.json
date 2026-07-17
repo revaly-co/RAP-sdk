@@ -1,0 +1,23 @@
+{
+  "name": "revaly-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Server-side TypeScript SDK for the RAP V2 API. Package name is [Proposed] until OQ-3 registry provisioning (runtime-tdd.md §7); \"private\" stays true while registry publish is embargoed (repo rule 3) — interim distribution is per-language GitHub release artifacts. Version 0.0.0 is the development placeholder; stage 5 stamps release versions at packaging time.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.3"
+  },
+  "exports": {
+    ".": "./runtime/src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}
