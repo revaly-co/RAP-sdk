@@ -382,17 +382,32 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: pipeline/typescript/compile-check/package-lock.json
+          cache-dependency-path: |
+            pipeline/typescript/compile-check/package-lock.json
+            languages/typescript/package-lock.json
 
       # The core is generated without package scaffolding (pipeline/typescript/config.yaml:
       # deliberately no npmName) — it ships inside the runtime's package (runtime-tdd.md §2).
-      # Until the runtime lands, pipeline/typescript/compile-check/ is the compile harness:
-      # strict tsc, no emit, lockfile-pinned like pipeline/spec-tooling.
+      # pipeline/typescript/compile-check/ additionally proves the core compiles STANDALONE
+      # (no node globals, no runtime imports): strict tsc, no emit, lockfile-pinned.
       - name: Install Compile-Check Toolchain (lockfile-pinned)
         run: npm ci --prefix pipeline/typescript/compile-check --no-audit --no-fund
 
       - name: Strict tsc over the Core
         run: pipeline/typescript/compile-check/node_modules/.bin/tsc -p pipeline/typescript/compile-check/tsconfig.json
+
+      # The runtime package (languages/typescript): strict typecheck over core + runtime +
+      # tests, then the contract test suite — classification matrix (failover-contract §2),
+      # reconcile verdicts (§3), transport headers (ADR-SDK-005), ADR-SDK-020 log-capture
+      # scrub assertions, and the pinned core-serialization probes.
+      - name: Install Runtime Toolchain (lockfile-pinned)
+        run: npm ci --prefix languages/typescript --no-audit --no-fund
+
+      - name: Typecheck Runtime + Core (strict tsc)
+        run: npm run typecheck --prefix languages/typescript
+
+      - name: Runtime Tests (vitest)
+        run: npm test --prefix languages/typescript
 
   build-python:
     name: Stage 3 - Build + Test (python)
