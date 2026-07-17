@@ -435,6 +435,23 @@ jobs:
       - name: Import Package
         run: python -c "import revaly_sdk_core; print(revaly_sdk_core.__name__, 'imports clean')"
 
+      - name: Byte-Compile Runtime + Tests
+        run: python -m compileall -q languages/python/runtime/revaly_sdk languages/python/tests
+
+      # The SDK ships as ONE distribution with the generated core riding inside
+      # (runtime-tdd §2, php/ts precedent). Uninstalling the standalone core install
+      # first proves the combined package is self-contained.
+      - name: Install SDK Package
+        run: |
+          python -m pip uninstall --quiet -y revaly_sdk_core
+          python -m pip install --quiet "./languages/python[dev]"
+
+      - name: Import SDK Package
+        run: python -c "import revaly_sdk; print(revaly_sdk.__name__, revaly_sdk.SDK_VERSION, 'imports clean')"
+
+      - name: Runtime Tests (pytest)
+        run: python -m pytest languages/python/tests -q
+
   build-go:
     name: Stage 3 - Build + Test (go)
     runs-on: ubuntu-latest
