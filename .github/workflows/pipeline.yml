@@ -340,6 +340,34 @@ jobs:
         working-directory: languages/php/core
         run: composer dump-autoload --optimize --strict-psr
 
+      # Runtime package (languages/php — runtime-tdd §§1-9): same bar as the core
+      # (manifest, resolvable ranges, parse-clean, strict PSR-4 across runtime AND the
+      # re-exported core), then the hand-written suite: classification (§2 rows),
+      # transport headers, reconcile, no-retry, scrubber + log-capture (ADR-SDK-020),
+      # core-behaviour pins, quickstart.
+      - name: Validate Runtime Composer Manifest
+        working-directory: languages/php
+        run: composer validate --no-check-lock
+
+      - name: Install Runtime Dependencies
+        working-directory: languages/php
+        run: composer install --no-interaction --no-progress
+
+      - name: Syntax Lint (php -l over runtime/ + tests/)
+        working-directory: languages/php
+        run: |
+          set -euo pipefail
+          find runtime tests -name '*.php' -print0 | xargs -0 -n1 -P"$(nproc)" php -l > /dev/null
+          echo "php -l clean over runtime/ + tests/"
+
+      - name: PSR-4 Autoload Conformance (runtime, strict)
+        working-directory: languages/php
+        run: composer dump-autoload --optimize --strict-psr
+
+      - name: Runtime Tests (PHPUnit)
+        working-directory: languages/php
+        run: vendor/bin/phpunit --no-progress
+
   build-typescript:
     name: Stage 3 - Build + Test (typescript)
     runs-on: ubuntu-latest
