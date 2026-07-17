@@ -109,6 +109,52 @@ public class GetTransactionById200Response extends AbstractOpenApiSchema {
             boolean typeCoercion = ctxt.isEnabled(MapperFeature.ALLOW_COERCION_OF_SCALARS);
             int match = 0;
             JsonToken token = tree.traverse(jp.getCodec()).nextToken();
+            // RAP fork, pass 1 (STRICT): attempt each object branch with unknown
+            // properties REJECTED. Against a server matching the pinned spec, exactly one
+            // branch strict-matches, which is the correct discrimination the lenient pass
+            // below cannot provide (all-optional models lenient-match everything).
+            int strictMatch = 0;
+            Object strictDeserialized = null;
+            // strict-deserialize TransactionGroupResponse
+            try {
+                boolean strictAttempt = !(TransactionGroupResponse.class.equals(Integer.class) || TransactionGroupResponse.class.equals(Long.class) || TransactionGroupResponse.class.equals(Float.class) || TransactionGroupResponse.class.equals(Double.class) || TransactionGroupResponse.class.equals(Boolean.class) || TransactionGroupResponse.class.equals(String.class));
+                if (strictAttempt && tree.isObject()) {
+                    strictDeserialized = ((com.fasterxml.jackson.databind.ObjectMapper) jp.getCodec())
+                            .readerFor(TransactionGroupResponse.class)
+                            .with(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                            .readValue(tree.traverse(jp.getCodec()));
+                    strictMatch++;
+                    log.log(Level.FINER, "Input data strictly matches schema 'TransactionGroupResponse'");
+                }
+            } catch (Exception e) {
+                // strict mismatch, continue
+                log.log(Level.FINER, "Input data does not strictly match schema 'TransactionGroupResponse'", e);
+            }
+            // strict-deserialize TransactionResponse
+            try {
+                boolean strictAttempt = !(TransactionResponse.class.equals(Integer.class) || TransactionResponse.class.equals(Long.class) || TransactionResponse.class.equals(Float.class) || TransactionResponse.class.equals(Double.class) || TransactionResponse.class.equals(Boolean.class) || TransactionResponse.class.equals(String.class));
+                if (strictAttempt && tree.isObject()) {
+                    strictDeserialized = ((com.fasterxml.jackson.databind.ObjectMapper) jp.getCodec())
+                            .readerFor(TransactionResponse.class)
+                            .with(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                            .readValue(tree.traverse(jp.getCodec()));
+                    strictMatch++;
+                    log.log(Level.FINER, "Input data strictly matches schema 'TransactionResponse'");
+                }
+            } catch (Exception e) {
+                // strict mismatch, continue
+                log.log(Level.FINER, "Input data does not strictly match schema 'TransactionResponse'", e);
+            }
+            if (strictMatch == 1) {
+                GetTransactionById200Response retStrict = new GetTransactionById200Response();
+                retStrict.setActualInstance(strictDeserialized);
+                return retStrict;
+            }
+            // RAP fork, pass 2 (stock lenient) collects every candidate so the coverage
+            // tiebreak below can resolve multi-matches (e.g. a server newer than the
+            // pinned spec sending additive fields, which fails every strict attempt).
+            java.util.List<Object> lenientMatches = new ArrayList<>();
+            java.util.List<Class<?>> lenientClasses = new ArrayList<>();
             // deserialize TransactionGroupResponse
             try {
                 boolean attemptParsing = true;
@@ -128,6 +174,8 @@ public class GetTransactionById200Response extends AbstractOpenApiSchema {
                     // (min, max, enum, pattern...), this does not perform a strict JSON
                     // validation, which means the 'match' count may be higher than it should be.
                     match++;
+                    lenientMatches.add(deserialized);
+                    lenientClasses.add(TransactionGroupResponse.class);
                     log.log(Level.FINER, "Input data matches schema 'TransactionGroupResponse'");
                 }
             } catch (Exception e) {
@@ -154,6 +202,8 @@ public class GetTransactionById200Response extends AbstractOpenApiSchema {
                     // (min, max, enum, pattern...), this does not perform a strict JSON
                     // validation, which means the 'match' count may be higher than it should be.
                     match++;
+                    lenientMatches.add(deserialized);
+                    lenientClasses.add(TransactionResponse.class);
                     log.log(Level.FINER, "Input data matches schema 'TransactionResponse'");
                 }
             } catch (Exception e) {
@@ -166,7 +216,54 @@ public class GetTransactionById200Response extends AbstractOpenApiSchema {
                 ret.setActualInstance(deserialized);
                 return ret;
             }
+            // RAP fork, pass 3 (coverage tiebreak): among lenient multi-matches, bind the
+            // branch that recognizes strictly the most top-level fields of the payload; a
+            // genuine tie stays an error (stock behaviour). Field NAMES only are inspected,
+            // never values.
+            if (match > 1) {
+                int bestIndex = -1;
+                int bestCoverage = -1;
+                boolean coverageTie = false;
+                for (int i = 0; i < lenientMatches.size(); i++) {
+                    int coverage = countRecognizedTopLevelFields(tree, lenientClasses.get(i), (com.fasterxml.jackson.databind.ObjectMapper) jp.getCodec());
+                    if (coverage > bestCoverage) {
+                        bestCoverage = coverage;
+                        bestIndex = i;
+                        coverageTie = false;
+                    } else if (coverage == bestCoverage) {
+                        coverageTie = true;
+                    }
+                }
+                if (!coverageTie && bestIndex >= 0) {
+                    log.log(Level.FINER, String.format(java.util.Locale.ROOT, "Ambiguous lenient match for GetTransactionById200Response resolved by field coverage to '%s'", lenientClasses.get(bestIndex).getSimpleName()));
+                    GetTransactionById200Response retCoverage = new GetTransactionById200Response();
+                    retCoverage.setActualInstance(lenientMatches.get(bestIndex));
+                    return retCoverage;
+                }
+            }
             throw new IOException(String.format(java.util.Locale.ROOT, "Failed deserialization for GetTransactionById200Response: %d classes match result, expected 1", match));
+        }
+
+        // RAP fork helper: how many of the payload's top-level field names the target
+        // model recognizes as Jackson-visible properties (names only; values untouched).
+        private static int countRecognizedTopLevelFields(JsonNode tree, Class<?> target, com.fasterxml.jackson.databind.ObjectMapper mapper) {
+            if (!tree.isObject()) {
+                return 0;
+            }
+            java.util.Set<String> known = new HashSet<>();
+            com.fasterxml.jackson.databind.BeanDescription description =
+                    mapper.getDeserializationConfig().introspect(mapper.constructType(target));
+            for (com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition property : description.findProperties()) {
+                known.add(property.getName());
+            }
+            int recognized = 0;
+            java.util.Iterator<String> names = tree.fieldNames();
+            while (names.hasNext()) {
+                if (known.contains(names.next())) {
+                    recognized++;
+                }
+            }
+            return recognized;
         }
 
         /**

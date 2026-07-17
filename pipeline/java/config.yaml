@@ -14,6 +14,16 @@
 # library (it generates no auth helper classes), and the stock native README shows no
 # auth at all. Both now show the native mechanism — a request interceptor sending
 # `Authorization: ApiKey <key>` (the RAP scheme's required prefix).
+# templates/libraries/native/oneof_model.mustache — forked 2026-07-16 to fix oneOf
+# response discrimination (upstream defect): the stock deserializer demands exactly one
+# LENIENT match, but all-optional branch models (Jackson ignores unknown properties and
+# never enforces setter-level `required`) multi-match every object, so valid 200 bodies
+# on the two transaction GETs threw inside the core. Fork (jackson2 legs only): a strict
+# fail-on-unknown-properties first pass (spec-aligned bodies bind uniquely), the stock
+# lenient pass, then a recognized-top-level-field coverage tiebreak so a server newer
+# than the pinned spec (additive fields, e.g. the statementDescriptor precedent) still
+# binds instead of throwing. Regression-pinned in the runtime test suite
+# (ModelSerializationTests). Raise upstream at the next ADR-SDK-023 revision.
 generatorName: java
 library: native # JDK 11+ HttpClient + Jackson — leaner than the okhttp-gson default
 

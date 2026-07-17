@@ -190,10 +190,3 @@ reconcile re-poll is the only loop the SDK owns.
 The full generated V2 surface is re-exported through the client:
 `client.payments()`, `client.transactions()`, `client.paymentMethods()`,
 `client.notifyApi()` — same transport, same auth, same User-Agent, same version pin.
-
-> **Known core limitation:** `transactions().getTransactionById(...)` and
-> `getTransactionByMerchantTransactionId(...)` currently fail to deserialize valid 200
-> bodies inside the generated oneOf wrapper (multi-match defect; pinned by
-> `ModelSerializationTests`, fix tracked as a template-fork follow-up). Use
-> `client.reconcile(...)` for merchant-id lookups — it reads the raw body and is not
-> affected.

@@ -3,7 +3,6 @@ package co.revaly.sdk;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.revaly.sdk.core.ApiClient;
@@ -17,8 +16,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Core-serialization probes for the two cross-language generator traps found on the dotnet runtime
- * (rap-sdk memory: optional-enum write crash; anyOf/oneOf response binding), pinned here as java
- * regression facts.
+ * (optional-enum write crash; anyOf/oneOf response binding), pinned here as java regression facts.
+ * The oneOf discrimination defect is FIXED by the oneof_model.mustache template fork — the wrapper
+ * tests below pin the forked behaviour (strict pass, coverage tiebreak, both wrappers).
  */
 class ModelSerializationTests {
 
@@ -46,20 +46,71 @@ class ModelSerializationTests {
     }
 
     @Test
-    void oneOfWrapperCannotDiscriminateTerminalBodies() {
-        // CORE DEFECT, pinned: the generated oneOf wrapper for the merchant-transaction
-        // GET requires exactly one schema match, but its branch models are all-optional
-        // under Jackson's lenient binding, so a valid terminal body matches more than one
-        // branch and deserialization THROWS on a successful 200. The runtime therefore
-        // never uses this wrapper (RapReconciler reads the raw body). If a generator
-        // upgrade fixes discrimination, this test fails deliberately — re-evaluate the
-        // reconciler's raw-read note and this pin together.
-        assertThrows(
-                Exception.class,
-                () ->
-                        mapper.readValue(
-                                SyntheticData.transaction(1, TestClient.MTX),
-                                GetTransactionByMerchantTransactionId200Response.class));
+    void oneOfWrapperDiscriminatesTerminalBodies() throws Exception {
+        // Fixed 2026-07-16 via the oneof_model.mustache template fork (strict first
+        // pass + coverage tiebreak): stock upstream demanded exactly one LENIENT match,
+        // which all-optional branch models can never provide — valid 200s threw. The
+        // reconciler still reads raw bodies by design (repo rule 5); these pins keep the
+        // re-exported transaction GETs honest.
+        GetTransactionByMerchantTransactionId200Response wrapper =
+                mapper.readValue(
+                        SyntheticData.transaction(1, TestClient.MTX),
+                        GetTransactionByMerchantTransactionId200Response.class);
+
+        assertEquals(1, wrapper.getTransactionResponse().getTransactionStatus());
+    }
+
+    @Test
+    void oneOfWrapperDiscriminatesPendingBodies() throws Exception {
+        GetTransactionByMerchantTransactionId200Response wrapper =
+                mapper.readValue(
+                        SyntheticData.pending(TestClient.MTX),
+                        GetTransactionByMerchantTransactionId200Response.class);
+
+        assertEquals(
+                PendingTransactionResponse.StateEnum.PENDING,
+                wrapper.getPendingTransactionResponse().getState());
+    }
+
+    @Test
+    void oneOfWrapperDiscriminatesGroupEnvelopes() throws Exception {
+        GetTransactionByMerchantTransactionId200Response wrapper =
+                mapper.readValue(
+                        SyntheticData.transactionGroup(TestClient.MTX),
+                        GetTransactionByMerchantTransactionId200Response.class);
+
+        assertEquals(
+                TestClient.MTX,
+                wrapper.getTransactionGroupResponse().getTransaction().getMerchantTransactionId());
+    }
+
+    @Test
+    void oneOfWrapperSurvivesAdditiveServerFields() throws Exception {
+        // A server newer than the pinned spec sends fields this SDK does not know
+        // (the statementDescriptor precedent). Every strict attempt fails, so the
+        // coverage tiebreak must bind the branch recognizing the most fields instead
+        // of throwing.
+        String terminalPlusUnknown =
+                SyntheticData.transaction(2, TestClient.MTX)
+                        .replaceFirst("\\{", "{\"futureAdditiveField\":\"x\",");
+
+        GetTransactionByMerchantTransactionId200Response wrapper =
+                mapper.readValue(
+                        terminalPlusUnknown,
+                        GetTransactionByMerchantTransactionId200Response.class);
+
+        assertEquals(2, wrapper.getTransactionResponse().getTransactionStatus());
+    }
+
+    @Test
+    void byIdWrapperDiscriminatesToo() throws Exception {
+        // Same forked deserializer, second affected wrapper (GET /transactions/{id}).
+        co.revaly.sdk.core.model.GetTransactionById200Response wrapper =
+                mapper.readValue(
+                        SyntheticData.transaction(1, TestClient.MTX),
+                        co.revaly.sdk.core.model.GetTransactionById200Response.class);
+
+        assertEquals(1, wrapper.getTransactionResponse().getTransactionStatus());
     }
 
     @Test
