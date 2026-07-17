@@ -23,12 +23,10 @@ export interface ReconcileOptions {
  *
  * The GET goes through the same generated api / transport / classification stack as
  * every other SDK request, but verdicts are read from the RAW response body, never the
- * core's typed wrapper, for a safety reason: the generated union wrapper for this
- * endpoint cannot discriminate its branches (its all-optional group envelope matches
- * first), so a terminal record read through it silently loses every field. The raw
- * body's required `state` field discriminates a pending intent, and terminal records
- * bind directly to TransactionResponse — classify from raw bodies, never core wrappers
- * (repo rule 5).
+ * core's typed wrapper (repo rule 5): reconciliation is the safety path, so it must not
+ * depend on generated discrimination logic — server-newer-than-spec shapes still count
+ * as sightings here. The raw body's required `state` field discriminates a pending
+ * intent, and terminal records bind directly to TransactionResponse.
  */
 export class RapReconciler {
     constructor(

@@ -89,7 +89,17 @@ export type RtnDataMerchantDataMerchantAccountAgeIndicatorEnum = typeof RtnDataM
  * Check if a given object implements the RtnDataMerchantData interface.
  */
 export function instanceOfRtnDataMerchantData(value: object): value is RtnDataMerchantData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('acquirerMerchantId' in value && value['acquirerMerchantId'] !== undefined)
+        || ('issuerMerchantId' in value && value['issuerMerchantId'] !== undefined)
+        || ('acquirerBin' in value && value['acquirerBin'] !== undefined)
+        || ('acquirerReferenceNumber' in value && value['acquirerReferenceNumber'] !== undefined)
+        || ('merchantName' in value && value['merchantName'] !== undefined)
+        || ('merchantAccountAgeIndicator' in value && value['merchantAccountAgeIndicator'] !== undefined)
+        || ('merchantAccountOpenedDate' in value && value['merchantAccountOpenedDate'] !== undefined)
+        || ('isTenuredMerchant' in value && value['isTenuredMerchant'] !== undefined);
 }
 
 export function RtnDataMerchantDataFromJSON(json: any): RtnDataMerchantData {

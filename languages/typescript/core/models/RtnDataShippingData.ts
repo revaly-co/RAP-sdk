@@ -175,7 +175,27 @@ export type RtnDataShippingDataDeliveryTimeframeIndicatorEnum = typeof RtnDataSh
  * Check if a given object implements the RtnDataShippingData interface.
  */
 export function instanceOfRtnDataShippingData(value: object): value is RtnDataShippingData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('shippingIndicator' in value && value['shippingIndicator'] !== undefined)
+        || ('addressLine1' in value && value['addressLine1'] !== undefined)
+        || ('addressLine2' in value && value['addressLine2'] !== undefined)
+        || ('addressLine3' in value && value['addressLine3'] !== undefined)
+        || ('city' in value && value['city'] !== undefined)
+        || ('region' in value && value['region'] !== undefined)
+        || ('postalCode' in value && value['postalCode'] !== undefined)
+        || ('country' in value && value['country'] !== undefined)
+        || ('addressFirstUsedDate' in value && value['addressFirstUsedDate'] !== undefined)
+        || ('addressFirstUsedIndicator' in value && value['addressFirstUsedIndicator'] !== undefined)
+        || ('isShippingNameMatch' in value && value['isShippingNameMatch'] !== undefined)
+        || ('deliveryEmailAddress' in value && value['deliveryEmailAddress'] !== undefined)
+        || ('deliveryTimeframeIndicator' in value && value['deliveryTimeframeIndicator'] !== undefined)
+        || ('shippingFirstName' in value && value['shippingFirstName'] !== undefined)
+        || ('shippingLastName' in value && value['shippingLastName'] !== undefined)
+        || ('shippingPhone' in value && value['shippingPhone'] !== undefined)
+        || ('shippingAddressCount' in value && value['shippingAddressCount'] !== undefined)
+        || ('daysSinceShipToAddressChange' in value && value['daysSinceShipToAddressChange'] !== undefined);
 }
 
 export function RtnDataShippingDataFromJSON(json: any): RtnDataShippingData {

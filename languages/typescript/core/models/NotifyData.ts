@@ -128,7 +128,23 @@ export interface NotifyData {
  * Check if a given object implements the NotifyData interface.
  */
 export function instanceOfNotifyData(value: object): value is NotifyData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transactionId' in value && value['transactionId'] !== undefined)
+        || ('merchantTransactionId' in value && value['merchantTransactionId'] !== undefined)
+        || ('orderID' in value && value['orderID'] !== undefined)
+        || ('customerId' in value && value['customerId'] !== undefined)
+        || ('amount' in value && value['amount'] !== undefined)
+        || ('currency' in value && value['currency'] !== undefined)
+        || ('customerAccountNumber' in value && value['customerAccountNumber'] !== undefined)
+        || ('disableSmsNotification' in value && value['disableSmsNotification'] !== undefined)
+        || ('disableEmailNotification' in value && value['disableEmailNotification'] !== undefined)
+        || ('contactInformation' in value && value['contactInformation'] !== undefined)
+        || ('address' in value && value['address'] !== undefined)
+        || ('reasonCode' in value && value['reasonCode'] !== undefined)
+        || ('arn' in value && value['arn'] !== undefined)
+        || ('disputeDate' in value && value['disputeDate'] !== undefined);
 }
 
 export function NotifyDataFromJSON(json: any): NotifyData {

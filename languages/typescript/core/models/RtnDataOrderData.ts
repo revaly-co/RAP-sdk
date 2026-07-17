@@ -171,7 +171,29 @@ export type RtnDataOrderDataIsCouponUsedEnum = typeof RtnDataOrderDataIsCouponUs
  * Check if a given object implements the RtnDataOrderData interface.
  */
 export function instanceOfRtnDataOrderData(value: object): value is RtnDataOrderData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('purchaseDate' in value && value['purchaseDate'] !== undefined)
+        || ('itemCount' in value && value['itemCount'] !== undefined)
+        || ('highestPriceItemPrice' in value && value['highestPriceItemPrice'] !== undefined)
+        || ('highestPriceItemBrand' in value && value['highestPriceItemBrand'] !== undefined)
+        || ('highestPriceItemCategory' in value && value['highestPriceItemCategory'] !== undefined)
+        || ('isPreOrderPurchase' in value && value['isPreOrderPurchase'] !== undefined)
+        || ('preOrderDate' in value && value['preOrderDate'] !== undefined)
+        || ('isReorder' in value && value['isReorder'] !== undefined)
+        || ('installmentPaymentCount' in value && value['installmentPaymentCount'] !== undefined)
+        || ('isRecurringPurchase' in value && value['isRecurringPurchase'] !== undefined)
+        || ('recurringIntervalDays' in value && value['recurringIntervalDays'] !== undefined)
+        || ('recurringEndDate' in value && value['recurringEndDate'] !== undefined)
+        || ('alternatePaymentIndicator' in value && value['alternatePaymentIndicator'] !== undefined)
+        || ('giftCardCount' in value && value['giftCardCount'] !== undefined)
+        || ('giftCardAmount' in value && value['giftCardAmount'] !== undefined)
+        || ('giftCardCurrency' in value && value['giftCardCurrency'] !== undefined)
+        || ('installmentPaymentData' in value && value['installmentPaymentData'] !== undefined)
+        || ('topItemCategories' in value && value['topItemCategories'] !== undefined)
+        || ('highestPriceItemSku' in value && value['highestPriceItemSku'] !== undefined)
+        || ('isCouponUsed' in value && value['isCouponUsed'] !== undefined);
 }
 
 export function RtnDataOrderDataFromJSON(json: any): RtnDataOrderData {

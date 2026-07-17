@@ -89,7 +89,19 @@ export interface PreviousTransaction {
  * Check if a given object implements the PreviousTransaction interface.
  */
 export function instanceOfPreviousTransaction(value: object): value is PreviousTransaction {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transactionDate' in value && value['transactionDate'] !== undefined)
+        || ('merchantAccountReferenceId' in value && value['merchantAccountReferenceId'] !== undefined)
+        || ('gatewayCode' in value && value['gatewayCode'] !== undefined)
+        || ('gatewayMessage' in value && value['gatewayMessage'] !== undefined)
+        || ('gatewayMessageKey' in value && value['gatewayMessageKey'] !== undefined)
+        || ('transactionStatus' in value && value['transactionStatus'] !== undefined)
+        || ('avsCode' in value && value['avsCode'] !== undefined)
+        || ('avsMessage' in value && value['avsMessage'] !== undefined)
+        || ('cvvCode' in value && value['cvvCode'] !== undefined)
+        || ('cvvMessage' in value && value['cvvMessage'] !== undefined);
 }
 
 export function PreviousTransactionFromJSON(json: any): PreviousTransaction {

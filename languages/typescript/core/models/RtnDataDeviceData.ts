@@ -180,7 +180,30 @@ export type RtnDataDeviceDataDeviceTypeEnum = typeof RtnDataDeviceDataDeviceType
  * Check if a given object implements the RtnDataDeviceData interface.
  */
 export function instanceOfRtnDataDeviceData(value: object): value is RtnDataDeviceData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('ipAddress' in value && value['ipAddress'] !== undefined)
+        || ('city' in value && value['city'] !== undefined)
+        || ('region' in value && value['region'] !== undefined)
+        || ('country' in value && value['country'] !== undefined)
+        || ('deviceId' in value && value['deviceId'] !== undefined)
+        || ('isJavascriptEnabled' in value && value['isJavascriptEnabled'] !== undefined)
+        || ('isJavaEnabled' in value && value['isJavaEnabled'] !== undefined)
+        || ('userAgent' in value && value['userAgent'] !== undefined)
+        || ('timezone' in value && value['timezone'] !== undefined)
+        || ('timezoneOffsetMinutes' in value && value['timezoneOffsetMinutes'] !== undefined)
+        || ('browserLanguage' in value && value['browserLanguage'] !== undefined)
+        || ('deviceLongitude' in value && value['deviceLongitude'] !== undefined)
+        || ('deviceLatitude' in value && value['deviceLatitude'] !== undefined)
+        || ('channel' in value && value['channel'] !== undefined)
+        || ('digitalWalletProviderId' in value && value['digitalWalletProviderId'] !== undefined)
+        || ('isDeviceFraudAssociated' in value && value['isDeviceFraudAssociated'] !== undefined)
+        || ('isKnownDevice' in value && value['isKnownDevice'] !== undefined)
+        || ('deviceType' in value && value['deviceType'] !== undefined)
+        || ('browserTimezoneOffset' in value && value['browserTimezoneOffset'] !== undefined)
+        || ('sessionCookie' in value && value['sessionCookie'] !== undefined)
+        || ('purchaseHostName' in value && value['purchaseHostName'] !== undefined);
 }
 
 export function RtnDataDeviceDataFromJSON(json: any): RtnDataDeviceData {

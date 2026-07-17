@@ -65,7 +65,15 @@ export interface PaymentMethodWriteResponseTransaction {
  * Check if a given object implements the PaymentMethodWriteResponseTransaction interface.
  */
 export function instanceOfPaymentMethodWriteResponseTransaction(value: object): value is PaymentMethodWriteResponseTransaction {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transactionId' in value && value['transactionId'] !== undefined)
+        || ('transactionDate' in value && value['transactionDate'] !== undefined)
+        || ('transactionStatus' in value && value['transactionStatus'] !== undefined)
+        || ('message' in value && value['message'] !== undefined)
+        || ('responseCode' in value && value['responseCode'] !== undefined)
+        || ('transactionType' in value && value['transactionType'] !== undefined);
 }
 
 export function PaymentMethodWriteResponseTransactionFromJSON(json: any): PaymentMethodWriteResponseTransaction {

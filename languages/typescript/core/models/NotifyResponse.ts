@@ -41,7 +41,11 @@ export interface NotifyResponse {
  * Check if a given object implements the NotifyResponse interface.
  */
 export function instanceOfNotifyResponse(value: object): value is NotifyResponse {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('success' in value && value['success'] !== undefined)
+        || ('message' in value && value['message'] !== undefined);
 }
 
 export function NotifyResponseFromJSON(json: any): NotifyResponse {

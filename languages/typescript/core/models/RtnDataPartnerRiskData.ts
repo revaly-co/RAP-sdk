@@ -65,7 +65,15 @@ export interface RtnDataPartnerRiskData {
  * Check if a given object implements the RtnDataPartnerRiskData interface.
  */
 export function instanceOfRtnDataPartnerRiskData(value: object): value is RtnDataPartnerRiskData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transactionRiskScore' in value && value['transactionRiskScore'] !== undefined)
+        || ('isTrustedMidPartner' in value && value['isTrustedMidPartner'] !== undefined)
+        || ('customerRiskScore' in value && value['customerRiskScore'] !== undefined)
+        || ('deviceRiskScore' in value && value['deviceRiskScore'] !== undefined)
+        || ('ipRiskScore' in value && value['ipRiskScore'] !== undefined)
+        || ('merchantRiskScore' in value && value['merchantRiskScore'] !== undefined);
 }
 
 export function RtnDataPartnerRiskDataFromJSON(json: any): RtnDataPartnerRiskData {

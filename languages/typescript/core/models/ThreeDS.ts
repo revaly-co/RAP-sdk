@@ -137,7 +137,21 @@ export type ThreeDSEnrolledStatusEnum = typeof ThreeDSEnrolledStatusEnum[keyof t
  * Check if a given object implements the ThreeDS interface.
  */
 export function instanceOfThreeDS(value: object): value is ThreeDS {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('version' in value && value['version'] !== undefined)
+        || ('exemptionType' in value && value['exemptionType'] !== undefined)
+        || ('eci' in value && value['eci'] !== undefined)
+        || ('cryptogram' in value && value['cryptogram'] !== undefined)
+        || ('dsTransactionId' in value && value['dsTransactionId'] !== undefined)
+        || ('acsTransactionId' in value && value['acsTransactionId'] !== undefined)
+        || ('xid' in value && value['xid'] !== undefined)
+        || ('cavvAlgorithm' in value && value['cavvAlgorithm'] !== undefined)
+        || ('directoryStatus' in value && value['directoryStatus'] !== undefined)
+        || ('authenticationStatus' in value && value['authenticationStatus'] !== undefined)
+        || ('enrolledStatus' in value && value['enrolledStatus'] !== undefined)
+        || ('serverTransId' in value && value['serverTransId'] !== undefined);
 }
 
 export function ThreeDSFromJSON(json: any): ThreeDS {

@@ -83,7 +83,18 @@ export interface Recovery {
  * Check if a given object implements the Recovery interface.
  */
 export function instanceOfRecovery(value: object): value is Recovery {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('disableCustomerRecovery' in value && value['disableCustomerRecovery'] !== undefined)
+        || ('externalApproval' in value && value['externalApproval'] !== undefined)
+        || ('customerAccountNumber' in value && value['customerAccountNumber'] !== undefined)
+        || ('customerBalance' in value && value['customerBalance'] !== undefined)
+        || ('disableSMSNotification' in value && value['disableSMSNotification'] !== undefined)
+        || ('disableEmailNotification' in value && value['disableEmailNotification'] !== undefined)
+        || ('retryCount' in value && value['retryCount'] !== undefined)
+        || ('paymentReferenceData' in value && value['paymentReferenceData'] !== undefined)
+        || ('dateFirstAttempt' in value && value['dateFirstAttempt'] !== undefined);
 }
 
 export function RecoveryFromJSON(json: any): Recovery {

@@ -16,4 +16,15 @@
 # the generated api docs: typescript-fetch sends the configured apiKey value verbatim as
 # the Authorization header, and the RAP scheme requires the `ApiKey` prefix, so the
 # example value is now "ApiKey YOUR_API_KEY" instead of the bare key.
+#
+# templates/modelGeneric.mustache — forked 2026-07-17 (rap-sdk PR pattern of java PR #18 /
+# dotnet PR #15) solely to fix instanceOf* for ALL-OPTIONAL models: stock emits a bare
+# `return true`, which matches ANY object and breaks oneOf discrimination — the union
+# wrappers (GetTransactionByMerchantTransactionId200Response, by-id) tried the all-optional
+# TransactionGroupResponse branch before TransactionResponse, so terminal bodies bound to
+# the group mapper and lost every field. The fork makes all-optional models match only when
+# at least one DECLARED property is present (names inspected, never values; models with
+# required properties and zero-property models are unchanged). Pinned by
+# languages/typescript/tests/model-serialization.test.ts. Upstream report due at the next
+# ADR-SDK-023 revision, alongside the dotnet enum and java oneOf forks.
 generatorName: typescript-fetch

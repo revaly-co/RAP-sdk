@@ -175,7 +175,20 @@ export type RtnDataAdditionalTransactionDataMessageCategoryEnum = typeof RtnData
  * Check if a given object implements the RtnDataAdditionalTransactionData interface.
  */
 export function instanceOfRtnDataAdditionalTransactionData(value: object): value is RtnDataAdditionalTransactionData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('providerAuthDecision' in value && value['providerAuthDecision'] !== undefined)
+        || ('providerAuthDecisionCode' in value && value['providerAuthDecisionCode'] !== undefined)
+        || ('paymentRail' in value && value['paymentRail'] !== undefined)
+        || ('posEntryMode' in value && value['posEntryMode'] !== undefined)
+        || ('retrievalReferenceNumber' in value && value['retrievalReferenceNumber'] !== undefined)
+        || ('merchantTrustLevel' in value && value['merchantTrustLevel'] !== undefined)
+        || ('merchantTrustData' in value && value['merchantTrustData'] !== undefined)
+        || ('cardBrand' in value && value['cardBrand'] !== undefined)
+        || ('messageCategory' in value && value['messageCategory'] !== undefined)
+        || ('fullPan' in value && value['fullPan'] !== undefined)
+        || ('dpan' in value && value['dpan'] !== undefined);
 }
 
 export function RtnDataAdditionalTransactionDataFromJSON(json: any): RtnDataAdditionalTransactionData {

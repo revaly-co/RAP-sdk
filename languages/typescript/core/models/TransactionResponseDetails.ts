@@ -65,7 +65,15 @@ export interface TransactionResponseDetails {
  * Check if a given object implements the TransactionResponseDetails interface.
  */
 export function instanceOfTransactionResponseDetails(value: object): value is TransactionResponseDetails {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('avsCode' in value && value['avsCode'] !== undefined)
+        || ('avsMessage' in value && value['avsMessage'] !== undefined)
+        || ('cvvCode' in value && value['cvvCode'] !== undefined)
+        || ('cvvMessage' in value && value['cvvMessage'] !== undefined)
+        || ('errorCode' in value && value['errorCode'] !== undefined)
+        || ('errorDetail' in value && value['errorDetail'] !== undefined);
 }
 
 export function TransactionResponseDetailsFromJSON(json: any): TransactionResponseDetails {

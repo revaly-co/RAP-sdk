@@ -35,7 +35,10 @@ export interface RtnDataCustomData {
  * Check if a given object implements the RtnDataCustomData interface.
  */
 export function instanceOfRtnDataCustomData(value: object): value is RtnDataCustomData {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('customField1' in value && value['customField1'] !== undefined);
 }
 
 export function RtnDataCustomDataFromJSON(json: any): RtnDataCustomData {

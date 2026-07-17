@@ -243,7 +243,41 @@ export interface TransactionListItem {
  * Check if a given object implements the TransactionListItem interface.
  */
 export function instanceOfTransactionListItem(value: object): value is TransactionListItem {
-    return true;
+    // RAP fork (pipeline/typescript/config.yaml): every property is optional, so a purely
+    // structural check would accept ANY object and break oneOf discrimination — match only
+    // when at least one declared property is present (names inspected, never values).
+    return ('transactionId' in value && value['transactionId'] !== undefined)
+        || ('transactionDate' in value && value['transactionDate'] !== undefined)
+        || ('transactionStatus' in value && value['transactionStatus'] !== undefined)
+        || ('responseCode' in value && value['responseCode'] !== undefined)
+        || ('message' in value && value['message'] !== undefined)
+        || ('transactionType' in value && value['transactionType'] !== undefined)
+        || ('retryDate' in value && value['retryDate'] !== undefined)
+        || ('amount' in value && value['amount'] !== undefined)
+        || ('initialMerchantTransactionId' in value && value['initialMerchantTransactionId'] !== undefined)
+        || ('storageState' in value && value['storageState'] !== undefined)
+        || ('completionStatus' in value && value['completionStatus'] !== undefined)
+        || ('gatewaySpecificResponseFields' in value && value['gatewaySpecificResponseFields'] !== undefined)
+        || ('gatewaySpecificFields' in value && value['gatewaySpecificFields'] !== undefined)
+        || ('acquirerAuthCode' in value && value['acquirerAuthCode'] !== undefined)
+        || ('gatewayTransactionId' in value && value['gatewayTransactionId'] !== undefined)
+        || ('gatewayPaymentMethodId' in value && value['gatewayPaymentMethodId'] !== undefined)
+        || ('engagedRecoveryState' in value && value['engagedRecoveryState'] !== undefined)
+        || ('currencyCode' in value && value['currencyCode'] !== undefined)
+        || ('merchantTransactionId' in value && value['merchantTransactionId'] !== undefined)
+        || ('merchantAccountReferenceId' in value && value['merchantAccountReferenceId'] !== undefined)
+        || ('customerId' in value && value['customerId'] !== undefined)
+        || ('orderId' in value && value['orderId'] !== undefined)
+        || ('statementDescriptor' in value && value['statementDescriptor'] !== undefined)
+        || ('paymentMethodId' in value && value['paymentMethodId'] !== undefined)
+        || ('paymentMethodStorageState' in value && value['paymentMethodStorageState'] !== undefined)
+        || ('paymentMethodType' in value && value['paymentMethodType'] !== undefined)
+        || ('paymentMethodMerchantAccountReferenceId' in value && value['paymentMethodMerchantAccountReferenceId'] !== undefined)
+        || ('errorCode' in value && value['errorCode'] !== undefined)
+        || ('errorDetail' in value && value['errorDetail'] !== undefined)
+        || ('avsCode' in value && value['avsCode'] !== undefined)
+        || ('gateway' in value && value['gateway'] !== undefined)
+        || ('paymentMethod' in value && value['paymentMethod'] !== undefined);
 }
 
 export function TransactionListItemFromJSON(json: any): TransactionListItem {

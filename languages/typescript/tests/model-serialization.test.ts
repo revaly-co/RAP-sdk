@@ -7,7 +7,11 @@ import {
     StoredCredentialReasonTypeFromJSON,
     TransactionResponseFromJSON,
 } from '../runtime/src/index';
-import type { PendingTransactionResponse, TransactionGroupResponse } from '../runtime/src/index';
+import type {
+    PendingTransactionResponse,
+    TransactionGroupResponse,
+    TransactionResponse,
+} from '../runtime/src/index';
 import { syntheticCardPayment } from './support/TestClients';
 
 /**
@@ -27,24 +31,29 @@ const terminalBody = {
     amount: 1999,
 };
 
-describe('KNOWN CORE LIMITATION — union wrappers cannot discriminate (pinned until the template fork)', () => {
-    // The union tries PendingTransactionResponse (properly guarded by `state`), then
-    // TransactionGroupResponse — whose all-optional instanceOf matches ANY object — so
-    // a terminal TransactionResponse body binds to the group mapper and loses every
-    // field. The runtime reconciler therefore reads RAW bodies (repo rule 5). A
-    // template fork (java-precedent, PR #18 pattern) will fix the wrapper; when it
-    // lands, THESE ASSERTIONS FLIP.
-    test('by-merchant-id wrapper: a terminal body is silently emptied by the group branch', () => {
-        const bound = GetTransactionByMerchantTransactionId200ResponseFromJSON(terminalBody);
+describe('union wrapper discrimination (fixed by the modelGeneric template fork)', () => {
+    // Stock typescript-fetch emitted `return true` instanceOf checks for all-optional
+    // models, so the group branch matched ANY object and terminal bodies came back
+    // emptied. The fork (pipeline/typescript/config.yaml) requires at least one
+    // declared property, so each branch now binds only its own shape. The runtime
+    // reconciler still reads RAW bodies by design (repo rule 5) — these probes pin
+    // the core's behaviour for direct consumers of the typed lookups.
+    test('by-merchant-id wrapper: a terminal body binds TransactionResponse with data intact', () => {
+        const bound = GetTransactionByMerchantTransactionId200ResponseFromJSON(
+            terminalBody,
+        ) as TransactionResponse;
 
-        expect(bound).toEqual({ transaction: undefined, transactions: undefined });
-        expect((bound as { transactionId?: string }).transactionId).toBeUndefined();
+        expect(bound.transactionId).toBe('txn-synthetic-1');
+        expect(bound.transactionStatus).toBe(1);
+        expect(bound.merchantTransactionId).toBe('mtx-synthetic-1');
+        expect((bound as { transaction?: unknown }).transaction).toBeUndefined();
     });
 
-    test('by-id wrapper: same silent data loss', () => {
-        const bound = GetTransactionById200ResponseFromJSON(terminalBody);
+    test('by-id wrapper: same correct binding', () => {
+        const bound = GetTransactionById200ResponseFromJSON(terminalBody) as TransactionResponse;
 
-        expect(bound).toEqual({ transaction: undefined, transactions: undefined });
+        expect(bound.transactionId).toBe('txn-synthetic-1');
+        expect(bound.transactionStatus).toBe(1);
     });
 
     test('the pending branch IS discriminated correctly (required `state` guard)', () => {

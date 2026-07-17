@@ -192,11 +192,3 @@ transport, headers and classification:
 const methods = await client.paymentMethods.listPaymentMethods({ /* ... */ });
 const byId = await client.transactions.getTransactionByIdRaw({ transactionId: 'txn-1' });
 ```
-
-> **Known core limitation (fix in flight):** the generated union return types of the
-> two transaction lookups (`getTransactionById`, `getTransactionByMerchantTransactionId`)
-> cannot discriminate their branches — a terminal transaction body read through the
-> **typed** (non-`Raw`) methods binds to the group envelope and comes back empty. Until
-> the wrapper template fork lands, use the `*Raw` variants and read `raw.json()`, or use
-> `client.reconcile(...)`, which reads raw bodies by design (and is the safety-correct
-> path for OutcomeUnknown anyway). Pinned in `tests/model-serialization.test.ts`.
