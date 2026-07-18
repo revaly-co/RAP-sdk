@@ -23,11 +23,14 @@
 | 1 | **validate** | Re-lint + re-bundle the consumed spec artifact (defense in depth on top of platform gates); verify artifact checksum + provenance metadata | Bad/tampered input — nothing downstream runs |
 | 2 | **generate** | Generate all six language cores from the artifact (generator pinned per ADR-SDK-023 — `pipeline/generator-pin.yaml`); regeneration-diff check proves no hand edits | Generator/toolchain drift |
 | 3 | **build + test** | Compile all six; unit tests (runtime + core); ecosystem linters (DX contract §a); log-capture scrub tests (ADR-SDK-020) | Any language red blocks the release for all |
-| 4 | **contract smoke** | Live smoke of all six SDKs against **Sandbox** (Enablement-issued CI key from Key Vault, ADR-SDK-014): charge, each error class where triggerable, reconcile both verdicts | Release blocked — the taxonomy is unproven against reality |
+| 4 | **contract smoke** | Live smoke of all six SDKs against the stage-4 environment (ADR-SDK-024: Backbone staging via the environment-scoped `staging` secrets interim; merchant sandbox key-scope with the Enablement-issued Key Vault key at GA, ADR-SDK-014): charge approved + declined, validation/auth rejections, the injected `503+not_processed` fast-failover row, reconcile both verdicts | Release blocked — the taxonomy is unproven against reality |
 | 5 | **package** | Version stamp (semver, §4), license + SCM metadata (Apache-2.0, ADR-SDK-019), SBOM per package, release notes with spec SHA | Metadata incomplete (Maven hard-fails without license/SCM) |
 | 6 | **publish** | Signed publish to npm · PyPI · NuGet · Packagist · Maven Central · pkg.go.dev, from the protected environment only (ADR-SDK-013) | — |
 
-Stages 1–4 run on every PR; 5–6 run only from a release tag on `main` (machine gates below).
+Stages 1–3 run on every PR. Stage 4 runs on release tags (**blocking**: any language red
+blocks the release for all six), on the nightly schedule (advisory), and on manual dispatch —
+never on plain PRs (network and secrets stay out of the PR path; ADR-SDK-024). Stages 5–6 run
+only from a release tag on `main` (machine gates below).
 
 ## 3. Publish mechanics (ADR-SDK-013 machine gates)
 
@@ -78,6 +81,7 @@ RFC:
 | --- | --- | --- |
 | Gated spec artifact | Platform repo publication (platform ADR 016) | Pinned by committed reference; bumped by PR |
 | Generator toolchain | ADR-SDK-023 pin (`pipeline/generator-pin.yaml`) | Digest-pinned Docker image — checksum-pinned like any release tooling |
-| Sandbox CI key | Key Vault | Enablement-issued (ADR-SDK-014); never logged |
+| Stage-4 smoke secrets (interim) | GitHub environment **`staging`**: `RAP_SMOKE_BASE_URL`, `RAP_SMOKE_API_KEY`, `RAP_SMOKE_GATEWAY_ROUTING_ID` | ADR-SDK-024 implementation record. Keys borrowed from the platform's staging E2E pool (scope lives on the key — prefer sandbox-scoped for GA parity); never logged. `RAP_SMOKE_FAULT_INJECT=pre-dispatch` is plain workflow env (staging-only fault seam), removed at the GA retarget |
+| Sandbox CI key (GA) | Key Vault | Enablement-issued (ADR-SDK-014); replaces the interim staging secrets at the ADR-SDK-024 GA retarget; never logged |
 | GPG keys (Maven) | Key Vault | Environment-scoped job access only |
 | Registry identities | OIDC trusted publishing | No long-lived registry tokens anywhere |
