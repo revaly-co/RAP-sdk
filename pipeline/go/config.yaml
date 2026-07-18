@@ -1,15 +1,33 @@
 # Stage-2 generation config — Go core (normative flag set: ADR-SDK-023 table;
 # evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
 # digest-pinned generator container; spec/output/template paths are supplied by the script.
-# NOTE: the bake-off's "stdlib-only" observation does not hold on spec v2.1.3 — the two
-# anyOf response wrappers (GetTransactionBy*200Response) import gopkg.in/validator.v2,
-# pinned in the hand-written languages/go/go.mod + go.sum.
+# NOTE: the bake-off's "stdlib-only" observation does not hold on this spec — the two
+# oneOf response wrappers (GetTransactionBy*200Response) import gopkg.in/validator.v2,
+# pinned in the hand-written languages/go/go.mod + go.sum. Since the 2026-07-18
+# model_oneof fork (below) the import is generator-forced but never invoked: the fork
+# emits a `var _ = validator.Validate` reference solely to keep the files compiling.
 # Maintained template surface (re-diff against the embedded originals on any generator
-# upgrade — upgrades are ADR-SDK-023 revisions): templates/partial_header.mustache
-# (generated-code banner) and templates/README.mustache — forked 2026-07-15 solely to fix
-# the README auth example: the stock example sets APIKey{Key: ...} with no Prefix, which
-# sends the bare key; the RAP scheme requires `Authorization: ApiKey <key>`, so the
-# example now sets APIKey{Key: ..., Prefix: "ApiKey"}.
+# upgrade — upgrades are ADR-SDK-023 revisions):
+#   * templates/partial_header.mustache (generated-code banner);
+#   * templates/README.mustache — forked 2026-07-15 solely to fix the README auth
+#     example: the stock example sets APIKey{Key: ...} with no Prefix, which sends the
+#     bare key; the RAP scheme requires `Authorization: ApiKey <key>`, so the example
+#     now sets APIKey{Key: ..., Prefix: "ApiKey"};
+#   * templates/model_oneof.mustache — forked 2026-07-18 (sixth materialization of the
+#     cross-language oneOf-wrapper defect, docs/README.md § taxonomy): the stock
+#     per-branch strict-decode + validator.v2 value-validation eliminated valid branches
+#     unconditionally on this spec (regexp validators on Nullable* struct FIELDS are
+#     "unsupported type"; {m,n} regexp quantifiers split on validator.v2's tag comma),
+#     so BOTH wrappers returned "data failed to match schemas" for every terminal
+#     TransactionResponse / TransactionGroupResponse payload — the reconcile lookup and
+#     GET /transactions/{id} were unparseable. The fork discriminates by field NAMES
+#     only, never values (failover-contract §2): strict unknown-fields pass first
+#     (stock semantics minus validator), then — only on zero strict matches — a lenient
+#     recognized-field-coverage pass (required keys = json tags without omitempty; the
+#     uniquely highest coverage wins; bind from the payload filtered to known keys,
+#     lenient so nested additive fields survive). Additive platform fields from minor
+#     releases therefore keep binding; ambiguous payloads still return the stock errors
+#     verbatim. Pinned by languages/go/tests/oneof_discrimination_test.go.
 generatorName: go
 
 additionalProperties:

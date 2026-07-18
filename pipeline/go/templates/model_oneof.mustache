@@ -1,0 +1,284 @@
+// RAP fork imports (fork note in UnmarshalJSON below; record: pipeline/go/config.yaml).
+import (
+	"reflect"
+	"strings"
+)
+
+// The generator force-imports gopkg.in/validator.v2 into every oneOf model. The RAP
+// fork discriminates by field names only — never values (failover-contract §2 forbids
+// content heuristics) — so the import is referenced here solely to keep the file
+// compiling; it is never invoked.
+var _ = validator.Validate
+
+// {{classname}} - {{{description}}}{{^description}}struct for {{{classname}}}{{/description}}
+type {{classname}} struct {
+	{{#oneOf}}
+	{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} *{{{.}}}
+	{{/oneOf}}
+}
+
+{{#oneOf}}
+// {{{.}}}As{{classname}} is a convenience function that returns {{{.}}} wrapped in {{classname}}
+func {{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}As{{classname}}(v *{{{.}}}) {{classname}} {
+	return {{classname}}{
+		{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}: v,
+	}
+}
+
+{{/oneOf}}
+
+// Unmarshal JSON data into one of the pointers in the struct
+//
+// RAP fork (ADR-SDK-023; recorded in pipeline/go/config.yaml): two-pass,
+// names-only discrimination replacing the stock strict-decode + validator.v2
+// value-validation pass. On this spec the stock pass eliminated valid branches
+// unconditionally — gopkg.in/validator.v2 reports "unsupported type" for regexp
+// tags on Nullable* struct fields and splits {m,n} regexp quantifiers on the
+// tag comma ("unknown tag") — so every terminal-transaction payload matched
+// zero schemas. The fork discriminates by field NAMES only, never values
+// (failover-contract §2 prohibits value/content heuristics):
+//
+//   Pass 1 (strict, stock semantics minus validator): DisallowUnknownFields
+//   decode per branch, empty-struct binds discarded; exactly one match wins,
+//   more than one is the stock ambiguity error.
+//
+//   Pass 2 (lenient, only when pass 1 matched nothing — additive platform
+//   fields from minor releases land here): per branch, all required top-level
+//   keys (json tags without omitempty) must be present, then the branch with
+//   the uniquely highest count of recognized top-level keys wins and is bound
+//   from the payload filtered to its known keys (lenient decode, so nested
+//   additive fields bind too). No unique winner keeps the stock error.
+func (dst *{{classname}}) UnmarshalJSON(data []byte) error {
+	var err error
+	{{#isNullable}}
+	// this object is nullable so check if the payload is null or empty string
+	if string(data) == "" || string(data) == "{}" {
+		return nil
+	}
+
+	{{/isNullable}}
+	{{#useOneOfDiscriminatorLookup}}
+	{{#discriminator}}
+	{{#mappedModels}}
+	{{#-first}}
+	// use discriminator value to speed up the lookup
+	var jsonDict map[string]interface{}
+	err = newStrictDecoder(data).Decode(&jsonDict)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal JSON into map for the discriminator lookup")
+	}
+
+	{{/-first}}
+	// check if the discriminator value is '{{{mappingName}}}'
+	if jsonDict["{{{propertyBaseName}}}"] == "{{{mappingName}}}" {
+		// try to unmarshal JSON data into {{{modelName}}}
+		err = json.Unmarshal(data, &dst.{{{modelName}}})
+		if err == nil {
+			return nil // data stored in dst.{{{modelName}}}, return on the first match
+		} else {
+			dst.{{{modelName}}} = nil
+			return fmt.Errorf("failed to unmarshal {{classname}} as {{{modelName}}}: %s", err.Error())
+		}
+	}
+
+	{{/mappedModels}}
+	return nil
+	{{/discriminator}}
+	{{^discriminator}}
+	match := 0
+	{{#oneOf}}
+	// try to unmarshal data into {{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}
+	err = json.Unmarshal(data, &dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}})
+	if err == nil {
+		json{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}, _ := json.Marshal(dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}})
+		if string(json{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}) == "{}" { // empty struct
+			dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+		} else {
+			match++
+		}
+	} else {
+		dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+	}
+
+	{{/oneOf}}
+	if match > 1 { // more than 1 match
+		// reset to nil
+		{{#oneOf}}
+		dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+		{{/oneOf}}
+
+		return fmt.Errorf("data matches more than one schema in oneOf({{classname}})")
+	} else if match == 1 {
+		return nil // exactly one match
+	} else { // no match
+		return fmt.Errorf("data failed to match schemas in oneOf({{classname}})")
+	}
+	{{/discriminator}}
+	{{/useOneOfDiscriminatorLookup}}
+	{{^useOneOfDiscriminatorLookup}}
+	// Pass 1 — strict: unknown top-level fields disqualify a branch; the models'
+	// own UnmarshalJSON methods additionally enforce their required properties.
+	match := 0
+	{{#oneOf}}
+	// try to unmarshal data into {{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}
+	err = newStrictDecoder(data).Decode(&dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}})
+	if err == nil {
+		json{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}, _ := json.Marshal(dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}})
+		if string(json{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}) == "{}" { // empty struct
+			dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+		} else {
+			match++
+		}
+	} else {
+		dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+	}
+
+	{{/oneOf}}
+	if match > 1 { // more than 1 match
+		// reset to nil
+		{{#oneOf}}
+		dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+		{{/oneOf}}
+
+		return fmt.Errorf("data matches more than one schema in oneOf({{classname}})")
+	} else if match == 1 {
+		return nil // exactly one match
+	}
+
+	// Pass 2 — lenient, names-only coverage (zero strict matches).
+	var payload map[string]json.RawMessage
+	if err = json.Unmarshal(data, &payload); err != nil || payload == nil {
+		return fmt.Errorf("data failed to match schemas in oneOf({{classname}})")
+	}
+	// knownAndRequiredKeys reflects a branch struct's exported top-level json tags;
+	// required mirrors the generated required-property sets (tags without omitempty).
+	knownAndRequiredKeys := func(t reflect.Type) (map[string]bool, []string) {
+		known := make(map[string]bool, t.NumField())
+		var required []string
+		for i := 0; i < t.NumField(); i++ {
+			tag := t.Field(i).Tag.Get("json")
+			if tag == "" || tag == "-" {
+				continue
+			}
+			parts := strings.Split(tag, ",")
+			if parts[0] == "" {
+				continue
+			}
+			known[parts[0]] = true
+			optional := false
+			for _, p := range parts[1:] {
+				if p == "omitempty" {
+					optional = true
+				}
+			}
+			if !optional {
+				required = append(required, parts[0])
+			}
+		}
+		return known, required
+	}
+	// coverageOf: a branch is a candidate only if every required key is present;
+	// its coverage is the number of recognized top-level payload keys (≥ 1).
+	coverageOf := func(t reflect.Type) (int, bool) {
+		known, required := knownAndRequiredKeys(t)
+		for _, r := range required {
+			if _, present := payload[r]; !present {
+				return 0, false
+			}
+		}
+		cov := 0
+		for k := range payload {
+			if known[k] {
+				cov++
+			}
+		}
+		return cov, cov > 0
+	}
+	branchTypes := []reflect.Type{
+		{{#oneOf}}
+		reflect.TypeOf({{{.}}}{}),
+		{{/oneOf}}
+	}
+	// bind decodes the payload filtered to the branch's known keys — leniently,
+	// so additive fields nested inside known keys cannot disqualify the branch.
+	branchBinders := []func([]byte) error{
+		{{#oneOf}}
+		func(filtered []byte) error {
+			if bindErr := json.Unmarshal(filtered, &dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}); bindErr != nil {
+				dst.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} = nil
+				return bindErr
+			}
+			return nil
+		},
+		{{/oneOf}}
+	}
+	bestIdx, bestCov, bestCount := -1, 0, 0
+	for i, t := range branchTypes {
+		cov, candidate := coverageOf(t)
+		if !candidate {
+			continue
+		}
+		if cov > bestCov {
+			bestIdx, bestCov, bestCount = i, cov, 1
+		} else if cov == bestCov {
+			bestCount++
+		}
+	}
+	if bestIdx >= 0 && bestCount == 1 {
+		known, _ := knownAndRequiredKeys(branchTypes[bestIdx])
+		filtered := make(map[string]json.RawMessage, len(payload))
+		for k, v := range payload {
+			if known[k] {
+				filtered[k] = v
+			}
+		}
+		filteredJSON, marshalErr := json.Marshal(filtered)
+		if marshalErr == nil && branchBinders[bestIdx](filteredJSON) == nil {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("data failed to match schemas in oneOf({{classname}})")
+	{{/useOneOfDiscriminatorLookup}}
+}
+
+// Marshal data from the first non-nil pointers in the struct to JSON
+func (src {{classname}}) MarshalJSON() ([]byte, error) {
+{{#oneOf}}
+	if src.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} != nil {
+		return json.Marshal(&src.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}})
+	}
+
+{{/oneOf}}
+	return nil, nil // no data in oneOf schemas
+}
+
+// Get the actual instance
+func (obj *{{classname}}) GetActualInstance() (interface{}) {
+	if obj == nil {
+		return nil
+	}
+{{#oneOf}}
+	if obj.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} != nil {
+		return obj.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}
+	}
+
+{{/oneOf}}
+	// all schemas are nil
+	return nil
+}
+
+// Get the actual instance value
+func (obj {{classname}}) GetActualInstanceValue() (interface{}) {
+{{#oneOf}}
+	if obj.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}} != nil {
+		return *obj.{{#lambda.type-to-name}}{{{.}}}{{/lambda.type-to-name}}
+	}
+
+{{/oneOf}}
+	// all schemas are nil
+	return nil
+}
+
+{{>nullable_model}}
+

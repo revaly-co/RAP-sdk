@@ -20,6 +20,18 @@ import (
 	"gopkg.in/validator.v2"
 )
 
+// RAP fork imports (fork note in UnmarshalJSON below; record: pipeline/go/config.yaml).
+import (
+	"reflect"
+	"strings"
+)
+
+// The generator force-imports gopkg.in/validator.v2 into every oneOf model. The RAP
+// fork discriminates by field names only — never values (failover-contract §2 forbids
+// content heuristics) — so the import is referenced here solely to keep the file
+// compiling; it is never invoked.
+var _ = validator.Validate
+
 // GetTransactionByMerchantTransactionId200Response - struct for GetTransactionByMerchantTransactionId200Response
 type GetTransactionByMerchantTransactionId200Response struct {
 	PendingTransactionResponse *PendingTransactionResponse
@@ -50,8 +62,30 @@ func TransactionResponseAsGetTransactionByMerchantTransactionId200Response(v *Tr
 
 
 // Unmarshal JSON data into one of the pointers in the struct
+//
+// RAP fork (ADR-SDK-023; recorded in pipeline/go/config.yaml): two-pass,
+// names-only discrimination replacing the stock strict-decode + validator.v2
+// value-validation pass. On this spec the stock pass eliminated valid branches
+// unconditionally — gopkg.in/validator.v2 reports "unsupported type" for regexp
+// tags on Nullable* struct fields and splits {m,n} regexp quantifiers on the
+// tag comma ("unknown tag") — so every terminal-transaction payload matched
+// zero schemas. The fork discriminates by field NAMES only, never values
+// (failover-contract §2 prohibits value/content heuristics):
+//
+//   Pass 1 (strict, stock semantics minus validator): DisallowUnknownFields
+//   decode per branch, empty-struct binds discarded; exactly one match wins,
+//   more than one is the stock ambiguity error.
+//
+//   Pass 2 (lenient, only when pass 1 matched nothing — additive platform
+//   fields from minor releases land here): per branch, all required top-level
+//   keys (json tags without omitempty) must be present, then the branch with
+//   the uniquely highest count of recognized top-level keys wins and is bound
+//   from the payload filtered to its known keys (lenient decode, so nested
+//   additive fields bind too). No unique winner keeps the stock error.
 func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data []byte) error {
 	var err error
+	// Pass 1 — strict: unknown top-level fields disqualify a branch; the models'
+	// own UnmarshalJSON methods additionally enforce their required properties.
 	match := 0
 	// try to unmarshal data into PendingTransactionResponse
 	err = newStrictDecoder(data).Decode(&dst.PendingTransactionResponse)
@@ -60,11 +94,7 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 		if string(jsonPendingTransactionResponse) == "{}" { // empty struct
 			dst.PendingTransactionResponse = nil
 		} else {
-			if err = validator.Validate(dst.PendingTransactionResponse); err != nil {
-				dst.PendingTransactionResponse = nil
-			} else {
-				match++
-			}
+			match++
 		}
 	} else {
 		dst.PendingTransactionResponse = nil
@@ -77,11 +107,7 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 		if string(jsonTransactionGroupResponse) == "{}" { // empty struct
 			dst.TransactionGroupResponse = nil
 		} else {
-			if err = validator.Validate(dst.TransactionGroupResponse); err != nil {
-				dst.TransactionGroupResponse = nil
-			} else {
-				match++
-			}
+			match++
 		}
 	} else {
 		dst.TransactionGroupResponse = nil
@@ -94,11 +120,7 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 		if string(jsonTransactionResponse) == "{}" { // empty struct
 			dst.TransactionResponse = nil
 		} else {
-			if err = validator.Validate(dst.TransactionResponse); err != nil {
-				dst.TransactionResponse = nil
-			} else {
-				match++
-			}
+			match++
 		}
 	} else {
 		dst.TransactionResponse = nil
@@ -113,9 +135,114 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 		return fmt.Errorf("data matches more than one schema in oneOf(GetTransactionByMerchantTransactionId200Response)")
 	} else if match == 1 {
 		return nil // exactly one match
-	} else { // no match
+	}
+
+	// Pass 2 — lenient, names-only coverage (zero strict matches).
+	var payload map[string]json.RawMessage
+	if err = json.Unmarshal(data, &payload); err != nil || payload == nil {
 		return fmt.Errorf("data failed to match schemas in oneOf(GetTransactionByMerchantTransactionId200Response)")
 	}
+	// knownAndRequiredKeys reflects a branch struct's exported top-level json tags;
+	// required mirrors the generated required-property sets (tags without omitempty).
+	knownAndRequiredKeys := func(t reflect.Type) (map[string]bool, []string) {
+		known := make(map[string]bool, t.NumField())
+		var required []string
+		for i := 0; i < t.NumField(); i++ {
+			tag := t.Field(i).Tag.Get("json")
+			if tag == "" || tag == "-" {
+				continue
+			}
+			parts := strings.Split(tag, ",")
+			if parts[0] == "" {
+				continue
+			}
+			known[parts[0]] = true
+			optional := false
+			for _, p := range parts[1:] {
+				if p == "omitempty" {
+					optional = true
+				}
+			}
+			if !optional {
+				required = append(required, parts[0])
+			}
+		}
+		return known, required
+	}
+	// coverageOf: a branch is a candidate only if every required key is present;
+	// its coverage is the number of recognized top-level payload keys (≥ 1).
+	coverageOf := func(t reflect.Type) (int, bool) {
+		known, required := knownAndRequiredKeys(t)
+		for _, r := range required {
+			if _, present := payload[r]; !present {
+				return 0, false
+			}
+		}
+		cov := 0
+		for k := range payload {
+			if known[k] {
+				cov++
+			}
+		}
+		return cov, cov > 0
+	}
+	branchTypes := []reflect.Type{
+		reflect.TypeOf(PendingTransactionResponse{}),
+		reflect.TypeOf(TransactionGroupResponse{}),
+		reflect.TypeOf(TransactionResponse{}),
+	}
+	// bind decodes the payload filtered to the branch's known keys — leniently,
+	// so additive fields nested inside known keys cannot disqualify the branch.
+	branchBinders := []func([]byte) error{
+		func(filtered []byte) error {
+			if bindErr := json.Unmarshal(filtered, &dst.PendingTransactionResponse); bindErr != nil {
+				dst.PendingTransactionResponse = nil
+				return bindErr
+			}
+			return nil
+		},
+		func(filtered []byte) error {
+			if bindErr := json.Unmarshal(filtered, &dst.TransactionGroupResponse); bindErr != nil {
+				dst.TransactionGroupResponse = nil
+				return bindErr
+			}
+			return nil
+		},
+		func(filtered []byte) error {
+			if bindErr := json.Unmarshal(filtered, &dst.TransactionResponse); bindErr != nil {
+				dst.TransactionResponse = nil
+				return bindErr
+			}
+			return nil
+		},
+	}
+	bestIdx, bestCov, bestCount := -1, 0, 0
+	for i, t := range branchTypes {
+		cov, candidate := coverageOf(t)
+		if !candidate {
+			continue
+		}
+		if cov > bestCov {
+			bestIdx, bestCov, bestCount = i, cov, 1
+		} else if cov == bestCov {
+			bestCount++
+		}
+	}
+	if bestIdx >= 0 && bestCount == 1 {
+		known, _ := knownAndRequiredKeys(branchTypes[bestIdx])
+		filtered := make(map[string]json.RawMessage, len(payload))
+		for k, v := range payload {
+			if known[k] {
+				filtered[k] = v
+			}
+		}
+		filteredJSON, marshalErr := json.Marshal(filtered)
+		if marshalErr == nil && branchBinders[bestIdx](filteredJSON) == nil {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("data failed to match schemas in oneOf(GetTransactionByMerchantTransactionId200Response)")
 }
 
 // Marshal data from the first non-nil pointers in the struct to JSON

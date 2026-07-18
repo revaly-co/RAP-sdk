@@ -474,3 +474,7 @@ jobs:
       - name: Vet Module (all packages)
         working-directory: languages/go
         run: go vet ./...
+
+      - name: Module Tests (go test)
+        working-directory: languages/go
+        run: go test ./...
