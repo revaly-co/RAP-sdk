@@ -22,6 +22,16 @@
 #     the stock example leaves the key prefix-less with a commented-out 'Bearer' hint,
 #     but the RAP scheme requires `Authorization: ApiKey <key>` — the example now sets
 #     api_key_prefix['ApiKeyAuth'] = 'ApiKey' unconditionally.
+#   templates/model_oneof.mustache     — forked 2026-07-17 (java PR #18 / typescript
+#     PR #25 pattern): the stock oneOf wrapper demands exactly one lenient match in
+#     from_json AND in the actual_instance validator, but the all-optional branch
+#     models lenient-match every body, so every valid 200 response raised
+#     "Multiple matches found". The fork adds a strict top-level-key pass plus a
+#     recognized-field coverage tiebreak (field names only, never values) shared by
+#     both sites, and moves the validator to mode='before' so raw dicts are
+#     discriminated instead of silently union-coerced into the first all-optional
+#     branch; genuinely ambiguous payloads still raise the stock error. Raise
+#     upstream at the next generator-pin revision (ADR-SDK-023).
 generatorName: python # default urllib3 library
 
 additionalProperties:

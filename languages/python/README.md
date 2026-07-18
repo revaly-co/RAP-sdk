@@ -162,21 +162,6 @@ Synthetic data only — no real PAN/CVV/PII ever appears in the mock.
 - Every response and every typed error carries the `X-Correlation-ID`; quote it in
   support tickets to join RAP-core telemetry directly.
 
-## Known core limitation (tracked)
-
-The generated union wrappers for the transaction lookups
-(`GetTransactionById200Response`, `GetTransactionByMerchantTransactionId200Response`)
-currently raise `ValueError("Multiple matches found...")` for **every** valid response
-shape — the branch models are all-optional, so every body matches more than one oneOf
-branch. **The runtime is unaffected**: `RapClient.reconcile` and the typed failure
-paths read raw bodies by design (the safety path never depends on generated
-discrimination). If you call
-`client.transactions.get_transaction_by_id(...)` / `..._by_merchant_transaction_id(...)`
-directly, use the `*_without_preload_content` variants and read the raw body, or bind
-`TransactionResponse` yourself. A generator template fork fixing the wrappers is the
-tracked follow-up (java/typescript precedent); the behavior is pinned in
-`tests/test_model_serialization.py` and those probes flip when the fork lands.
-
 ## What this SDK never does
 
 No hidden retries, no resubmission, no circuit breaker, no cross-request state, no

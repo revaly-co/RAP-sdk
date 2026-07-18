@@ -61,8 +61,8 @@ def test_per_call_api_version_wins_over_config():
     mock = RapMockTransport()
     mock.reconcile().returns_approved()
     client = make_client(mock)
-    # The without_preload_content variant dodges the (defective) oneOf wrapper
-    # deserialize — this test only observes the outbound header.
+    # The without_preload_content variant skips response deserialization —
+    # this test only observes the outbound header.
     client.transactions.get_transaction_by_merchant_transaction_id_without_preload_content(
         "mtx_synthetic_0001", x_api_version="2.0"
     )
