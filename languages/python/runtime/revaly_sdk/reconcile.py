@@ -4,9 +4,8 @@ GET-only, side-effect-free, caller-bounded — the only loop the runtime owns
 (ADR-SDK-004). Verdicts are read from the RAW response body, never the core's
 typed union wrapper (repo rule 5): reconciliation is the safety path, so it must
 not depend on generated discrimination logic — server-newer-than-spec shapes
-still count as sightings here. (The generated wrapper is unusable regardless: it
-raises "Multiple matches found" for every valid body shape — pinned in tests
-until the template fork lands.)
+still count as sightings here. (The wrapper discrimination itself works since
+the model_oneof template fork, but the safety path stays raw BY DESIGN.)
 
 All time values are seconds (Python convention), as floats.
 """

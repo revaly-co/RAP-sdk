@@ -1,11 +1,12 @@
 """Empirical pins on generated-core behavior the runtime depends on.
 
-KNOWN CORE LIMITATION (oneOf wrappers): the generated union wrappers raise
-``ValueError("Multiple matches found...")`` for EVERY valid response shape —
-the branch models are all-optional, so every body matches more than one branch.
-The runtime reads raw bodies everywhere (repo rule 5) and is unaffected; these
-probes pin the defect until the python oneOf template fork lands (java PR #18 /
-typescript PR #25 pattern), at which point they FLIP to assert correct binding.
+oneOf wrappers: discrimination comes from the forked
+``pipeline/python/templates/model_oneof.mustache`` (java PR #18 / typescript
+PR #25 pattern) — a strict top-level-key pass binds spec-aligned bodies
+uniquely, a recognized-field coverage tiebreak keeps additive server-side
+schema evolution binding, and genuinely ambiguous payloads still raise the
+stock error. The runtime keeps reading raw bodies everywhere (repo rule 5) —
+the fork serves merchants calling the generated lookups directly.
 """
 
 from __future__ import annotations
@@ -23,7 +24,9 @@ from revaly_sdk_core.models.get_transaction_by_merchant_transaction_id200_respon
     GetTransactionByMerchantTransactionId200Response,
 )
 from revaly_sdk_core.models.payment_request import PaymentRequest
+from revaly_sdk_core.models.pending_transaction_response import PendingTransactionResponse
 from revaly_sdk_core.models.stored_credential import StoredCredential
+from revaly_sdk_core.models.transaction_group_response import TransactionGroupResponse
 from revaly_sdk_core.models.transaction_response import TransactionResponse
 from revaly_sdk.testing import synthetic_data
 
@@ -32,25 +35,86 @@ GROUP_BODY = synthetic_data.transaction_group()
 PENDING_BODY = synthetic_data.pending()
 
 
-# ---- KNOWN CORE LIMITATION: oneOf wrapper discrimination ---------------------
+# ---- oneOf wrapper discrimination (forked model_oneof.mustache) --------------
 
 
-@pytest.mark.parametrize("body", [TERMINAL_BODY, GROUP_BODY], ids=["terminal", "group"])
-def test_by_id_wrapper_throws_multiple_matches_on_valid_shapes(body):
-    with pytest.raises(ValueError, match="Multiple matches found"):
-        GetTransactionById200Response.from_json(body)
+def test_by_id_wrapper_binds_terminal():
+    wrapper = GetTransactionById200Response.from_json(TERMINAL_BODY)
+    assert isinstance(wrapper.actual_instance, TransactionResponse)
+    assert wrapper.actual_instance.transaction_status == 1
+
+
+def test_by_id_wrapper_binds_group():
+    wrapper = GetTransactionById200Response.from_json(GROUP_BODY)
+    assert isinstance(wrapper.actual_instance, TransactionGroupResponse)
+    assert wrapper.actual_instance.transactions[0].transaction_status == 1
+
+
+def test_by_merchant_wrapper_binds_terminal():
+    wrapper = GetTransactionByMerchantTransactionId200Response.from_json(TERMINAL_BODY)
+    assert isinstance(wrapper.actual_instance, TransactionResponse)
+
+
+def test_by_merchant_wrapper_binds_group():
+    wrapper = GetTransactionByMerchantTransactionId200Response.from_json(GROUP_BODY)
+    assert isinstance(wrapper.actual_instance, TransactionGroupResponse)
+
+
+def test_by_merchant_wrapper_binds_pending():
+    wrapper = GetTransactionByMerchantTransactionId200Response.from_json(PENDING_BODY)
+    assert isinstance(wrapper.actual_instance, PendingTransactionResponse)
+    assert wrapper.actual_instance.state == "pending"
 
 
 @pytest.mark.parametrize(
-    "body", [TERMINAL_BODY, GROUP_BODY, PENDING_BODY], ids=["terminal", "group", "pending"]
+    "wrapper_cls",
+    [GetTransactionById200Response, GetTransactionByMerchantTransactionId200Response],
+    ids=["by_id", "by_merchant"],
 )
-def test_by_merchant_wrapper_throws_multiple_matches_on_valid_shapes(body):
+def test_wrappers_bind_additive_terminal_via_coverage_tiebreak(wrapper_cls):
+    # A server newer than the pinned spec (additive top-level field) fails the
+    # strict pass for every branch; the recognized-field coverage tiebreak keeps
+    # the terminal shape binding (java fork precedent).
+    body = json.dumps(
+        {**synthetic_data.transaction_dict(1), "settlementBatchId": "batch_synthetic_01"}
+    )
+    wrapper = wrapper_cls.from_json(body)
+    assert isinstance(wrapper.actual_instance, TransactionResponse)
+
+
+@pytest.mark.parametrize(
+    "wrapper_cls",
+    [GetTransactionById200Response, GetTransactionByMerchantTransactionId200Response],
+    ids=["by_id", "by_merchant"],
+)
+def test_wrappers_still_raise_on_genuinely_ambiguous_body(wrapper_cls):
+    # An empty object matches every all-optional branch with zero coverage — the
+    # fork resolves nothing and the stock error is preserved.
     with pytest.raises(ValueError, match="Multiple matches found"):
-        GetTransactionByMerchantTransactionId200Response.from_json(body)
+        wrapper_cls.from_json("{}")
+
+
+def test_wrapper_validator_discriminates_raw_dict():
+    # Fork site 2: assigning a raw dict binds the right branch instead of
+    # silently union-coercing into the first all-optional branch.
+    terminal = GetTransactionById200Response(actual_instance=json.loads(TERMINAL_BODY))
+    assert isinstance(terminal.actual_instance, TransactionResponse)
+    group = GetTransactionById200Response(actual_instance=json.loads(GROUP_BODY))
+    assert isinstance(group.actual_instance, TransactionGroupResponse)
+    pending = GetTransactionByMerchantTransactionId200Response(
+        actual_instance=json.loads(PENDING_BODY)
+    )
+    assert isinstance(pending.actual_instance, PendingTransactionResponse)
+
+
+def test_wrapper_validator_instance_passthrough():
+    transaction = TransactionResponse.from_json(TERMINAL_BODY)
+    wrapper = GetTransactionById200Response(actual_instance=transaction)
+    assert wrapper.actual_instance is transaction
 
 
 def test_branch_models_bind_directly_from_raw():
-    # The raw-read path the runtime actually uses is unaffected by the wrapper.
+    # The raw-read path the runtime actually uses (repo rule 5) stays valid.
     transaction = TransactionResponse.from_json(TERMINAL_BODY)
     assert transaction.transaction_status == 1
     assert transaction.merchant_transaction_id == synthetic_data.DEFAULT_MERCHANT_TRANSACTION_ID

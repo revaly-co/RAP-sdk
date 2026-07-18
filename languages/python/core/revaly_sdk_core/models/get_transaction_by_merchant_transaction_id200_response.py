@@ -30,6 +30,57 @@ from typing_extensions import Literal, Self
 
 GETTRANSACTIONBYMERCHANTTRANSACTIONID200RESPONSE_ONE_OF_SCHEMAS = ["PendingTransactionResponse", "TransactionGroupResponse", "TransactionResponse"]
 
+
+# RAP fork helpers (ADR-SDK-023 maintained surface): oneOf discrimination for
+# all-optional branch models. from_json and the actual_instance validator resolve
+# lenient multi-matches with a strict top-level-key pass, then a recognized-field
+# coverage tiebreak. Payload field NAMES only are inspected — never values.
+def _rap_recognized_names(branch_cls) -> Set[str]:
+    """Every top-level name the branch model accepts: python field names and wire aliases."""
+    names = set()
+    for _field_name, _field in branch_cls.model_fields.items():
+        names.add(_field_name)
+        if _field.alias:
+            names.add(_field.alias)
+    return names
+
+
+def _rap_resolve(candidates, data):
+    """Pick the single best bound instance among lenient matches, or None.
+
+    Pass 1 (strict): a candidate whose recognized names cover every top-level payload
+    key, unique winner only — an all-optional model cannot strict-match a foreign shape.
+    Pass 2 (coverage): the candidate recognizing the most top-level keys, unique winner
+    only — keeps a server newer than the pinned spec (additive fields) binding.
+    """
+    if not isinstance(data, dict):
+        return None
+    keys = set(data.keys())
+    strict_bound = []
+    for branch_cls, bound in candidates:
+        if branch_cls is not None and keys <= _rap_recognized_names(branch_cls):
+            strict_bound.append(bound)
+    if len(strict_bound) == 1:
+        return strict_bound[0]
+    best = None
+    best_coverage = -1
+    tie = False
+    for branch_cls, bound in candidates:
+        coverage = 0
+        if branch_cls is not None:
+            names = _rap_recognized_names(branch_cls)
+            coverage = sum(1 for key in keys if key in names)
+        if coverage > best_coverage:
+            best = bound
+            best_coverage = coverage
+            tie = False
+        elif coverage == best_coverage:
+            tie = True
+    if tie or best is None:
+        return None
+    return best
+
+
 class GetTransactionByMerchantTransactionId200Response(BaseModel):
     """
     GetTransactionByMerchantTransactionId200Response
@@ -59,7 +110,7 @@ class GetTransactionByMerchantTransactionId200Response(BaseModel):
         else:
             super().__init__(**kwargs)
 
-    @field_validator('actual_instance')
+    @field_validator('actual_instance', mode='before')
     def actual_instance_must_validate_oneof(cls, v):
         instance = GetTransactionByMerchantTransactionId200Response.model_construct()
         error_messages = []
@@ -79,6 +130,32 @@ class GetTransactionByMerchantTransactionId200Response(BaseModel):
             error_messages.append(f"Error! Input type `{type(v)}` is not `TransactionGroupResponse`")
         else:
             match += 1
+        # RAP fork: with mode='before' a raw dict reaches this validator unresolved
+        # (no silent union pre-coercion into the first all-optional branch);
+        # discriminate it across the model branches with the same strict-then-coverage
+        # algorithm as from_json.
+        if match == 0 and isinstance(v, dict):
+            _rap_candidates = []
+            # lenient-attempt data type: TransactionResponse
+            try:
+                _rap_candidates.append((TransactionResponse, TransactionResponse.from_dict(v)))
+            except (ValidationError, ValueError) as e:
+                error_messages.append(str(e))
+            # lenient-attempt data type: PendingTransactionResponse
+            try:
+                _rap_candidates.append((PendingTransactionResponse, PendingTransactionResponse.from_dict(v)))
+            except (ValidationError, ValueError) as e:
+                error_messages.append(str(e))
+            # lenient-attempt data type: TransactionGroupResponse
+            try:
+                _rap_candidates.append((TransactionGroupResponse, TransactionGroupResponse.from_dict(v)))
+            except (ValidationError, ValueError) as e:
+                error_messages.append(str(e))
+            _rap_bound = _rap_resolve(_rap_candidates, v)
+            if _rap_bound is not None:
+                return _rap_bound
+            if len(_rap_candidates) > 1:
+                raise ValueError("Multiple matches found when setting `actual_instance` in GetTransactionByMerchantTransactionId200Response with oneOf schemas: PendingTransactionResponse, TransactionGroupResponse, TransactionResponse. Details: " + ", ".join(error_messages))
         if match > 1:
             # more than 1 match
             raise ValueError("Multiple matches found when setting `actual_instance` in GetTransactionByMerchantTransactionId200Response with oneOf schemas: PendingTransactionResponse, TransactionGroupResponse, TransactionResponse. Details: " + ", ".join(error_messages))
@@ -99,33 +176,50 @@ class GetTransactionByMerchantTransactionId200Response(BaseModel):
         error_messages = []
         match = 0
 
+        # RAP fork: parse the payload once for the strict and coverage passes below
+        # (top-level key NAMES only — values are never inspected).
+        try:
+            _rap_data = json.loads(json_str)
+        except ValueError:
+            _rap_data = None
+        _rap_candidates = []
         # deserialize data into TransactionResponse
         try:
-            instance.actual_instance = TransactionResponse.from_json(json_str)
+            # RAP fork: collect the candidate instead of binding immediately
+            _rap_candidates.append((TransactionResponse, TransactionResponse.from_json(json_str)))
             match += 1
         except (ValidationError, ValueError) as e:
             error_messages.append(str(e))
         # deserialize data into PendingTransactionResponse
         try:
-            instance.actual_instance = PendingTransactionResponse.from_json(json_str)
+            # RAP fork: collect the candidate instead of binding immediately
+            _rap_candidates.append((PendingTransactionResponse, PendingTransactionResponse.from_json(json_str)))
             match += 1
         except (ValidationError, ValueError) as e:
             error_messages.append(str(e))
         # deserialize data into TransactionGroupResponse
         try:
-            instance.actual_instance = TransactionGroupResponse.from_json(json_str)
+            # RAP fork: collect the candidate instead of binding immediately
+            _rap_candidates.append((TransactionGroupResponse, TransactionGroupResponse.from_json(json_str)))
             match += 1
         except (ValidationError, ValueError) as e:
             error_messages.append(str(e))
 
+        if match == 1:
+            instance.actual_instance = _rap_candidates[0][1]
+            return instance
         if match > 1:
+            # RAP fork: strict-then-coverage discrimination resolves lenient
+            # multi-matches (all-optional branch models lenient-match every body);
+            # a genuine tie still raises the stock error below.
+            _rap_bound = _rap_resolve(_rap_candidates, _rap_data)
+            if _rap_bound is not None:
+                instance.actual_instance = _rap_bound
+                return instance
             # more than 1 match
             raise ValueError("Multiple matches found when deserializing the JSON string into GetTransactionByMerchantTransactionId200Response with oneOf schemas: PendingTransactionResponse, TransactionGroupResponse, TransactionResponse. Details: " + ", ".join(error_messages))
-        elif match == 0:
-            # no match
-            raise ValueError("No match found when deserializing the JSON string into GetTransactionByMerchantTransactionId200Response with oneOf schemas: PendingTransactionResponse, TransactionGroupResponse, TransactionResponse. Details: " + ", ".join(error_messages))
-        else:
-            return instance
+        # no match
+        raise ValueError("No match found when deserializing the JSON string into GetTransactionByMerchantTransactionId200Response with oneOf schemas: PendingTransactionResponse, TransactionGroupResponse, TransactionResponse. Details: " + ", ".join(error_messages))
 
     def to_json(self) -> str:
         """Returns the JSON representation of the actual instance"""
