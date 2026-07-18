@@ -9,6 +9,10 @@ spec/provenance.json -text
 languages/*/core/** -text
 languages/go/go.mod text eol=lf
 languages/go/go.sum text eol=lf
+# Hand-written go sources (runtime/tests/root shim): gofmt emits LF-only output, and the
+# stage-3 gofmt check hashes exactly what the checkout contains — keep them LF everywhere.
+languages/go/**/*.go text eol=lf
+languages/go/*.go text eol=lf
 pipeline/*/templates/** -text
 pipeline/*/.openapi-generator-ignore text eol=lf
 pipeline/*/config.yaml text eol=lf

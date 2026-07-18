@@ -478,3 +478,14 @@ jobs:
       - name: Module Tests (go test)
         working-directory: languages/go
         run: go test ./...
+
+      # dx-contract §a baseline for Go: gofmt + go vet. Hand-written surfaces only —
+      # the generated core ships as the generator emits it (ADR-SDK-001).
+      - name: Format Check (gofmt, hand-written packages)
+        working-directory: languages/go
+        run: |
+          UNFORMATTED=$(gofmt -l revaly.go runtime tests)
+          if [ -n "$UNFORMATTED" ]; then
+            echo "::error::gofmt needed on: $UNFORMATTED"
+            exit 1
+          fi
