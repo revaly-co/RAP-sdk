@@ -9,5 +9,12 @@
     "types": ["node"],
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["core/**/*.ts", "runtime/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "core/**/*.ts",
+    "runtime/**/*.ts",
+    "tests/**/*.ts",
+    "smoke/**/*.ts",
+    "vitest.config.ts",
+    "vitest.smoke.config.ts"
+  ]
 }

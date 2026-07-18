@@ -6,6 +6,9 @@
   <Folder Name="/runtime/">
     <Project Path="runtime/Revaly.Sdk/Revaly.Sdk.csproj" />
   </Folder>
+  <Folder Name="/smoke/">
+    <Project Path="smoke/Revaly.Sdk.Smoke/Revaly.Sdk.Smoke.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Revaly.Sdk.Tests/Revaly.Sdk.Tests.csproj" />
   </Folder>
