@@ -1,0 +1,50 @@
+# revaly-sdk — Python runtime package (RFC-046; runtime-tdd.md §2 one-package surface).
+# Distribution name "revaly-sdk" is [Proposed] until OQ-3 registry provisioning
+# (runtime-tdd.md §7) — do not treat as final.
+# PUBLISH IS EMBARGOED (repo rule 3): the "Private :: Do Not Upload" classifier makes
+# PyPI reject any upload of this package until the embargo gates close.
+# The generated core (core/revaly_sdk_core) ships INSIDE this one distribution —
+# php/ts precedent: merchants install one package and import only revaly_sdk.
+
+[project]
+name = "revaly-sdk"
+version = "0.0.0.dev0"
+description = "Revaly RAP V2 server-side SDK for Python (payments, payment methods, transactions, notify) with the merchant failover contract built in"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+classifiers = [
+  "Private :: Do Not Upload",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = [
+  "urllib3 (>=2.7.0,<3.0.0)",
+  "python-dateutil (>=2.8.2)",
+  "pydantic (>=2.11)",
+  "typing-extensions (>=4.7.1)",
+]
+
+[project.optional-dependencies]
+dev = ["pytest (>=8.0)"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+  "revaly_sdk",
+  "revaly_sdk.testing",
+  "revaly_sdk_core",
+  "revaly_sdk_core.api",
+  "revaly_sdk_core.models",
+]
+
+[tool.setuptools.package-dir]
+"revaly_sdk" = "runtime/revaly_sdk"
+"revaly_sdk_core" = "core/revaly_sdk_core"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

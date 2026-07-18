@@ -18,3 +18,7 @@ languages/php/core/vendor/
 languages/php/core/composer.lock
 languages/python/core/build/
 languages/python/core/*.egg-info/
+languages/python/build/
+languages/python/*.egg-info/
+languages/python/**/__pycache__/
+languages/python/.pytest_cache/
