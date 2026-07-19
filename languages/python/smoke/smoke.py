@@ -91,7 +91,11 @@ def fresh_id(label: str) -> str:
 
 
 def build_charge(mtid: str, pan: str, expiry_year: str, routing_id: Optional[str]) -> PaymentRequest:
-    """Quickstart-shaped charge request; synthetic test cards only."""
+    """Charge request with the minimal live-approving field set (staging-verified
+    2026-07-18): paymentMethodType + a cardholder name are SERVER-required
+    (business validation; the spec marks them optional — ADR-SDK-024), and
+    orderId + email are additionally required by the staging simulator for an
+    approval. Synthetic test cards only."""
     kwargs = {}
     if routing_id:
         kwargs["gateway_routing_id"] = routing_id
@@ -99,13 +103,17 @@ def build_charge(mtid: str, pan: str, expiry_year: str, routing_id: Optional[str
         amount=1999,
         currency="USD",
         merchant_transaction_id=mtid,
+        payment_method_type="creditCard",
+        order_id=mtid,
         payment_method=PaymentMethod(
+            full_name="Smoke Test",
+            email="smoke@example.com",
             credit_card=CreditCard(
                 number=pan,
                 card_verification_code="123",
                 expiry_month="12",
                 expiry_year=expiry_year,
-            )
+            ),
         ),
         **kwargs,
     )

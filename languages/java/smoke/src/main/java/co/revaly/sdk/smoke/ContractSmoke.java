@@ -359,16 +359,25 @@ public final class ContractSmoke {
                 "RESULT: PASS (%d/%d passed, %d skipped)%n", passed, scenarios.size(), skips);
     }
 
-    /** Quickstart-shaped charge request; synthetic test cards only. */
+    /**
+     * Charge request with the minimal live-approving field set (staging-verified 2026-07-18):
+     * paymentMethodType + a cardholder name are SERVER-required (business validation; the spec
+     * marks them optional — ADR-SDK-024), and orderId + email are additionally required by the
+     * staging simulator for an approval. Synthetic test cards only.
+     */
     private static PaymentRequest buildCharge(
             String merchantTransactionId, String pan, String expiryYear, String routingId) {
         PaymentRequest request =
                 new PaymentRequest()
                         .amount(1999L)
                         .merchantTransactionId(merchantTransactionId)
+                        .paymentMethodType(PaymentRequest.PaymentMethodTypeEnum.CREDIT_CARD)
                         .currency("USD")
+                        .orderId(merchantTransactionId)
                         .paymentMethod(
                                 new PaymentMethod()
+                                        .fullName("Smoke Test")
+                                        .email("smoke@example.com")
                                         .creditCard(
                                                 new CreditCard()
                                                         .number(pan)

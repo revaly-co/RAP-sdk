@@ -90,15 +90,24 @@ function freshId(label: string): string {
     return `smoke-typescript-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
-/** Quickstart-shaped charge request; synthetic test cards only. */
+/**
+ * Charge request with the minimal live-approving field set (staging-verified
+ * 2026-07-18): paymentMethodType + a cardholder name are SERVER-required
+ * (business validation; the spec marks them optional — ADR-SDK-024), and
+ * orderId + email are additionally required by the staging simulator for an
+ * approval. Synthetic test cards only.
+ */
 function buildCharge(merchantTransactionId: string, pan: string, expiryYear: string) {
     return {
         amount: 1999,
         currency: 'USD',
         merchantTransactionId,
+        orderId: merchantTransactionId,
         ...(routingId ? { gatewayRoutingId: routingId } : {}),
         paymentMethodType: 'creditCard' as const,
         paymentMethod: {
+            fullName: 'Smoke Test',
+            email: 'smoke@example.com',
             creditCard: {
                 number: pan,
                 cardVerificationCode: '123',

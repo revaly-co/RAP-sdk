@@ -66,7 +66,13 @@ function freshId(string $label): string
     return sprintf('smoke-php-%s-%d-%s', $label, (int) (microtime(true) * 1000), bin2hex(random_bytes(4)));
 }
 
-/** Quickstart-shaped charge request; synthetic test cards only. */
+/**
+ * Charge request with the minimal live-approving field set (staging-verified
+ * 2026-07-18): paymentMethodType + a cardholder name are SERVER-required
+ * (business validation; the spec marks them optional — ADR-SDK-024), and
+ * orderId + email are additionally required by the staging simulator for an
+ * approval. Synthetic test cards only.
+ */
 function buildCharge(string $mtid, string $pan, string $expiryYear, ?string $routingId): PaymentRequest
 {
     $card = new CreditCard();
@@ -76,12 +82,16 @@ function buildCharge(string $mtid, string $pan, string $expiryYear, ?string $rou
     $card->setCardVerificationCode('123');
 
     $method = new PaymentMethod();
+    $method->setFullName('Smoke Test');
+    $method->setEmail('smoke@example.com');
     $method->setCreditCard($card);
 
     $request = new PaymentRequest();
     $request->setAmount(1999);
+    $request->setPaymentMethodType('creditCard');
     $request->setCurrency('USD');
     $request->setMerchantTransactionId($mtid);
+    $request->setOrderId($mtid);
     $request->setPaymentMethod($method);
     if ($routingId !== null && $routingId !== '') {
         $request->setGatewayRoutingId($routingId);

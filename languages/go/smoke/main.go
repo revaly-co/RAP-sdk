@@ -108,18 +108,25 @@ func main() {
 		})
 	}
 
-	// buildCharge assembles a quickstart-shaped charge request. One synthetic
-	// test PAN; the EXPIRY drives the outcome (staging-verified matrix
-	// 2026-07-18: 12/2027 approves, 12/2020 declines).
+	// buildCharge assembles a charge request with the minimal live-approving
+	// field set (staging-verified 2026-07-18): paymentMethodType + a cardholder
+	// name are SERVER-required (business validation; spec marks them optional —
+	// recorded in ADR-SDK-024), and orderId + email are additionally required
+	// by the staging simulator for an approval. One synthetic test PAN; the
+	// EXPIRY drives the outcome (12/2027 approves, 12/2020 declines).
 	buildCharge := func(mtid, number, month, year string) revaly.PaymentRequest {
 		request := *revaly.NewPaymentRequest(1999, mtid)
+		request.SetPaymentMethodType("creditCard")
 		request.SetCurrency("USD")
+		request.SetOrderId(mtid)
 		if routingID != "" {
 			request.SetGatewayRoutingId(routingID)
 		}
 		card := revaly.NewCreditCard(number, month, year)
 		card.SetCardVerificationCode("123")
 		method := revaly.NewPaymentMethod()
+		method.SetFullName("Smoke Test")
+		method.SetEmail("smoke@example.com")
 		method.SetCreditCard(*card)
 		request.SetPaymentMethod(*method)
 		return request

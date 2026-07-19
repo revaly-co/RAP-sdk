@@ -317,14 +317,24 @@ internal static class Program
         return 0;
     }
 
-    /// <summary>Quickstart-shaped charge request; synthetic test cards only.</summary>
+    /// <summary>
+    /// Charge request with the minimal live-approving field set (staging-verified
+    /// 2026-07-18): paymentMethodType + a cardholder name are SERVER-required
+    /// (business validation; the spec marks them optional — ADR-SDK-024), and
+    /// orderId + email are additionally required by the staging simulator for an
+    /// approval. Synthetic test cards only.
+    /// </summary>
     private static PaymentRequest BuildCharge(string merchantTransactionId, string pan, string expiryYear, string? routingId)
         => new(
             amount: 1999,
             merchantTransactionId: merchantTransactionId,
+            paymentMethodType: new Option<PaymentRequest.PaymentMethodTypeEnum?>(PaymentRequest.PaymentMethodTypeEnum.CreditCard),
             currency: new Option<string?>("USD"),
+            orderId: new Option<string?>(merchantTransactionId),
             gatewayRoutingId: string.IsNullOrEmpty(routingId) ? default : new Option<string?>(routingId),
             paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
+                fullName: new Option<string?>("Smoke Test"),
+                email: new Option<string?>("smoke@example.com"),
                 creditCard: new Option<CreditCard?>(new CreditCard(
                     pan, "12", expiryYear,
                     cardVerificationCode: new Option<string?>("123"))))));
