@@ -46,8 +46,9 @@ require __DIR__ . '/../vendor/autoload.php';
 // gateway dispatch — the only deterministic live trigger for the
 // 503 + code=not_processed fast-failover row.
 const FAULT_INJECT_HEADER = 'X-Backbone-Fault-Inject';
-const APPROVE_PAN = '4111111111111111';
-const EXPIRED_PAN = '424242424242424242';
+// One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
+// matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+const TEST_PAN = '4111111111111111';
 
 /** A scenario assertion failure (values-free message). */
 final class SmokeFailure extends \RuntimeException
@@ -189,7 +190,7 @@ $declinedId = freshId('decline');
 
 $scenarios = [
     'charge-approved' => function () use ($client, $chargedId, $routingId, &$lastCorrelation): string {
-        $transaction = $client->charge(buildCharge($chargedId, APPROVE_PAN, '2030', $routingId));
+        $transaction = $client->charge(buildCharge($chargedId, TEST_PAN, '2027', $routingId));
         if (($transaction->getTransactionId() ?? '') === '') {
             throw new SmokeFailure('transactionId is empty on the success surface');
         }
@@ -201,10 +202,10 @@ $scenarios = [
     },
 
     'charge-declined' => function () use ($client, $declinedId, $routingId, &$lastCorrelation): string {
-        // An expired card declines deterministically. A decline is a business
+        // An expired expiry declines deterministically (same PAN). A decline is a business
         // outcome on the SUCCESS surface — not a failure class;
         // reconcile-found-declined proves the mapping below.
-        $transaction = $client->charge(buildCharge($declinedId, EXPIRED_PAN, '2020', $routingId));
+        $transaction = $client->charge(buildCharge($declinedId, TEST_PAN, '2020', $routingId));
         if (($transaction->getTransactionId() ?? '') === '') {
             throw new SmokeFailure('transactionId is empty on the declined-charge surface');
         }
@@ -220,7 +221,7 @@ $scenarios = [
         // server's required-field validation — the rejection is proven to come
         // from reality (HTTP 400; 4xx carries no code).
         try {
-            $client->charge(buildCharge(freshId('validation'), '', '2030', $routingId));
+            $client->charge(buildCharge(freshId('validation'), '', '2027', $routingId));
         } catch (PermanentRejectionException $rejection) {
             if (!in_array($rejection->getStatusCode(), [400, 422], true)) {
                 throw new SmokeFailure(sprintf('expected HTTP 400/422, got %d', $rejection->getStatusCode() ?? 0));
@@ -241,7 +242,7 @@ $scenarios = [
 
     'charge-auth-rejected' => function () use ($badKeyClient, $routingId): string {
         try {
-            $badKeyClient->charge(buildCharge(freshId('auth'), APPROVE_PAN, '2030', $routingId));
+            $badKeyClient->charge(buildCharge(freshId('auth'), TEST_PAN, '2027', $routingId));
         } catch (PermanentRejectionException $rejection) {
             if (!in_array($rejection->getStatusCode(), [401, 403], true)) {
                 throw new SmokeFailure(sprintf('expected HTTP 401/403, got %d', $rejection->getStatusCode() ?? 0));
@@ -270,7 +271,7 @@ $scenarios = [
             throw new SmokeSkip('RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)');
         }
         try {
-            $faultClient->charge(buildCharge(freshId('fault'), APPROVE_PAN, '2030', $routingId));
+            $faultClient->charge(buildCharge(freshId('fault'), TEST_PAN, '2027', $routingId));
         } catch (TransientFailureException $transient) {
             if ($transient->getStatusCode() !== 503) {
                 throw new SmokeFailure(sprintf('expected HTTP 503, got %d', $transient->getStatusCode() ?? 0));

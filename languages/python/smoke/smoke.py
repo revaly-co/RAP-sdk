@@ -53,8 +53,9 @@ from revaly_sdk.transport import _Urllib3Wire
 # 503 + code=not_processed fast-failover row.
 FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject"
 
-APPROVE_PAN = "4111111111111111"
-EXPIRED_PAN = "424242424242424242"
+# One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
+# matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+TEST_PAN = "4111111111111111"
 
 
 class SmokeFailure(Exception):
@@ -193,7 +194,7 @@ def main() -> int:
     declined_id = fresh_id("decline")
 
     def charge_approved() -> str:
-        transaction = client.charge(build_charge(charged_id, APPROVE_PAN, "2030", routing_id))
+        transaction = client.charge(build_charge(charged_id, TEST_PAN, "2027", routing_id))
         if not transaction.transaction_id:
             raise SmokeFailure("transactionId is empty on the success surface")
         if not last_correlation[0]:
@@ -201,10 +202,10 @@ def main() -> int:
         return f" (txn={transaction.transaction_id} correlation={last_correlation[0]})"
 
     def charge_declined() -> str:
-        # An expired card declines deterministically. A decline is a business
+        # An expired expiry declines deterministically (same PAN). A decline is a business
         # outcome on the SUCCESS surface — not a failure class;
         # reconcile-found-declined proves the mapping below.
-        transaction = client.charge(build_charge(declined_id, EXPIRED_PAN, "2020", routing_id))
+        transaction = client.charge(build_charge(declined_id, TEST_PAN, "2020", routing_id))
         if not transaction.transaction_id:
             raise SmokeFailure("transactionId is empty on the declined-charge surface")
         if not last_correlation[0]:
@@ -216,7 +217,7 @@ def main() -> int:
         # server's required-field validation — the rejection is proven to come
         # from reality (HTTP 400; 4xx carries no code).
         try:
-            client.charge(build_charge(fresh_id("validation"), "", "2030", routing_id))
+            client.charge(build_charge(fresh_id("validation"), "", "2027", routing_id))
         except RapPermanentRejection as rejection:
             if rejection.status not in (400, 422):
                 raise SmokeFailure(f"expected HTTP 400/422, got {rejection.status}") from None
@@ -229,7 +230,7 @@ def main() -> int:
 
     def charge_auth_rejected() -> str:
         try:
-            bad_key_client.charge(build_charge(fresh_id("auth"), APPROVE_PAN, "2030", routing_id))
+            bad_key_client.charge(build_charge(fresh_id("auth"), TEST_PAN, "2027", routing_id))
         except RapPermanentRejection as rejection:
             if rejection.status not in (401, 403):
                 raise SmokeFailure(f"expected HTTP 401/403, got {rejection.status}") from None
@@ -248,7 +249,7 @@ def main() -> int:
         if fault_client is None:
             raise SmokeSkip("RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)")
         try:
-            fault_client.charge(build_charge(fresh_id("fault"), APPROVE_PAN, "2030", routing_id))
+            fault_client.charge(build_charge(fresh_id("fault"), TEST_PAN, "2027", routing_id))
         except RapTransientFailure as transient:
             if transient.status != 503:
                 raise SmokeFailure(f"expected HTTP 503, got {transient.status}") from None

@@ -35,8 +35,9 @@ import {
 // gateway dispatch — the only deterministic live trigger for the
 // 503 + code=not_processed fast-failover row.
 const FAULT_INJECT_HEADER = 'X-Backbone-Fault-Inject';
-const APPROVE_PAN = '4111111111111111';
-const EXPIRED_PAN = '424242424242424242';
+// One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
+// matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+const TEST_PAN = '4111111111111111';
 
 const baseUrl = process.env.RAP_SMOKE_BASE_URL;
 const apiKey = process.env.RAP_SMOKE_API_KEY;
@@ -168,7 +169,7 @@ const declinedId = freshId('decline');
 
 test('charge-approved', () =>
     guard(async () => {
-        const transaction = await client.charge(buildCharge(chargedId, APPROVE_PAN, '2030'));
+        const transaction = await client.charge(buildCharge(chargedId, TEST_PAN, '2027'));
         if (!transaction.transactionId) {
             throw new SmokeFailure('transactionId is empty on the success surface');
         }
@@ -179,10 +180,10 @@ test('charge-approved', () =>
 
 test('charge-declined', () =>
     guard(async () => {
-        // An expired card declines deterministically. A decline is a business
+        // An expired expiry declines deterministically (same PAN). A decline is a business
         // outcome on the SUCCESS surface — not a failure class;
         // reconcile-found-declined proves the mapping below.
-        const transaction = await client.charge(buildCharge(declinedId, EXPIRED_PAN, '2020'));
+        const transaction = await client.charge(buildCharge(declinedId, TEST_PAN, '2020'));
         if (!transaction.transactionId) {
             throw new SmokeFailure('transactionId is empty on the declined-charge surface');
         }
@@ -197,7 +198,7 @@ test('charge-validation-rejected', () =>
         // server's required-field validation — the rejection is proven to come
         // from reality (HTTP 400; 4xx carries no code).
         const failure = await expectFailure(
-            () => client.charge(buildCharge(freshId('validation'), '', '2030')),
+            () => client.charge(buildCharge(freshId('validation'), '', '2027')),
             'expected RapPermanentRejection',
         );
         if (!(failure instanceof RapPermanentRejection)) {
@@ -214,7 +215,7 @@ test('charge-validation-rejected', () =>
 test('charge-auth-rejected', () =>
     guard(async () => {
         const failure = await expectFailure(
-            () => badKeyClient.charge(buildCharge(freshId('auth'), APPROVE_PAN, '2030')),
+            () => badKeyClient.charge(buildCharge(freshId('auth'), TEST_PAN, '2027')),
             'expected RapPermanentRejection',
         );
         if (!(failure instanceof RapPermanentRejection)) {
@@ -236,7 +237,7 @@ test('charge-auth-rejected', () =>
 test.skipIf(!faultClient)('charge-not-processed-503', () =>
     guard(async () => {
         const failure = await expectFailure(
-            () => faultClient!.charge(buildCharge(freshId('fault'), APPROVE_PAN, '2030')),
+            () => faultClient!.charge(buildCharge(freshId('fault'), TEST_PAN, '2027')),
             'expected RapTransientFailure',
         );
         if (!(failure instanceof RapTransientFailure)) {

@@ -44,8 +44,9 @@ public final class ContractSmoke {
      */
     private static final String FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject";
 
-    private static final String APPROVE_PAN = "4111111111111111";
-    private static final String EXPIRED_PAN = "424242424242424242";
+    // One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
+    // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+    private static final String TEST_PAN = "4111111111111111";
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -132,7 +133,7 @@ public final class ContractSmoke {
                 "charge-approved",
                 () -> {
                     TransactionResponse transaction =
-                            client.charge(buildCharge(chargedId, APPROVE_PAN, "2030", routingId));
+                            client.charge(buildCharge(chargedId, TEST_PAN, "2027", routingId));
                     if (isBlank(transaction.getTransactionId())) {
                         throw new SmokeFailure("transactionId is empty on the success surface");
                     }
@@ -148,12 +149,12 @@ public final class ContractSmoke {
         scenarios.put(
                 "charge-declined",
                 () -> {
-                    // An expired card declines deterministically. A decline is
+                    // An expired expiry declines deterministically (same PAN). A decline is
                     // a business outcome on the SUCCESS surface — not a
                     // failure class; reconcile-found-declined proves the
                     // mapping below.
                     TransactionResponse transaction =
-                            client.charge(buildCharge(declinedId, EXPIRED_PAN, "2020", routingId));
+                            client.charge(buildCharge(declinedId, TEST_PAN, "2020", routingId));
                     if (isBlank(transaction.getTransactionId())) {
                         throw new SmokeFailure(
                                 "transactionId is empty on the declined-charge surface");
@@ -176,7 +177,7 @@ public final class ContractSmoke {
                     // rejection is proven to come from reality (HTTP 400; 4xx
                     // carries no code).
                     try {
-                        client.charge(buildCharge(freshId("validation"), "", "2030", routingId));
+                        client.charge(buildCharge(freshId("validation"), "", "2027", routingId));
                     } catch (PermanentRejectionException rejection) {
                         Integer status = rejection.getStatusCode();
                         if (status == null || (status != 400 && status != 422)) {
@@ -199,7 +200,7 @@ public final class ContractSmoke {
                 () -> {
                     try {
                         badKeyClient.charge(
-                                buildCharge(freshId("auth"), APPROVE_PAN, "2030", routingId));
+                                buildCharge(freshId("auth"), TEST_PAN, "2027", routingId));
                     } catch (PermanentRejectionException rejection) {
                         Integer status = rejection.getStatusCode();
                         if (status == null || (status != 401 && status != 403)) {
@@ -232,7 +233,7 @@ public final class ContractSmoke {
                     }
                     try {
                         faultClient.charge(
-                                buildCharge(freshId("fault"), APPROVE_PAN, "2030", routingId));
+                                buildCharge(freshId("fault"), TEST_PAN, "2027", routingId));
                     } catch (TransientFailureException transientFailure) {
                         Integer status = transientFailure.getStatusCode();
                         if (status == null || status != 503) {

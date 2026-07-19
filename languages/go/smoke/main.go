@@ -108,8 +108,9 @@ func main() {
 		})
 	}
 
-	// buildCharge assembles a quickstart-shaped charge request. Synthetic test
-	// cards only; the expired-card variant is the deterministic decline.
+	// buildCharge assembles a quickstart-shaped charge request. One synthetic
+	// test PAN; the EXPIRY drives the outcome (staging-verified matrix
+	// 2026-07-18: 12/2027 approves, 12/2020 declines).
 	buildCharge := func(mtid, number, month, year string) revaly.PaymentRequest {
 		request := *revaly.NewPaymentRequest(1999, mtid)
 		request.SetCurrency("USD")
@@ -135,7 +136,7 @@ func main() {
 		run  func(ctx context.Context) (string, error)
 	}{
 		{"charge-approved", func(ctx context.Context) (string, error) {
-			transaction, err := client.Charge(ctx, buildCharge(chargedID, "4111111111111111", "12", "2030"))
+			transaction, err := client.Charge(ctx, buildCharge(chargedID, "4111111111111111", "12", "2027"))
 			if err != nil {
 				return "", classified("expected a successful charge", err)
 			}
@@ -149,10 +150,11 @@ func main() {
 		}},
 
 		{"charge-declined", func(ctx context.Context) (string, error) {
-			// An expired card declines deterministically. A decline is a
-			// business outcome on the SUCCESS surface — not a failure class;
+			// An expired expiry declines deterministically (same PAN — the
+			// expiry drives the outcome). A decline is a business outcome on
+			// the SUCCESS surface — not a failure class;
 			// reconcile-found-declined proves the mapping below.
-			transaction, err := client.Charge(ctx, buildCharge(declinedID, "424242424242424242", "12", "2020"))
+			transaction, err := client.Charge(ctx, buildCharge(declinedID, "4111111111111111", "12", "2020"))
 			if err != nil {
 				return "", classified("expected a declined charge on the success surface", err)
 			}
@@ -169,7 +171,7 @@ func main() {
 			// An empty card number passes every client-side model but fails
 			// the server's required-field validation — the rejection is proven
 			// to come from reality (HTTP 400, no code on 4xx).
-			_, err := client.Charge(ctx, buildCharge(freshID("validation"), "", "12", "2030"))
+			_, err := client.Charge(ctx, buildCharge(freshID("validation"), "", "12", "2027"))
 			if err == nil {
 				return "", errors.New("server accepted an empty card number — expected PermanentRejection")
 			}
@@ -187,7 +189,7 @@ func main() {
 		}},
 
 		{"charge-auth-rejected", func(ctx context.Context) (string, error) {
-			_, err := badKeyClient.Charge(ctx, buildCharge(freshID("auth"), "4111111111111111", "12", "2030"))
+			_, err := badKeyClient.Charge(ctx, buildCharge(freshID("auth"), "4111111111111111", "12", "2027"))
 			if err == nil {
 				return "", errors.New("server accepted a synthetic invalid key — expected PermanentRejection")
 			}
@@ -213,7 +215,7 @@ func main() {
 			if faultClient == nil {
 				return "", errSkip{"RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)"}
 			}
-			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "12", "2030"))
+			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "12", "2027"))
 			if err == nil {
 				return "", errors.New("fault-injected charge succeeded — expected TransientFailure")
 			}

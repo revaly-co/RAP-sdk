@@ -31,8 +31,9 @@ namespace Revaly.Sdk.Smoke;
 internal static class Program
 {
     private const string FaultInjectHeader = "X-Backbone-Fault-Inject";
-    private const string ApprovePan = "4111111111111111";
-    private const string ExpiredPan = "424242424242424242";
+    // One synthetic test PAN; the EXPIRY drives the outcome
+    // (staging-verified matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+    private const string TestPan = "4111111111111111";
 
     private static async Task<int> Main()
     {
@@ -92,7 +93,7 @@ internal static class Program
         {
             ("charge-approved", async () =>
             {
-                var response = await client.Payments.ChargePaymentAsync(BuildCharge(chargedId, ApprovePan, "2030", routingId));
+                var response = await client.Payments.ChargePaymentAsync(BuildCharge(chargedId, TestPan, "2027", routingId));
                 if (!response.TryOk(out var transaction) || transaction is null)
                 {
                     throw new SmokeFailure("2xx response did not bind a TransactionResponse");
@@ -111,10 +112,10 @@ internal static class Program
 
             ("charge-declined", async () =>
             {
-                // An expired card declines deterministically. A decline is a
+                // An expired expiry declines deterministically (same PAN). A decline is a
                 // business outcome on the SUCCESS surface — not a failure
                 // class; reconcile-found-declined proves the mapping below.
-                var response = await client.Payments.ChargePaymentAsync(BuildCharge(declinedId, ExpiredPan, "2020", routingId));
+                var response = await client.Payments.ChargePaymentAsync(BuildCharge(declinedId, TestPan, "2020", routingId));
                 if (!response.TryOk(out var transaction) || transaction is null)
                 {
                     throw new SmokeFailure("2xx response did not bind a TransactionResponse on the declined path");
@@ -139,7 +140,7 @@ internal static class Program
                 // code).
                 try
                 {
-                    await client.Payments.ChargePaymentAsync(BuildCharge(FreshId("validation"), string.Empty, "2030", routingId));
+                    await client.Payments.ChargePaymentAsync(BuildCharge(FreshId("validation"), string.Empty, "2027", routingId));
                 }
                 catch (PermanentRejectionException ex)
                 {
@@ -161,7 +162,7 @@ internal static class Program
             {
                 try
                 {
-                    await badKeyClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("auth"), ApprovePan, "2030", routingId));
+                    await badKeyClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("auth"), TestPan, "2027", routingId));
                 }
                 catch (PermanentRejectionException ex)
                 {
@@ -192,7 +193,7 @@ internal static class Program
                 }
                 try
                 {
-                    await faultClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("fault"), ApprovePan, "2030", routingId));
+                    await faultClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("fault"), TestPan, "2027", routingId));
                 }
                 catch (TransientFailureException ex)
                 {

@@ -588,8 +588,15 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: maven
 
+      # Two invocations deliberately: a direct exec:java with -am would run on
+      # every reactor module (core has no mainClass), and -pl smoke alone
+      # cannot resolve the SNAPSHOT dependency — so install the reactor first
+      # (tests already ran in build-java), then exec only the smoke module.
       - name: Run Contract Smoke
-        run: mvn -B -ntp -f languages/java/pom.xml -pl smoke -am compile exec:java
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f languages/java/pom.xml -pl smoke -am -DskipTests install
+          mvn -B -ntp -f languages/java/pom.xml -pl smoke exec:java
 
   smoke-php:
     name: Stage 4 - Contract Smoke (php)
