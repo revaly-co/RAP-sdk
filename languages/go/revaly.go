@@ -101,6 +101,19 @@ type (
 	ErrorResponse              = core.ErrorResponse
 )
 
+// Constructors for the payment-path models, re-exported so the quickstart
+// path compiles against this package alone (runtime-tdd §2).
+var (
+	NewPaymentRequest      = core.NewPaymentRequest
+	NewAuthorizeRequest    = core.NewAuthorizeRequest
+	NewCaptureRequest      = core.NewCaptureRequest
+	NewVoidRequest         = core.NewVoidRequest
+	NewRefundRequest       = core.NewRefundRequest
+	NewRefundCancelRequest = core.NewRefundCancelRequest
+	NewCreditCard          = core.NewCreditCard
+	NewPaymentMethod       = core.NewPaymentMethod
+)
+
 // Pointer helpers for optional model fields, re-exported from the core.
 var (
 	PtrBool    = core.PtrBool

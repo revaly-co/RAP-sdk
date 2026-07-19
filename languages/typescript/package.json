@@ -13,7 +13,8 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke": "vitest run --config vitest.smoke.config.ts"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
