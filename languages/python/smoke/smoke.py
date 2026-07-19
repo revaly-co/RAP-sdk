@@ -90,7 +90,9 @@ def fresh_id(label: str) -> str:
     return f"smoke-python-{label}-{int(time.time() * 1000)}-{secrets.token_hex(4)}"
 
 
-def build_charge(mtid: str, pan: str, expiry_year: str, routing_id: Optional[str]) -> PaymentRequest:
+def build_charge(
+    mtid: str, pan: str, expiry_year: str, routing_id: Optional[str], with_name: bool = True
+) -> PaymentRequest:
     """Charge request with the minimal live-approving field set (staging-verified
     2026-07-18): paymentMethodType + a cardholder name are SERVER-required
     (business validation; the spec marks them optional — ADR-SDK-024), and
@@ -106,7 +108,7 @@ def build_charge(mtid: str, pan: str, expiry_year: str, routing_id: Optional[str
         payment_method_type="creditCard",
         order_id=mtid,
         payment_method=PaymentMethod(
-            full_name="Smoke Test",
+            full_name="Smoke Test" if with_name else None,
             email="smoke@example.com",
             credit_card=CreditCard(
                 number=pan,
@@ -221,11 +223,13 @@ def main() -> int:
         return f" (txn={transaction.transaction_id} correlation={last_correlation[0]})"
 
     def charge_validation_rejected() -> str:
-        # An empty card number passes every client-side model but fails the
-        # server's required-field validation — the rejection is proven to come
-        # from reality (HTTP 400; 4xx carries no code).
+        # A NAMELESS charge (no fullName/firstName/lastName) passes every
+        # client-side model — the php/python cores reject an empty PAN locally,
+        # so the PAN stays valid — and fails the server's cardholder-name
+        # business validation: the rejection is proven to come from reality
+        # (HTTP 400; 4xx carries no code).
         try:
-            client.charge(build_charge(fresh_id("validation"), "", "2027", routing_id))
+            client.charge(build_charge(fresh_id("validation"), TEST_PAN, "2027", routing_id, with_name=False))
         except RapPermanentRejection as rejection:
             if rejection.status not in (400, 422):
                 raise SmokeFailure(f"expected HTTP 400/422, got {rejection.status}") from None
@@ -234,7 +238,7 @@ def main() -> int:
             return f" (status={rejection.status} correlation={rejection.correlation_id})"
         except Exception as err:  # noqa: BLE001 — classified below
             raise classified("expected RapPermanentRejection", err) from None
-        raise SmokeFailure("server accepted an empty card number — expected RapPermanentRejection")
+        raise SmokeFailure("server accepted a nameless charge — expected RapPermanentRejection")
 
     def charge_auth_rejected() -> str:
         try:

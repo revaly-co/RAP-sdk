@@ -133,7 +133,8 @@ public final class ContractSmoke {
                 "charge-approved",
                 () -> {
                     TransactionResponse transaction =
-                            client.charge(buildCharge(chargedId, TEST_PAN, "2027", routingId));
+                            client.charge(
+                                    buildCharge(chargedId, TEST_PAN, "2027", routingId, true));
                     if (isBlank(transaction.getTransactionId())) {
                         throw new SmokeFailure("transactionId is empty on the success surface");
                     }
@@ -154,7 +155,8 @@ public final class ContractSmoke {
                     // failure class; reconcile-found-declined proves the
                     // mapping below.
                     TransactionResponse transaction =
-                            client.charge(buildCharge(declinedId, TEST_PAN, "2020", routingId));
+                            client.charge(
+                                    buildCharge(declinedId, TEST_PAN, "2020", routingId, true));
                     if (isBlank(transaction.getTransactionId())) {
                         throw new SmokeFailure(
                                 "transactionId is empty on the declined-charge surface");
@@ -177,7 +179,9 @@ public final class ContractSmoke {
                     // rejection is proven to come from reality (HTTP 400; 4xx
                     // carries no code).
                     try {
-                        client.charge(buildCharge(freshId("validation"), "", "2027", routingId));
+                        client.charge(
+                                buildCharge(
+                                        freshId("validation"), TEST_PAN, "2027", routingId, false));
                     } catch (PermanentRejectionException rejection) {
                         Integer status = rejection.getStatusCode();
                         if (status == null || (status != 400 && status != 422)) {
@@ -191,7 +195,7 @@ public final class ContractSmoke {
                                 status, rejection.getCorrelationId());
                     }
                     throw new SmokeFailure(
-                            "server accepted an empty card number — expected"
+                            "server accepted a nameless charge — expected"
                                     + " PermanentRejectionException");
                 });
 
@@ -200,7 +204,7 @@ public final class ContractSmoke {
                 () -> {
                     try {
                         badKeyClient.charge(
-                                buildCharge(freshId("auth"), TEST_PAN, "2027", routingId));
+                                buildCharge(freshId("auth"), TEST_PAN, "2027", routingId, true));
                     } catch (PermanentRejectionException rejection) {
                         Integer status = rejection.getStatusCode();
                         if (status == null || (status != 401 && status != 403)) {
@@ -233,7 +237,7 @@ public final class ContractSmoke {
                     }
                     try {
                         faultClient.charge(
-                                buildCharge(freshId("fault"), TEST_PAN, "2027", routingId));
+                                buildCharge(freshId("fault"), TEST_PAN, "2027", routingId, true));
                     } catch (TransientFailureException transientFailure) {
                         Integer status = transientFailure.getStatusCode();
                         if (status == null || status != 503) {
@@ -366,7 +370,11 @@ public final class ContractSmoke {
      * staging simulator for an approval. Synthetic test cards only.
      */
     private static PaymentRequest buildCharge(
-            String merchantTransactionId, String pan, String expiryYear, String routingId) {
+            String merchantTransactionId,
+            String pan,
+            String expiryYear,
+            String routingId,
+            boolean withName) {
         PaymentRequest request =
                 new PaymentRequest()
                         .amount(1999L)
@@ -376,7 +384,7 @@ public final class ContractSmoke {
                         .orderId(merchantTransactionId)
                         .paymentMethod(
                                 new PaymentMethod()
-                                        .fullName("Smoke Test")
+                                        .fullName(withName ? "Smoke Test" : null)
                                         .email("smoke@example.com")
                                         .creditCard(
                                                 new CreditCard()

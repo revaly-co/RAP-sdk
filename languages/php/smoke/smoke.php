@@ -73,7 +73,7 @@ function freshId(string $label): string
  * orderId + email are additionally required by the staging simulator for an
  * approval. Synthetic test cards only.
  */
-function buildCharge(string $mtid, string $pan, string $expiryYear, ?string $routingId): PaymentRequest
+function buildCharge(string $mtid, string $pan, string $expiryYear, ?string $routingId, bool $withName = true): PaymentRequest
 {
     $card = new CreditCard();
     $card->setNumber($pan);
@@ -82,7 +82,9 @@ function buildCharge(string $mtid, string $pan, string $expiryYear, ?string $rou
     $card->setCardVerificationCode('123');
 
     $method = new PaymentMethod();
-    $method->setFullName('Smoke Test');
+    if ($withName) {
+        $method->setFullName('Smoke Test');
+    }
     $method->setEmail('smoke@example.com');
     $method->setCreditCard($card);
 
@@ -227,11 +229,13 @@ $scenarios = [
     },
 
     'charge-validation-rejected' => function () use ($client, $routingId): string {
-        // An empty card number passes every client-side model but fails the
-        // server's required-field validation — the rejection is proven to come
-        // from reality (HTTP 400; 4xx carries no code).
+        // A NAMELESS charge (no fullName/firstName/lastName) passes every
+        // client-side model — the php/python cores reject an empty PAN locally,
+        // so the PAN stays valid — and fails the server's cardholder-name
+        // business validation: the rejection is proven to come from reality
+        // (HTTP 400; 4xx carries no code).
         try {
-            $client->charge(buildCharge(freshId('validation'), '', '2027', $routingId));
+            $client->charge(buildCharge(freshId('validation'), TEST_PAN, '2027', $routingId, withName: false));
         } catch (PermanentRejectionException $rejection) {
             if (!in_array($rejection->getStatusCode(), [400, 422], true)) {
                 throw new SmokeFailure(sprintf('expected HTTP 400/422, got %d', $rejection->getStatusCode() ?? 0));
@@ -247,7 +251,7 @@ $scenarios = [
             throw classified('expected PermanentRejectionException', $err);
         }
 
-        throw new SmokeFailure('server accepted an empty card number — expected PermanentRejectionException');
+        throw new SmokeFailure('server accepted a nameless charge — expected PermanentRejectionException');
     },
 
     'charge-auth-rejected' => function () use ($badKeyClient, $routingId): string {

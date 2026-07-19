@@ -97,7 +97,7 @@ function freshId(label: string): string {
  * orderId + email are additionally required by the staging simulator for an
  * approval. Synthetic test cards only.
  */
-function buildCharge(merchantTransactionId: string, pan: string, expiryYear: string) {
+function buildCharge(merchantTransactionId: string, pan: string, expiryYear: string, withName = true) {
     return {
         amount: 1999,
         currency: 'USD',
@@ -106,7 +106,7 @@ function buildCharge(merchantTransactionId: string, pan: string, expiryYear: str
         ...(routingId ? { gatewayRoutingId: routingId } : {}),
         paymentMethodType: 'creditCard' as const,
         paymentMethod: {
-            fullName: 'Smoke Test',
+            ...(withName ? { fullName: 'Smoke Test' } : {}),
             email: 'smoke@example.com',
             creditCard: {
                 number: pan,
@@ -203,11 +203,13 @@ test('charge-declined', () =>
 
 test('charge-validation-rejected', () =>
     guard(async () => {
-        // An empty card number passes every client-side model but fails the
-        // server's required-field validation — the rejection is proven to come
-        // from reality (HTTP 400; 4xx carries no code).
+        // A NAMELESS charge (no fullName/firstName/lastName) passes every
+        // client-side model — php/python cores reject an empty PAN locally, so
+        // the PAN stays valid — and fails the server's cardholder-name business
+        // validation: the rejection is proven to come from reality (HTTP 400;
+        // 4xx carries no code).
         const failure = await expectFailure(
-            () => client.charge(buildCharge(freshId('validation'), '', '2027')),
+            () => client.charge(buildCharge(freshId('validation'), TEST_PAN, '2027', false)),
             'expected RapPermanentRejection',
         );
         if (!(failure instanceof RapPermanentRejection)) {

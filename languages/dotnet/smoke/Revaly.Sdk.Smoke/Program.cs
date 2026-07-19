@@ -134,13 +134,15 @@ internal static class Program
 
             ("charge-validation-rejected", async () =>
             {
-                // An empty card number passes every client-side model but
-                // fails the server's required-field validation — the rejection
+                // A NAMELESS charge (no fullName / firstName / lastName)
+                // passes every client-side model — php/python cores reject an
+                // empty PAN locally, so the PAN stays valid — and fails the
+                // server's cardholder-name business validation: the rejection
                 // is proven to come from reality (HTTP 400; 4xx carries no
                 // code).
                 try
                 {
-                    await client.Payments.ChargePaymentAsync(BuildCharge(FreshId("validation"), string.Empty, "2027", routingId));
+                    await client.Payments.ChargePaymentAsync(BuildCharge(FreshId("validation"), TestPan, "2027", routingId, withName: false));
                 }
                 catch (PermanentRejectionException ex)
                 {
@@ -324,7 +326,7 @@ internal static class Program
     /// orderId + email are additionally required by the staging simulator for an
     /// approval. Synthetic test cards only.
     /// </summary>
-    private static PaymentRequest BuildCharge(string merchantTransactionId, string pan, string expiryYear, string? routingId)
+    private static PaymentRequest BuildCharge(string merchantTransactionId, string pan, string expiryYear, string? routingId, bool withName = true)
         => new(
             amount: 1999,
             merchantTransactionId: merchantTransactionId,
@@ -333,7 +335,7 @@ internal static class Program
             orderId: new Option<string?>(merchantTransactionId),
             gatewayRoutingId: string.IsNullOrEmpty(routingId) ? default : new Option<string?>(routingId),
             paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
-                fullName: new Option<string?>("Smoke Test"),
+                fullName: withName ? new Option<string?>("Smoke Test") : default,
                 email: new Option<string?>("smoke@example.com"),
                 creditCard: new Option<CreditCard?>(new CreditCard(
                     pan, "12", expiryYear,
@@ -363,9 +365,14 @@ internal static class Program
         }
     }
 
-    /// <summary>Unique merchantTransactionId (≤ 100 chars) — every reconcile scenario uses a fresh one (ADR-SDK-024).</summary>
+    /// <summary>
+    /// Unique merchantTransactionId — every reconcile scenario uses a fresh one
+    /// (ADR-SDK-024). Kept under ~48 chars: the staging CyberSource simulator
+    /// declines charges whose merchant reference exceeds ~50 (live-bisected
+    /// 2026-07-18), even though the platform accepts up to 100.
+    /// </summary>
     private static string FreshId(string label)
-        => $"smoke-dotnet-{label}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}-{Guid.NewGuid():N}"[..60];
+        => $"smoke-dotnet-{label}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}-{Guid.NewGuid().ToString("N")[..8]}";
 }
 
 /// <summary>A scenario assertion failure (values-free message).</summary>

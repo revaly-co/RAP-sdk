@@ -114,7 +114,7 @@ func main() {
 	// recorded in ADR-SDK-024), and orderId + email are additionally required
 	// by the staging simulator for an approval. One synthetic test PAN; the
 	// EXPIRY drives the outcome (12/2027 approves, 12/2020 declines).
-	buildCharge := func(mtid, number, month, year string) revaly.PaymentRequest {
+	buildCharge := func(mtid, number, year string, withName bool) revaly.PaymentRequest {
 		request := *revaly.NewPaymentRequest(1999, mtid)
 		request.SetPaymentMethodType("creditCard")
 		request.SetCurrency("USD")
@@ -122,10 +122,12 @@ func main() {
 		if routingID != "" {
 			request.SetGatewayRoutingId(routingID)
 		}
-		card := revaly.NewCreditCard(number, month, year)
+		card := revaly.NewCreditCard(number, "12", year)
 		card.SetCardVerificationCode("123")
 		method := revaly.NewPaymentMethod()
-		method.SetFullName("Smoke Test")
+		if withName {
+			method.SetFullName("Smoke Test")
+		}
 		method.SetEmail("smoke@example.com")
 		method.SetCreditCard(*card)
 		request.SetPaymentMethod(*method)
@@ -143,7 +145,7 @@ func main() {
 		run  func(ctx context.Context) (string, error)
 	}{
 		{"charge-approved", func(ctx context.Context) (string, error) {
-			transaction, err := client.Charge(ctx, buildCharge(chargedID, "4111111111111111", "12", "2027"))
+			transaction, err := client.Charge(ctx, buildCharge(chargedID, "4111111111111111", "2027", true))
 			if err != nil {
 				return "", classified("expected a successful charge", err)
 			}
@@ -161,7 +163,7 @@ func main() {
 			// expiry drives the outcome). A decline is a business outcome on
 			// the SUCCESS surface — not a failure class;
 			// reconcile-found-declined proves the mapping below.
-			transaction, err := client.Charge(ctx, buildCharge(declinedID, "4111111111111111", "12", "2020"))
+			transaction, err := client.Charge(ctx, buildCharge(declinedID, "4111111111111111", "2020", true))
 			if err != nil {
 				return "", classified("expected a declined charge on the success surface", err)
 			}
@@ -175,12 +177,14 @@ func main() {
 		}},
 
 		{"charge-validation-rejected", func(ctx context.Context) (string, error) {
-			// An empty card number passes every client-side model but fails
-			// the server's required-field validation — the rejection is proven
-			// to come from reality (HTTP 400, no code on 4xx).
-			_, err := client.Charge(ctx, buildCharge(freshID("validation"), "", "12", "2027"))
+			// A NAMELESS charge (no fullName/firstName/lastName) passes every
+			// client-side model — php/python cores reject an empty PAN locally,
+			// so the PAN stays valid — and fails the server's cardholder-name
+			// business validation: the rejection is proven to come from
+			// reality (HTTP 400, no code on 4xx).
+			_, err := client.Charge(ctx, buildCharge(freshID("validation"), "4111111111111111", "2027", false))
 			if err == nil {
-				return "", errors.New("server accepted an empty card number — expected PermanentRejection")
+				return "", errors.New("server accepted a nameless charge — expected PermanentRejection")
 			}
 			var rejection *revaly.PermanentRejection
 			if !errors.As(err, &rejection) {
@@ -196,7 +200,7 @@ func main() {
 		}},
 
 		{"charge-auth-rejected", func(ctx context.Context) (string, error) {
-			_, err := badKeyClient.Charge(ctx, buildCharge(freshID("auth"), "4111111111111111", "12", "2027"))
+			_, err := badKeyClient.Charge(ctx, buildCharge(freshID("auth"), "4111111111111111", "2027", true))
 			if err == nil {
 				return "", errors.New("server accepted a synthetic invalid key — expected PermanentRejection")
 			}
@@ -222,7 +226,7 @@ func main() {
 			if faultClient == nil {
 				return "", errSkip{"RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)"}
 			}
-			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "12", "2027"))
+			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "2027", true))
 			if err == nil {
 				return "", errors.New("fault-injected charge succeeded — expected TransientFailure")
 			}
