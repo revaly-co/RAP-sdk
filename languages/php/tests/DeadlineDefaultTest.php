@@ -21,7 +21,6 @@ final class DeadlineDefaultTest extends TestCase
     private static function wiredTimeout(RapClient $client): mixed
     {
         $prop = new \ReflectionProperty(RapClient::class, 'guzzle');
-        $prop->setAccessible(true);
         /** @var GuzzleClient $guzzle */
         $guzzle = $prop->getValue($client);
 
