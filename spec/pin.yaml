@@ -4,27 +4,32 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.2.1+c4000e9
-specVersion: 2.2.1
-sourceCommit: c4000e9715bd2f6a2f2f486c338659c9c77c6fc5
+releaseTag: spec/v2.3.0+80cc897
+specVersion: 2.3.0
+sourceCommit: 80cc8976bb7ea4f2ea58fa0c4c8ffb0e9b2f0023
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: efc78066a4724b96e6401f6b08ca32b31c1952c6746aab9143f506aa615acbdf
-pinnedAt: "2026-07-16"
+  openapi.bundled.yaml: 1407f5ca396354d0975f3c63ecb9c7299f9bcdbd8e67c4a56f36df20b07142c0
+pinnedAt: "2026-07-20"
 notes: >-
-  Fourth pin (was spec/v2.2.0+1e59620). Backbone PR #247 documents the X-Correlation-ID
-  response header the platform has always emitted (echoed verbatim when the caller sends one,
-  generated otherwise): new components/headers/XCorrelationId referenced from all 8 shared
-  error responses and every endpoint 200, plus a "Request tracing" section in the API
-  description. Documentation of existing behaviour, hence the patch bump 2.2.0 -> 2.2.1.
-  Closes the SDK-side spec gap flagged in rap-sdk PR #14 — the .NET runtime already surfaces
-  exactly this header on every typed error (DX contract §c); the header name is now
-  contract-protected (CorrelationIdContractTests in the platform suite). All four platform
-  gates pass; provenance ciRunId 29529926459. Prior pin history: v2.1.2+9af661b (first pin,
-  int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
-  v2.2.0+1e59620 (additive statementDescriptor, STR-108).
-  Repo pointer updated 2026-07-17 for the org migration (FlexPay-io -> revaly-co transfer);
-  releaseTag, checksums and provenance unchanged — same artifact, new owner slug.
+  Fifth pin (was spec/v2.2.1+c4000e9). Backbone PR #251 (platform ADR 020 — validation reality
+  matches the published contract) closes the spec-vs-reality gaps stage-4 smoke surfaced
+  (rap-sdk ADR-SDK-024 / issue #32). Documentation-only spec delta: paymentMethodType is now
+  explicitly omittable on charge/authorize (the server infers it when exactly one payment-method
+  object is supplied; two-plus without an explicit type = 400; stored-method and recommendation
+  flows carry no type), per-type required fields spelled out on PaymentMethod and both enum
+  descriptions (creditCard needs a cardholder name; vaultToken needs the request-level
+  customerId, with merchantAccountReferenceId dropped from its requirements — vault tokens are
+  gateway-agnostic), the shared 400 response documents that business-rule rejections may carry
+  `error` alone (details/code optional — the body ADR-SDK-024 mis-read as a third shape), and
+  merchantTransactionId carries the <=48-character gateway-compatibility guidance. Server wire
+  behaviour moved TOWARD the spec in the same PR (inference at the API boundary, ErrorResponse
+  on every 400/500 producer, vaultToken customerId enforced on every path); minor bump because
+  previously-rejected inputs are now accepted. All four platform gates pass; provenance ciRunId
+  29754021001. Prior pin history: v2.1.2+9af661b (first pin, int64 maximum fix) ->
+  v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) -> v2.2.0+1e59620 (additive
+  statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID response header
+  documented).
