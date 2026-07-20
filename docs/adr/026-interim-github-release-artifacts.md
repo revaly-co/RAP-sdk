@@ -124,7 +124,10 @@ sanctioned interim distribution channel.
 - **Follow-up (repo-admin, Dimitri):** a tag ruleset protecting `*/v*` creation (maintainer-only)
   and blocking `languages/go/v*` outright — the workflow refuses the latter, but the tag itself
   should never exist. Tracked with the OQ-3 environment work (ADR-SDK-013 implementation
-  guidance).
+  guidance). ✅ **Done 2026-07-20:** `ReleaseTagsAdminOnly` (`refs/tags/**/v*`, admin bypass
+  only) + `BlockGoModuleFormTags` (`refs/tags/languages/go/**`, no bypass — proven live against
+  an admin push). Lifting the go-form block is a deliberate admin ceremony at the real Go
+  registry publish.
 - At registry-publish time, stage 6 interim is superseded, not removed: GitHub releases remain
   as the provenance record, and the registry publish job appends after it (`needs:`), gated on
   the `publish` environment.
