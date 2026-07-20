@@ -82,7 +82,7 @@ public class Example {
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Notification received and processed successfully |  * X-Correlation-ID -  <br>  |
-| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 | **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 | **404** | Resource not found |  * X-Correlation-ID -  <br>  |
@@ -166,7 +166,7 @@ ApiResponse<[**NotifyResponse**](NotifyResponse.md)>
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Notification received and processed successfully |  * X-Correlation-ID -  <br>  |
-| **400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+| **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 | **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 | **404** | Resource not found |  * X-Correlation-ID -  <br>  |

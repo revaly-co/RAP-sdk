@@ -22,7 +22,7 @@ authorizePayment($authorize_request, $x_api_version): \Revaly\Sdk\Core\Model\Tra
 
 Authorize a payment
 
-Authorize a payment without immediately capturing funds.  This endpoint creates an authorization hold on the customer's payment method. The authorized amount can later be captured using the capture endpoint.  **Payment Method Types:** - **creditCard**: Process using raw credit card details - **gatewayPaymentMethodId**: Process using an existing gateway payment method id  To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
+Authorize a payment without immediately capturing funds.  This endpoint creates an authorization hold on the customer's payment method. The authorized amount can later be captured using the capture endpoint.  **Payment Method Types:** - **creditCard**: Process using raw credit card details - **gatewayPaymentMethodId**: Process using an existing gateway payment method id - **vaultToken**: Process using a vault-issued token (requires the request-level `customerId`)  `paymentMethodType` may be omitted when exactly one of `paymentMethod.creditCard`, `paymentMethod.gatewayPaymentMethod`, or `paymentMethod.vaultPaymentMethod` is supplied — the type is inferred. See the `AuthorizeRequest` schema for the per-type required fields.  To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
 ### Example
 
@@ -156,7 +156,7 @@ chargePayment($payment_request, $x_api_version): \Revaly\Sdk\Core\Model\Transact
 
 Process a payment (charge)
 
-Process a direct payment charge against a payment method.  This endpoint performs an immediate charge and settlement of funds. Unlike authorization, the funds are immediately captured and transferred.  **Payment Method Types:** - **creditCard**: Process using raw credit card details - **gatewayPaymentMethodId**: Process using an existing gateway payment method id  To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
+Process a direct payment charge against a payment method.  This endpoint performs an immediate charge and settlement of funds. Unlike authorization, the funds are immediately captured and transferred.  **Payment Method Types:** - **creditCard**: Process using raw credit card details - **gatewayPaymentMethodId**: Process using an existing gateway payment method id - **vaultToken**: Process using a vault-issued token (requires the request-level `customerId`)  `paymentMethodType` may be omitted when exactly one of `paymentMethod.creditCard`, `paymentMethod.gatewayPaymentMethod`, or `paymentMethod.vaultPaymentMethod` is supplied — the type is inferred. See the `PaymentRequest` schema for the per-type required fields.  To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
 ### Example
 
