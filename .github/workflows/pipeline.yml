@@ -26,9 +26,17 @@ name: Pipeline
 # 503+not_processed row via the platform's staging-only fault injector —
 # remove it at the GA retarget.
 #
-# Stages 5–6 (package/publish) append here chained with `needs:`; they
-# additionally require a release tag on main and the protected environment —
-# publish is embargoed until ADR-SDK-011/013/019/022 gates close (repo rule 3).
+# Stage 5 — package (ADR-SDK-026): on a per-language release tag only, after
+# every language's smoke is green ("any language red blocks the release for
+# all six"), pipeline/package.sh stamps the tag version into an ephemeral
+# copy of the committed tree and produces the asset + .sha256 +
+# provenance.json set (the platform spec/v* release model).
+#
+# Stage 6 (interim) — GitHub release: uploads the stage-5 output as a GitHub
+# release on this repo — the sanctioned interim distribution channel (repo
+# rule 3). REGISTRY publish stays embargoed until ADR-SDK-011/013/019/022
+# close; the registry job, OIDC bindings, and the protected `publish`
+# environment land only when those gates open (OQ-3).
 
 permissions:
   contents: read
@@ -746,3 +754,180 @@ jobs:
       - name: Run Contract Smoke
         working-directory: languages/go
         run: go run ./smoke
+
+  # ---------------------------------------------------------------------------
+  # Stage 5 — package (ADR-SDK-026, docs/pipeline-and-release.md §2 row 5).
+  # Runs ONLY on a per-language release tag, and only after all six languages
+  # passed build+test AND contract smoke on this very run. The tag names
+  # exactly one language (dotnet|java|php|typescript|python|go)/vX.Y.Z; the
+  # Go tag is go/vX.Y.Z deliberately — languages/go/vX.Y.Z would activate the
+  # Go subdir module the moment the repo goes public, and is reserved for the
+  # real, gated, last-in-line Go registry publish (ADR-SDK-026).
+  # ---------------------------------------------------------------------------
+
+  package:
+    name: Stage 5 - Package (release tag)
+    runs-on: ubuntu-latest
+    needs:
+      - smoke-dotnet
+      - smoke-java
+      - smoke-php
+      - smoke-typescript
+      - smoke-python
+      - smoke-go
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout Repository (full history for the on-main check)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Parse Release Tag (fail closed)
+        id: tag
+        run: |
+          set -euo pipefail
+          REF="${GITHUB_REF#refs/tags/}"
+          LANG_ID="${REF%/v*}"
+          VERSION="${REF##*/v}"
+          case "$LANG_ID" in
+            dotnet|java|php|typescript|python|go) ;;
+            languages/go)
+              echo "::error::Tag ${REF} uses the Go MODULE tag form. Interim Go releases tag as go/vX.Y.Z; languages/go/v* is reserved for the gated Go registry publish (ADR-SDK-026)."
+              exit 1 ;;
+            *)
+              echo "::error::Tag ${REF} does not name a packageable language (expected <dotnet|java|php|typescript|python|go>/vX.Y.Z — ADR-SDK-026)."
+              exit 1 ;;
+          esac
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version '${VERSION}' is not plain X.Y.Z — the interim channel ships no pre-release identifiers (ADR-SDK-026)."
+            exit 1
+          fi
+          {
+            echo "lang=$LANG_ID"
+            echo "version=$VERSION"
+            echo "tag=$REF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Release tag: $REF → language=$LANG_ID version=$VERSION"
+
+      # ADR-SDK-013: releases come only from tags on main. GitHub cannot enforce
+      # "tag points into main" declaratively, so the pipeline proves ancestry
+      # itself and refuses tags cut from side branches.
+      - name: Verify Tag Commit Is on main
+        run: |
+          set -euo pipefail
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::Tagged commit $(git rev-parse --short HEAD) is not on main — release tags are cut on main only (ADR-SDK-013)."
+            exit 1
+          fi
+          echo "Tagged commit is reachable from origin/main."
+
+      - name: Setup .NET SDK
+        if: steps.tag.outputs.lang == 'dotnet'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+
+      - name: Setup JDK
+        if: steps.tag.outputs.lang == 'java'
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
+        with:
+          distribution: temurin
+          java-version: ${{ env.JDK_VERSION }}
+          cache: maven
+
+      - name: Setup PHP
+        if: steps.tag.outputs.lang == 'php'
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: curl, mbstring
+          coverage: none
+
+      - name: Setup Node
+        if: steps.tag.outputs.lang == 'typescript'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: languages/typescript/package-lock.json
+
+      - name: Setup Python
+        if: steps.tag.outputs.lang == 'python'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python Build Frontend
+        if: steps.tag.outputs.lang == 'python'
+        run: python3 -m pip install --quiet build
+
+      # (go needs no toolchain here: its interim asset is a source-module zip.)
+
+      - name: Package (pipeline/package.sh)
+        env:
+          LANG_ID: ${{ steps.tag.outputs.lang }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: bash pipeline/package.sh "$LANG_ID" "$VERSION"
+
+      - name: Upload Stage-5 Output
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-${{ steps.tag.outputs.lang }}
+          path: dist/${{ steps.tag.outputs.lang }}/
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Stage 6 (interim) — GitHub release (ADR-SDK-026): the sanctioned interim
+  # distribution channel while registry publish is embargoed (repo rule 3).
+  # gh release create FAILS if the release already exists — deliberate: a
+  # failed release never resumes via re-run; fix, then cut a new tag
+  # (docs/pipeline-and-release.md §1).
+  # ---------------------------------------------------------------------------
+
+  github-release:
+    name: Stage 6 (interim) - GitHub Release
+    runs-on: ubuntu-latest
+    needs: package
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Stage-5 Output
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: false
+
+      - name: Re-Verify Checksums After Artifact Transfer
+        run: |
+          set -euo pipefail
+          DIR=$(ls -d dist/release-*)
+          cd "$DIR"
+          sha256sum -c ./*.sha256
+          echo "Checksums verified post-transfer."
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REF="${GITHUB_REF#refs/tags/}"
+          LANG_ID="${REF%/v*}"
+          VERSION="${REF##*/v}"
+          DIR="dist/release-${LANG_ID}"
+          ASSETS=$(find "$DIR" -maxdepth 1 -type f ! -name RELEASE_NOTES.md)
+          # --latest=false: per-language releases must not fight over the repo's
+          # "latest" pointer; --verify-tag refuses to mint a release for a tag
+          # that no longer exists on the remote.
+          # shellcheck disable=SC2086
+          gh release create "$REF" $ASSETS \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "revaly-sdk-${LANG_ID} v${VERSION}" \
+            --notes-file "$DIR/RELEASE_NOTES.md" \
+            --verify-tag \
+            --latest=false
+          echo "Release $REF published with $(echo "$ASSETS" | wc -l) assets."
