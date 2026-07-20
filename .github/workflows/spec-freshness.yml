@@ -1,0 +1,201 @@
+name: Spec Freshness
+
+# ADR-SDK-025 tier 1 — the consumer-side watchdog: compare spec/pin.yaml against the latest
+# gated spec/v* release on the platform repo and keep exactly one actionable tracking issue
+# alive while the pin is behind. The issue carries the full re-pin checklist (the trigger
+# solves "forgot to start"; the template solves "forgot a step").
+#
+# Behaviour matrix (idempotent — safe to run any number of times):
+#   pin == latest  → close any open `spec-repin` issues (the pin caught up); exit green.
+#   pin <  latest  → close `spec-repin` issues for superseded versions, then ensure ONE open
+#                    issue for the latest tag — unless an open re-pin PR already carries the
+#                    work (branch `repin/spec-v<version>` or the tag in its title).
+#   pin >  latest  → fail: the pin references a release this token cannot see — a token-scope
+#                    or listing problem, never a legitimate state (ADR 019 keeps platform spec
+#                    history append-only).
+#
+# Fail-closed (platform ADR 012 lesson, same stance as pipeline stage 1): a missing token, an
+# empty release list, or an API failure turns the run red — "detector fired" and "detector
+# never ran" are never conflated. A red nightly here IS the reminder escalation.
+#
+# Tier 2 (pending the cross-repo PAT under the OQ-3 token re-provisioning): the platform's
+# spec-artifact.yml dispatches on publish and a workflow here opens the draft re-pin PR
+# (verified pin.yaml bump + regen ×6) — this watchdog then becomes the backstop that only
+# speaks when the push path silently broke.
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+on:
+  schedule:
+    # 06:15 UTC — after the 06:00 nightly advisory smoke (pipeline.yml), unrelated but tidy.
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: spec-freshness
+  cancel-in-progress: false
+
+jobs:
+  freshness:
+    name: Pin vs Latest Platform Spec Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Read Pin (spec/pin.yaml)
+        id: pin
+        run: |
+          set -euo pipefail
+          if [ ! -f spec/pin.yaml ]; then
+            echo "::error::spec/pin.yaml is missing — the spec pin is incomplete (ADR-SDK-006)."
+            exit 1
+          fi
+          REPO=$(grep -m1 -E '^repo:' spec/pin.yaml | awk '{print $2}')
+          TAG=$(grep -m1 -E '^releaseTag:' spec/pin.yaml | awk '{print $2}')
+          SPEC_VERSION=$(grep -m1 -E '^specVersion:' spec/pin.yaml | awk '{print $2}')
+          for v in "$REPO" "$TAG" "$SPEC_VERSION"; do
+            if [ -z "$v" ]; then
+              echo "::error::spec/pin.yaml is missing a required field (repo/releaseTag/specVersion)."
+              exit 1
+            fi
+          done
+          {
+            echo "repo=$REPO"
+            echo "tag=$TAG"
+            echo "spec_version=$SPEC_VERSION"
+          } >> "$GITHUB_OUTPUT"
+          echo "Pin: $REPO @ $TAG (spec $SPEC_VERSION)"
+
+      # The platform repo is private: the default GITHUB_TOKEN is scoped to THIS repo and
+      # cannot list its releases. SPEC_ARTIFACT_READ_TOKEN = fine-grained PAT (platform repo
+      # only, Contents: read-only) — the same secret pipeline stage 1 uses.
+      - name: Latest Platform Spec Release
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.SPEC_ARTIFACT_READ_TOKEN }}
+          PIN_REPO: ${{ steps.pin.outputs.repo }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::SPEC_ARTIFACT_READ_TOKEN is not configured — cannot list platform releases (fail-closed)."
+            exit 1
+          fi
+          # Default page size on purpose: per_page=100 reproducibly 503s on this repo's
+          # releases endpoint (server-side serialization weight — found in dry-run 2026-07-19);
+          # --paginate walks the default-sized pages fine. Three attempts absorb genuine
+          # transients so a red run means a real problem, not a hiccup.
+          TAGS=""
+          for attempt in 1 2 3; do
+            TAGS=$(gh api --paginate "repos/$PIN_REPO/releases" --jq '.[].tag_name' | grep '^spec/v' || true)
+            if [ -n "$TAGS" ]; then
+              break
+            fi
+            echo "Attempt $attempt: no spec/v* tags returned; retrying in 10s…"
+            sleep 10
+          done
+          if [ -z "$TAGS" ]; then
+            echo "::error::No spec/v* releases visible on $PIN_REPO after 3 attempts — token scope, API failure, or listing problem (fail-closed; see gh output above)."
+            exit 1
+          fi
+          # One tag per version (platform ADR 019 version-identity gate), so the highest
+          # semver identifies the latest artifact regardless of listing order.
+          LATEST_VERSION=$(echo "$TAGS" | sed -e 's|^spec/v||' -e 's|+.*||' | sort -V | tail -1)
+          LATEST_TAG=$(echo "$TAGS" | grep -F "spec/v$LATEST_VERSION+" | head -1 || true)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "::error::Could not resolve the tag for latest spec version $LATEST_VERSION."
+            exit 1
+          fi
+          {
+            echo "tag=$LATEST_TAG"
+            echo "version=$LATEST_VERSION"
+            echo "url=https://github.com/$PIN_REPO/releases/tag/$(printf '%s' "$LATEST_TAG" | sed -e 's|/|%2F|g' -e 's|+|%2B|g')"
+          } >> "$GITHUB_OUTPUT"
+          echo "Latest platform spec release: $LATEST_TAG"
+
+      - name: Reconcile Tracking Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PIN_TAG: ${{ steps.pin.outputs.tag }}
+          PIN_VERSION: ${{ steps.pin.outputs.spec_version }}
+          LATEST_TAG: ${{ steps.latest.outputs.tag }}
+          LATEST_VERSION: ${{ steps.latest.outputs.version }}
+          RELEASE_URL: ${{ steps.latest.outputs.url }}
+        run: |
+          set -euo pipefail
+
+          HIGHEST=$(printf '%s\n%s\n' "$PIN_VERSION" "$LATEST_VERSION" | sort -V | tail -1)
+
+          if [ "$PIN_VERSION" = "$LATEST_VERSION" ]; then
+            if [ "$PIN_TAG" != "$LATEST_TAG" ]; then
+              echo "::error::Pin and latest release claim spec $PIN_VERSION with different tags ($PIN_TAG vs $LATEST_TAG) — violates the platform's ADR 019 version identity."
+              exit 1
+            fi
+            echo "Pin is current ($PIN_TAG). Closing any open spec-repin issues."
+            for n in $(gh issue list --label spec-repin --state open --json number --jq '.[].number'); do
+              gh issue close "$n" --comment "The pin caught up: \`spec/pin.yaml\` now references \`$PIN_TAG\`. Closed automatically by \`spec-freshness.yml\`."
+            done
+            exit 0
+          fi
+
+          if [ "$HIGHEST" = "$PIN_VERSION" ]; then
+            echo "::error::Pin ($PIN_TAG) is AHEAD of the latest visible release ($LATEST_TAG) — the release listing is incomplete or the token lost scope (fail-closed)."
+            exit 1
+          fi
+
+          echo "Pin is behind: $PIN_TAG < $LATEST_TAG."
+
+          # Close issues for superseded versions (an even newer artifact landed since).
+          for n in $(gh issue list --label spec-repin --state open --json number,title --jq ".[] | select(.title | contains(\"$LATEST_TAG\") | not) | .number"); do
+            gh issue close "$n" --comment "Superseded: the latest platform spec release is now \`$LATEST_TAG\`. A fresh tracking issue covers it. Closed automatically by \`spec-freshness.yml\`."
+          done
+
+          # An open re-pin PR already carries the work — don't nag twice.
+          REPIN_PR=$(gh pr list --state open --json number,title,headRefName \
+            --jq ".[] | select((.headRefName == \"repin/spec-v$LATEST_VERSION\") or (.title | contains(\"$LATEST_TAG\")) or (.title | contains(\"spec/v$LATEST_VERSION\"))) | .number" | head -1)
+          if [ -n "$REPIN_PR" ]; then
+            echo "Open re-pin PR #$REPIN_PR already covers $LATEST_TAG — not filing an issue."
+            exit 0
+          fi
+
+          EXISTING=$(gh issue list --label spec-repin --state open --json number,title --jq ".[] | select(.title | contains(\"$LATEST_TAG\")) | .number" | head -1)
+          if [ -n "$EXISTING" ]; then
+            echo "Tracking issue #$EXISTING already open for $LATEST_TAG."
+            exit 0
+          fi
+
+          gh label create spec-repin --description "Spec pin is behind the latest gated platform artifact" --color "d93f0b" --force
+
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<EOF
+          A new gated spec artifact is published on the platform repo and the SDK pin is behind.
+
+          |  |  |
+          |---|---|
+          | Pinned | \`$PIN_TAG\` (spec $PIN_VERSION) |
+          | Latest | \`$LATEST_TAG\` (spec $LATEST_VERSION) |
+          | Release | $RELEASE_URL |
+
+          ## Re-pin checklist (docs/pipeline-and-release.md §2, ADR-SDK-006)
+
+          - [ ] Open a re-pin PR on branch \`repin/spec-v$LATEST_VERSION\` updating \`spec/pin.yaml\` — \`releaseTag\`, \`sourceCommit\`, \`specVersion\`, \`sha256\`, \`pinnedAt\`, and a \`notes\` entry that keeps the prior-pin history chain — plus the committed \`spec/openapi.bundled.yaml.sha256\` and \`spec/provenance.json\` copies from the release assets
+          - [ ] Regenerate all six cores against the new pin (\`pipeline/generate.sh\`) and commit the regen diff — never hand-edit \`languages/*/core/\` (ADR-SDK-001)
+          - [ ] Pipeline stages 1–3 green on the PR (stage 1 re-verifies checksums; stage 2 fails unless committed cores are byte-identical)
+          - [ ] If the merchant-facing request/response surface changed: sweep the six quickstart READMEs (runtime-tdd.md §9)
+          - [ ] If the release notes mention new error codes, transaction types, or reconcile verdicts: confirm open-string / default-branch handling per failover-contract.md §2/§5 — never introduce a closed enum
+          - [ ] Resolve or update any spec-gap markers that referenced the old spec (ADRs / open-items entries)
+          - [ ] Record the new spec commit SHA for the next per-language release notes (every package version maps to a spec commit — docs/pipeline-and-release.md)
+
+          ---
+          Filed automatically by \`spec-freshness.yml\` (ADR-SDK-025 tier 1; nightly 06:15 UTC). It is superseded automatically if a newer artifact publishes, closed automatically once \`spec/pin.yaml\` catches up, and suppressed while a \`repin/spec-v*\` PR is open. Tier 2 (platform-dispatched draft re-pin PR) activates once the cross-repo PAT is provisioned.
+          EOF
+
+          gh issue create \
+            --title "chore(spec): re-pin to $LATEST_TAG" \
+            --label spec-repin \
+            --body-file "$BODY_FILE"
