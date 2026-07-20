@@ -48,17 +48,18 @@ export interface RapClientConfig {
     /**
      * Overall per-request deadline in milliseconds. Expiry after the request was sent
      * classifies as OutcomeUnknown (reconcile before acting) — never TransientFailure.
-     * Default: none set by this SDK — the request waits per the platform's own
-     * behaviour. The telemetry-derived recommended default is OQ-6
-     * (docs/open-items.md) and lands before Wave-1 GA; this SDK deliberately does not
-     * invent one.
+     * Default: {@link DEFAULT_OVERALL_DEADLINE_MS} (75 seconds, ratified from
+     * production latency telemetry — ADR-SDK-027; it clears every observed gateway
+     * tail cluster and clips ≲0.007% of charges). Pass `null` to disable the SDK
+     * deadline and ride the platform's own behaviour.
      *
      * There is no `connectTimeout` option: WHATWG fetch cannot bound the connect phase
      * per request. On Node the platform's own connect timeout applies (undici, default
      * 10s), is reported structurally, and classifies TransientFailure (provably never
-     * sent); to tune it, pass a `dispatcher` (see the README's Agent recipe).
+     * sent); to tune it, pass a `dispatcher` (see the README's Agent recipe). A
+     * client-side connect default awaits the OQ-11 edge verification (ADR-SDK-027).
      */
-    readonly overallDeadlineMs?: number;
+    readonly overallDeadlineMs?: number | null;
     /**
      * Console-compatible logger (`console` itself works). Default output is
      * VALUES-FREE: operation, status, class, and correlation id only; debug level
@@ -93,6 +94,26 @@ export interface RapClientConfig {
 export interface RapCallOptions {
     /** Cancels the call. Cancellation rethrows the abort reason — it is not a payment outcome. */
     readonly signal?: AbortSignal;
+}
+
+/**
+ * The overall-deadline default applied when `overallDeadlineMs` is omitted: 75 seconds,
+ * ratified from production latency telemetry (ADR-SDK-027). Pass `overallDeadlineMs:
+ * null` to disable the SDK deadline entirely.
+ */
+export const DEFAULT_OVERALL_DEADLINE_MS = 75_000;
+
+/**
+ * Resolves the configured overall deadline: omitted (`undefined`) → the ratified
+ * default; `null` → disabled; a positive number → itself.
+ */
+export function resolveOverallDeadlineMs(
+    configured: number | null | undefined,
+): number | undefined {
+    if (configured === null) {
+        return undefined;
+    }
+    return configured ?? DEFAULT_OVERALL_DEADLINE_MS;
 }
 
 /**
@@ -143,8 +164,14 @@ export class RapClient {
         if (apiVersion.trim() === '') {
             throw new TypeError('apiVersion is required');
         }
-        if (config.overallDeadlineMs !== undefined && !(config.overallDeadlineMs > 0)) {
-            throw new TypeError('overallDeadlineMs must be positive when set');
+        if (
+            config.overallDeadlineMs !== undefined &&
+            config.overallDeadlineMs !== null &&
+            !(config.overallDeadlineMs > 0)
+        ) {
+            throw new TypeError(
+                'overallDeadlineMs must be positive when set (null disables the SDK deadline)',
+            );
         }
 
         this.logger = loggerOrSilent(config.logger);
@@ -161,7 +188,7 @@ export class RapClient {
                 apiKey: config.apiKey,
                 apiVersion,
                 userAgent: userAgentValue(config.userAgentSuffix),
-                overallDeadlineMs: config.overallDeadlineMs,
+                overallDeadlineMs: resolveOverallDeadlineMs(config.overallDeadlineMs),
                 transport: config.transport,
                 dispatcher: config.dispatcher,
             }),

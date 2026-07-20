@@ -188,7 +188,7 @@ final class ReconcileTest extends TestCase
 
     public function testPolicyBoundsAreValidated(): void
     {
-        // OQ-6: no SDK-invented defaults — all bounds are explicit and validated.
+        // ADR-SDK-027: reconcile bounds stay explicit (no SDK defaults) — all validated.
         foreach (
             [
                 fn () => new ReconcilePolicy(0, 1.0, 0.0),

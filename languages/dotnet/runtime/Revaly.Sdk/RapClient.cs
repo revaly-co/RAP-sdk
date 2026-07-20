@@ -32,6 +32,7 @@ public sealed class RapClient : IDisposable
         options.Validate();
 
         var loggerFactory = options.LoggerFactory ?? NullLoggerFactory.Instance;
+        var overallDeadline = options.EffectiveOverallDeadline;
         var services = new ServiceCollection();
         services.AddSingleton(loggerFactory);
         services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
@@ -48,7 +49,7 @@ public sealed class RapClient : IDisposable
                 client =>
                 {
                     client.BaseAddress = options.BaseUrl;
-                    if (options.OverallDeadline is not null)
+                    if (overallDeadline is not null)
                     {
                         // The safety handler owns the deadline so expiry is classified
                         // (OutcomeUnknown), not surfaced as a bare timeout.
@@ -64,7 +65,7 @@ public sealed class RapClient : IDisposable
                         .AddHttpMessageHandler(() => new UserAgentHandler())
                         .AddHttpMessageHandler(() => new ApiVersionHandler(options.ApiVersion))
                         .AddHttpMessageHandler(() => new RapSafetyHandler(
-                            options.OverallDeadline, options.ApiVersion));
+                            overallDeadline, options.ApiVersion));
 
                     builder.ConfigurePrimaryHttpMessageHandler(() => BuildPrimaryHandler(options));
                 });

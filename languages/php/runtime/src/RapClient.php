@@ -69,6 +69,13 @@ final class RapClient
     private readonly RapReconciler $reconciler;
 
     /**
+     * The overall-deadline default applied when the parameter is omitted: 75 seconds,
+     * ratified from production latency telemetry (ADR-SDK-027). Pass an explicit
+     * `overallDeadline: null` to disable the SDK deadline entirely.
+     */
+    public const DEFAULT_OVERALL_DEADLINE_SECONDS = 75.0;
+
+    /**
      * @param string $apiKey the merchant API key (required). Sent as
      *        `Authorization: ApiKey <key>` on every request; never persisted, never
      *        logged, never present in exception messages (ADR-SDK-020).
@@ -84,17 +91,18 @@ final class RapClient
      *        failover). Pin 2.1 unless you have a frozen 2.0 integration.
      * @param float|null $connectTimeout TCP/TLS connection-establishment timeout in
      *        seconds. Default: none set by this SDK — the transport waits per its own
-     *        default. The telemetry-derived recommended default is OQ-6
-     *        (docs/open-items.md) and lands before Wave-1 GA; this SDK deliberately
-     *        does not invent one. Note: curl reports a connect-phase timeout and an
-     *        after-send timeout with the same error, so BOTH classify OutcomeUnknown
-     *        (never TransientFailure).
+     *        default. A client-side connect default cannot be derived from server-side
+     *        telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027) and this
+     *        SDK deliberately does not invent one. Note: curl reports a connect-phase
+     *        timeout and an after-send timeout with the same error, so BOTH classify
+     *        OutcomeUnknown (never TransientFailure).
      * @param float|null $overallDeadline overall per-request deadline in seconds.
      *        Expiry after the request was sent classifies as OutcomeUnknown (reconcile
-     *        before acting) — never TransientFailure. Default: none set by this SDK —
-     *        the transport waits indefinitely. The telemetry-derived recommended
-     *        default is OQ-6 (docs/open-items.md); this SDK deliberately does not
-     *        invent one.
+     *        before acting) — never TransientFailure. Default:
+     *        {@see self::DEFAULT_OVERALL_DEADLINE_SECONDS} (75 seconds, ratified from
+     *        production latency telemetry — ADR-SDK-027; it clears every observed
+     *        gateway tail cluster and clips ≲0.007% of charges). Pass an explicit
+     *        null to disable the SDK deadline (the transport then waits indefinitely).
      * @param LoggerInterface|null $logger PSR-3 logger. Default output is VALUES-FREE:
      *        operation, status, class, and correlation id only; debug level carries
      *        allowlist-scrubbed payloads (ADR-SDK-020).
@@ -114,7 +122,7 @@ final class RapClient
         string $baseUrl = 'https://api.revaly.co',
         string $apiVersion = '2.1',
         ?float $connectTimeout = null,
-        ?float $overallDeadline = null,
+        ?float $overallDeadline = self::DEFAULT_OVERALL_DEADLINE_SECONDS,
         ?LoggerInterface $logger = null,
         ?callable $wireTraceHook = null,
         ?callable $transport = null,

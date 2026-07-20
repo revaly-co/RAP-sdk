@@ -18,6 +18,17 @@ const DefaultBaseURL = "https://api.revaly.co"
 // ErrorResponse.code fast-failover signal is documented (failover-contract §2).
 const DefaultAPIVersion = "2.1"
 
+// DefaultOverallDeadline is applied when Config.OverallDeadline is zero:
+// 75 seconds, ratified from production latency telemetry (ADR-SDK-027) — it
+// clears every observed gateway tail cluster and clips ≲0.007% of charges.
+// Set NoOverallDeadline to disable the client deadline entirely.
+const DefaultOverallDeadline = 75 * time.Second
+
+// NoOverallDeadline disables the client-imposed overall deadline — the
+// pre-ADR-SDK-027 zero-value behaviour. Callers can still bound calls with
+// their own context.
+const NoOverallDeadline time.Duration = -1
+
 // Config is the client configuration (runtime-tdd §1). One client per
 // configuration; the client is safe for concurrent use and there are no global
 // singletons.
@@ -41,16 +52,17 @@ type Config struct {
 	// stdlib defaults. Setting it is what makes a connect-phase expiry
 	// PROVABLY never-sent (a dial-phase *net.OpError → TransientFailure); a
 	// context deadline expiring during the dial is not phase-provable and
-	// classifies OutcomeUnknown. The OQ-6 telemetry-derived default lands
-	// before Wave-1 GA and is deliberately not invented here
-	// (docs/open-items.md).
+	// classifies OutcomeUnknown. A client-side connect default cannot be
+	// derived from server-side telemetry; it awaits the OQ-11 edge
+	// verification (ADR-SDK-027) and is deliberately not invented here.
 	ConnectTimeout time.Duration
 
 	// OverallDeadline bounds each client operation end to end, applied as a
 	// context timeout per call (callers can also bound calls with their own
 	// context). Expiry AFTER send classifies OutcomeUnknown, never
-	// TransientFailure. Zero means no client-imposed deadline (OQ-6, as
-	// above).
+	// TransientFailure. Zero applies DefaultOverallDeadline (75 s, ratified
+	// from production latency telemetry — ADR-SDK-027); NoOverallDeadline
+	// disables the client deadline entirely.
 	OverallDeadline time.Duration
 
 	// Logger receives values-free structured logs (runtime-tdd §6). Nil
@@ -91,8 +103,17 @@ func (c Config) withDefaults() (Config, error) {
 	if strings.TrimSpace(c.APIVersion) == "" {
 		return c, errors.New("revaly: Config.APIVersion cannot be blank")
 	}
-	if c.ConnectTimeout < 0 || c.OverallDeadline < 0 {
-		return c, errors.New("revaly: timeouts cannot be negative")
+	if c.ConnectTimeout < 0 {
+		return c, errors.New("revaly: Config.ConnectTimeout cannot be negative")
+	}
+	switch {
+	case c.OverallDeadline == 0:
+		c.OverallDeadline = DefaultOverallDeadline
+	case c.OverallDeadline == NoOverallDeadline:
+		// Explicit opt-out: the client applies no context deadline.
+	case c.OverallDeadline < 0:
+		return c, errors.New(
+			"revaly: Config.OverallDeadline must be positive, or NoOverallDeadline to disable")
 	}
 	if c.Logger == nil {
 		c.Logger = slog.New(discardHandler{})

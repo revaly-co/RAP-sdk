@@ -49,8 +49,8 @@ public class Quickstart {
                 // Enablement-issued sandbox-scoped key. Sandbox and live share the same
                 // URL — your key's scope selects the environment (no separate sandbox host).
                 .apiKey(System.getenv("REVALY_API_KEY"))
-                .connectTimeout(Duration.ofSeconds(2))      // your call — see OQ-6 note below
-                .overallDeadline(Duration.ofSeconds(10))    // expiry AFTER send = OutcomeUnknown
+                .connectTimeout(Duration.ofSeconds(2))      // no SDK default — see timeout note below
+                .overallDeadline(Duration.ofSeconds(10))    // default 75 s (ADR-SDK-027); expiry AFTER send = OutcomeUnknown
                 .build();
 
         // merchantTransactionId is required on every payment request — it is also the
@@ -132,13 +132,18 @@ public class Quickstart {
 }
 ```
 
-### Timeouts are yours to choose (for now)
+### Timeouts
 
-This SDK ships **no default** connect timeout or overall deadline: the recommended,
-telemetry-derived defaults are an open platform work item (OQ-6) and land before Wave-1
-GA. Set both explicitly, per your latency budget. The one rule that is not yours to
-choose: an overall deadline that expires **after the request was sent** classifies as
-`OutcomeUnknown` — reconcile, never resubmit.
+The overall deadline defaults to **75 seconds**, ratified from production latency
+telemetry (ADR-SDK-027): it clears every observed gateway tail cluster (the worst
+non-hung tail seen in 14 fleet days was 64 s), clips ≲0.007% of charges, and still
+classifies well before the platform's own ≈100 s ceiling. Tighten it per your checkout
+budget (RAP routes gateways server-side, so the default must cover the slowest common
+class — per-gateway tuning is your override), or disable it with `noOverallDeadline()`.
+The connect timeout ships **no SDK default** — a client-side value needs edge telemetry
+(OQ-11). The one rule that is not yours to choose: an overall deadline that expires
+**after the request was sent** classifies as `OutcomeUnknown` — reconcile, never
+resubmit.
 
 ### API versioning
 

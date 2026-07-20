@@ -121,15 +121,20 @@ try {
 has no defaults). On sustained `NotFoundYet`, escalate per your risk policy — V1 has no
 `SafeToFailover` verdict, deliberately.
 
-### Timeouts are yours to choose (for now)
+### Timeouts
 
-`connectTimeout` and `overallDeadline` (seconds) are unset by default — the SDK does
-not invent values; telemetry-derived recommendations land before Wave-1 GA (OQ-6). One
-PHP-specific caveat: curl reports connect-phase timeouts and after-send deadline expiry
-with the **same error**, so this SDK classifies **every timeout as `OutcomeUnknown`**
-(reconcile), never as safe-to-failover — it cannot prove the request was never sent.
-Provable never-sent (connection refused, DNS, TLS handshake) still classifies
-`TransientFailureException`.
+`overallDeadline` defaults to **75 seconds** — ratified from production latency
+telemetry (ADR-SDK-027): it clears every observed gateway tail cluster (the worst
+non-hung tail seen in 14 fleet days was 64 s), clips ≲0.007% of charges, and still
+classifies well before the platform's own ≈100 s ceiling. Tighten it per your checkout
+budget (RAP routes gateways server-side, so the default must cover the slowest common
+class), or pass an explicit `overallDeadline: null` to disable the SDK deadline.
+`connectTimeout` still ships **no SDK default** — a client-side value needs edge
+telemetry (OQ-11). One PHP-specific caveat: curl reports connect-phase timeouts and
+after-send deadline expiry with the **same error**, so this SDK classifies **every
+timeout as `OutcomeUnknown`** (reconcile), never as safe-to-failover — it cannot prove
+the request was never sent. Provable never-sent (connection refused, DNS, TLS
+handshake) still classifies `TransientFailureException`.
 
 ### API versioning
 

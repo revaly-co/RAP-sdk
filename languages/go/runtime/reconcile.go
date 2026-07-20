@@ -88,8 +88,8 @@ func (*NotFoundYet) reconcileVerdict() {}
 
 // ReconcilePolicy is the caller-bounded polling policy — the ONLY loop this
 // SDK owns (ADR-SDK-004). All bounds are explicit: the SDK ships no default
-// attempt counts, budgets, or delays until the OQ-6 telemetry-derived
-// recommendations land (docs/open-items.md — deliberately not invented here).
+// attempt counts, budgets, or delays — reconcile defaults need post-charge
+// visibility-lag telemetry (ADR-SDK-027 residual, tracked under SC-261).
 // The backoff shape is exponential with jitter ([Proposed]: multiplier 2.0,
 // full jitter ±20%).
 //

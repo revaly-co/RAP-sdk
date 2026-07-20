@@ -43,10 +43,12 @@ build stories.
    **GitHub release artifacts** from this repo (model: the platform's `spec/v*` releases —
    asset + `.sha256` + `provenance.json`).
 4. **Do not decide open items.** OQ-2 (full error-code taxonomy), OQ-3 (registry
-   ownership/namespaces), OQ-6 (deadline defaults — telemetry-derived, do not invent numbers),
-   OQ-11 (AFD/WAF edge behaviour) have owners and gates in `docs/open-items.md`. Where code
-   needs the answer, leave an explicit marker referencing the OQ. (OQ-1 is decided —
-   ADR-SDK-023; generator changes are ADR revisions, never quiet pipeline edits.)
+   ownership/namespaces), OQ-11 (AFD/WAF edge behaviour) have owners and gates in
+   `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
+   OQ. (OQ-1 is decided — ADR-SDK-023; generator changes are ADR revisions, never quiet
+   pipeline edits. OQ-6 is decided — ADR-SDK-027: overall-deadline default 75 s ×6,
+   telemetry-ratified; the connect default rides OQ-11 and reconcile-policy defaults ride
+   SC-261 — still do not invent either.)
 5. **Safety-contract invariants** (`failover-contract.md` §2/§5; ADR-SDK-002/003/004/007/009):
    classify failures only by the normative algorithm — never from `error` message text, latency,
    or wait heuristics; `ErrorResponse.code` and `transactionType` are **open strings**, never

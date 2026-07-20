@@ -63,6 +63,13 @@ public final class RapClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(RapClient.class);
 
+    /**
+     * The overall-deadline default applied when the builder does not set one: 75 seconds, ratified
+     * from production latency telemetry (ADR-SDK-027). Disable with {@link
+     * Builder#noOverallDeadline()}.
+     */
+    public static final Duration DEFAULT_OVERALL_DEADLINE = Duration.ofSeconds(75);
+
     private final String apiVersion;
     private final HttpClient httpClient;
     private final ObjectMapper coreMapper;
@@ -99,7 +106,8 @@ public final class RapClient {
                         ApiClient.createDefaultObjectMapper(),
                         builder.baseUrl);
         // Overall per-request deadline; expiry after send classifies OutcomeUnknown
-        // (runtime-tdd §1). No SDK-invented default — OQ-6 (docs/open-items.md).
+        // (runtime-tdd §1). Defaults to DEFAULT_OVERALL_DEADLINE (ADR-SDK-027);
+        // noOverallDeadline() leaves java.net.http unbounded.
         if (builder.overallDeadline != null) {
             apiClient.setReadTimeout(builder.overallDeadline);
         }
@@ -437,7 +445,7 @@ public final class RapClient {
         private String baseUrl = "https://api.revaly.co";
         private String apiVersion = "2.1";
         private Duration connectTimeout;
-        private Duration overallDeadline;
+        private Duration overallDeadline = DEFAULT_OVERALL_DEADLINE;
         private String userAgentSuffix;
         private Consumer<RapWireTrace> wireTraceHook;
         private HttpClient transport;
@@ -479,9 +487,9 @@ public final class RapClient {
 
         /**
          * TCP/TLS connection-establishment timeout. Default: none set by this SDK — the transport's
-         * own default applies. The telemetry-derived recommended default is OQ-6
-         * (docs/open-items.md) and lands before Wave-1 GA; this SDK deliberately does not invent
-         * one.
+         * own default applies. A client-side connect default cannot be derived from server-side
+         * telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027) and this SDK deliberately
+         * does not invent one.
          */
         public Builder connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
@@ -490,13 +498,23 @@ public final class RapClient {
 
         /**
          * Overall per-request deadline. Expiry after the request was sent classifies as
-         * <b>OutcomeUnknown</b> (reconcile before acting) — never TransientFailure. Default: none
-         * set by this SDK — {@code java.net.http} waits indefinitely for a response when no timeout
-         * is set. The telemetry-derived recommended default is OQ-6 (docs/open-items.md); this SDK
-         * deliberately does not invent one.
+         * <b>OutcomeUnknown</b> (reconcile before acting) — never TransientFailure. Default: {@link
+         * RapClient#DEFAULT_OVERALL_DEADLINE} (75 seconds, ratified from production latency
+         * telemetry — ADR-SDK-027; it clears every observed gateway tail cluster and clips ≲0.007%
+         * of charges). Passing null is equivalent to {@link #noOverallDeadline()}.
          */
         public Builder overallDeadline(Duration overallDeadline) {
             this.overallDeadline = overallDeadline;
+            return this;
+        }
+
+        /**
+         * Disables the SDK overall deadline entirely: {@code java.net.http} then waits indefinitely
+         * for a response. Prefer tuning {@link #overallDeadline(Duration)} instead — an unbounded
+         * payment request has no classification point.
+         */
+        public Builder noOverallDeadline() {
+            this.overallDeadline = null;
             return this;
         }
 
@@ -539,7 +557,16 @@ public final class RapClient {
             if (apiVersion == null || apiVersion.trim().isEmpty()) {
                 throw new IllegalArgumentException("apiVersion is required");
             }
+            if (overallDeadline != null
+                    && (overallDeadline.isZero() || overallDeadline.isNegative())) {
+                throw new IllegalArgumentException(
+                        "overallDeadline must be positive; use noOverallDeadline() to disable");
+            }
             return new RapClient(this);
+        }
+
+        Duration effectiveOverallDeadline() {
+            return overallDeadline;
         }
     }
 }

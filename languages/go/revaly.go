@@ -37,8 +37,10 @@ func NewClient(cfg Config) (*Client, error) { return runtime.NewClient(cfg) }
 
 // Configuration defaults.
 const (
-	DefaultBaseURL    = runtime.DefaultBaseURL
-	DefaultAPIVersion = runtime.DefaultAPIVersion
+	DefaultBaseURL         = runtime.DefaultBaseURL
+	DefaultAPIVersion      = runtime.DefaultAPIVersion
+	DefaultOverallDeadline = runtime.DefaultOverallDeadline
+	NoOverallDeadline      = runtime.NoOverallDeadline
 )
 
 // The three typed failure classes (runtime-tdd §3, failover-contract §2).

@@ -102,7 +102,7 @@ rap-sdk/
 | Generator bake-off (OQ-1) | build start | `open-items.md` |
 | Registry + publish-env provisioning (OQ-3) | first publish | ADR-SDK-011/013/022 |
 | AFD/WAF edge behaviour verification (OQ-11) | Wave-1 GA (hard gate) | `open-items.md` |
-| Deadline defaults from telemetry (OQ-6) | Wave-1 GA | `open-items.md` |
+| Deadline defaults from telemetry (OQ-6) | Wave-1 GA — ✅ ratified 2026-07-20 (overall 75 s; connect deferred to OQ-11) | ADR-SDK-027 |
 | Sandbox parity + Enablement-issued test keys (OQ-4) | contract-smoke + GA | ADR-SDK-014 |
 | Apache-2.0 Legal ratification (OQ-12) | first publish | ADR-SDK-019 |
 

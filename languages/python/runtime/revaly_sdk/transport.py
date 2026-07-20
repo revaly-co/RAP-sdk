@@ -270,9 +270,9 @@ class RapTransport:
         """Maps timeout inputs to a urllib3.Timeout.
 
         - ``None`` → the configured defaults: overall deadline as ``total``,
-          connect timeout as ``connect``. Both default to None — the OQ-6
-          telemetry-derived recommendations land before Wave-1 GA and are
-          deliberately not invented here (docs/open-items.md).
+          connect timeout as ``connect``. The transport itself defaults both to
+          None — RapClient resolves the 75 s ratified overall default before
+          construction (ADR-SDK-027); connect awaits OQ-11 edge data.
         - ``_PerCallTimeout`` → RapClient per-call overrides layered over config.
         - number / (connect, read) tuple → the core convention, honored verbatim
           for callers using the generated apis directly.
