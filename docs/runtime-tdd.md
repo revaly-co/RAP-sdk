@@ -16,8 +16,8 @@ TDD-level design to finalize in Epic SC-234 build stories without re-opening dec
 | `apiKey` | — required | Merchant-held; injected per request; never persisted/logged (ADR-SDK-020) |
 | `baseUrl` | `https://api.revaly.co` | Sandbox and live share this URL — the environment is selected by the API key's scope, not the URL (ADR-SDK-024); override only for internal/pre-release targets |
 | `apiVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request; `"2.0"` selectable |
-| `connectTimeout` | from OQ-6 | Telemetry-derived defaults, set before Wave-1 GA — do not invent |
-| `overallDeadline` | from OQ-6 | Expiry **after send** classifies as OutcomeUnknown, never TransientFailure |
+| `connectTimeout` | none (transport default) | No SDK default — not derivable from server-side telemetry; awaits OQ-11 edge data (ADR-SDK-027) |
+| `overallDeadline` | **30 s** (ADR-SDK-027) | Telemetry-ratified 2026-07-20; per-language opt-out sentinel documented in the ADR. Expiry **after send** classifies as OutcomeUnknown, never TransientFailure |
 | `logger` | ecosystem-native | Values-free by default (§6) |
 | `wireTraceHook` | off | Scrubbed request/response observer (§6) |
 | `transport` | real HTTP | Replaceable by the mock transport (§8) |
@@ -71,9 +71,10 @@ requires a default/else branch (sealed base + documented default; non-exhaustive
 `Found` distinguishes terminal outcomes from (post-P-2) pending intent as distinct variants.
 
 **[Proposed]** `policy` = backoff schedule (default exponential + jitter), per-attempt deadline,
-overall budget; defaults derived from OQ-6 telemetry work; cancellable per language idiom
-(CancellationToken / context / AbortSignal / …). The helper is GET-only and side-effect-free —
-the only loop the runtime owns (ADR-SDK-004).
+overall budget; policy defaults deliberately not shipped in V1 — they need post-charge
+visibility-lag telemetry, not charge latency (ADR-SDK-027 residual → SC-261 follow-up);
+cancellable per language idiom (CancellationToken / context / AbortSignal / …). The helper is
+GET-only and side-effect-free — the only loop the runtime owns (ADR-SDK-004).
 
 ## 5. Transport concerns
 
