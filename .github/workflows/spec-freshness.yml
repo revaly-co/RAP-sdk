@@ -85,10 +85,11 @@ jobs:
             echo "::error::SPEC_ARTIFACT_READ_TOKEN is not configured — cannot list platform releases (fail-closed)."
             exit 1
           fi
-          # Default page size on purpose: per_page=100 reproducibly 503s on this repo's
-          # releases endpoint (server-side serialization weight — found in dry-run 2026-07-19);
-          # --paginate walks the default-sized pages fine. Three attempts absorb genuine
-          # transients so a red run means a real problem, not a hiccup.
+          # Default page size + retries: during the 2026-07-19 dry run, large-page requests
+          # 503'd repeatedly (a GitHub service incident, in hindsight — per_page=100 works
+          # fine in health). Default-sized pages via --paginate cost nothing and behaved
+          # better under that degradation; three attempts absorb genuine transients so a
+          # red run means a real problem, not a hiccup.
           TAGS=""
           for attempt in 1 2 3; do
             TAGS=$(gh api --paginate "repos/$PIN_REPO/releases" --jq '.[].tag_name' | grep '^spec/v' || true)

@@ -54,9 +54,10 @@ Two tiers, shipped in reverse order of value because tier 1 has no credential de
      history and means the token lost scope or the listing broke.
    - **Fail-closed throughout** (platform ADR 012 lesson): missing token or empty listing turns
      the run red after three attempts — "detector fired" and "detector never ran" are never
-     conflated. Empirical note: the releases endpoint reproducibly 503s at `per_page=100` on
-     the platform repo (found in the 2026-07-19 dry run) — the workflow walks default-sized
-     pages instead.
+     conflated. Empirical note: the 2026-07-19 dry run hit repeated 503s on large-page release
+     listings — a GitHub service incident, in hindsight (`per_page=100` works fine in health) —
+     so the workflow walks default-sized pages with a small retry loop; strictly more robust
+     under exactly the degradation observed.
 
 2. **Tier 2 — producer-side dispatch → draft re-pin PR (pending OQ-17).** When the cross-repo
    credential lands: the platform's `spec-artifact.yml` gains a final `repository_dispatch`
