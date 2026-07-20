@@ -29,6 +29,7 @@ using var rap = new RapClient(new RapClientOptions
     // OverallDeadline defaults to 75 s (telemetry-ratified — ADR-SDK-027); expiry after
     // send classifies OutcomeUnknown, never TransientFailure. Tighten it to your checkout
     // budget, or opt out with Timeout.InfiniteTimeSpan (HttpClient's 100 s then applies).
+    OverallDeadline = TimeSpan.FromSeconds(10),
     // ConnectTimeout has no SDK default — that needs client-side edge data (OQ-11).
 });
 ```
