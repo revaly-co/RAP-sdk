@@ -46,7 +46,7 @@ using Revaly.Sdk.Core.Model;
 using Revaly.Sdk.Errors;
 using Revaly.Sdk.Reconcile;
 
-var merchantTransactionId = $"order-{Guid.NewGuid():N}"; // YOUR id — required, max 100 chars.
+var merchantTransactionId = $"order-{Guid.NewGuid():N}"; // YOUR id — required, max 100 chars; keep ≤ 48 for gateway compatibility.
                                                          // It is the reconcile key: persist it
                                                          // BEFORE sending the request.
 
@@ -54,7 +54,9 @@ var request = new PaymentRequest(
     amount: 1999,                                        // minor units
     merchantTransactionId: merchantTransactionId,
     currency: new Option<string?>("USD"),
+    // paymentMethodType is omitted — inferred from the one populated method object.
     paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
+        fullName: new Option<string?>("Ada Lovelace"),    // creditCard requires a cardholder name
         creditCard: new Option<CreditCard?>(new CreditCard(
             "4111111111111111", "12", "2030",             // sandbox test card
             cardVerificationCode: new Option<string?>("123"))))));

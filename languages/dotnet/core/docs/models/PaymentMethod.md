@@ -1,5 +1,5 @@
 # Revaly.Sdk.Core.Model.PaymentMethod
-Payment method details for either credit card or gatewayPaymentMethodId
+Payment method details. Which fields are required depends on the payment-method type of the request: creditCard requires a cardholder name (fullName, or firstName together with lastName) plus creditCard.number/expiryMonth/expiryYear; gatewayPaymentMethodId requires gatewayPaymentMethod.gatewayPaymentMethodId and merchantAccountReferenceId; vaultToken requires vaultPaymentMethod.vaultToken plus the request-level customerId. When billing a stored payment method, supply paymentMethodId alone.
 
 ## Properties
 

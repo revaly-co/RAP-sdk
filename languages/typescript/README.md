@@ -47,8 +47,9 @@ try {
         amount: 1999,
         currency: 'USD',
         merchantTransactionId: 'order-1042', // required on every payment — it is your reconcile handle
-        paymentMethodType: 'creditCard',
+        // paymentMethodType is omitted — inferred from the one populated method object
         paymentMethod: {
+            fullName: 'Ada Lovelace', // creditCard requires a cardholder name
             creditCard: {
                 number: '4111111111111111', // sandbox test PAN
                 cardVerificationCode: '999',

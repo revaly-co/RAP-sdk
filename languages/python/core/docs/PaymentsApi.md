@@ -25,6 +25,11 @@ The authorized amount can later be captured using the capture endpoint.
 **Payment Method Types:**
 - **creditCard**: Process using raw credit card details
 - **gatewayPaymentMethodId**: Process using an existing gateway payment method id
+- **vaultToken**: Process using a vault-issued token (requires the request-level `customerId`)
+
+`paymentMethodType` may be omitted when exactly one of `paymentMethod.creditCard`,
+`paymentMethod.gatewayPaymentMethod`, or `paymentMethod.vaultPaymentMethod` is supplied —
+the type is inferred. See the `AuthorizeRequest` schema for the per-type required fields.
 
 To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
@@ -102,7 +107,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Payment authorized successfully |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  * X-Correlation-ID -  <br>  |
@@ -198,7 +203,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Payment captured successfully |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
@@ -220,6 +225,11 @@ Unlike authorization, the funds are immediately captured and transferred.
 **Payment Method Types:**
 - **creditCard**: Process using raw credit card details
 - **gatewayPaymentMethodId**: Process using an existing gateway payment method id
+- **vaultToken**: Process using a vault-issued token (requires the request-level `customerId`)
+
+`paymentMethodType` may be omitted when exactly one of `paymentMethod.creditCard`,
+`paymentMethod.gatewayPaymentMethod`, or `paymentMethod.vaultPaymentMethod` is supplied —
+the type is inferred. See the `PaymentRequest` schema for the per-type required fields.
 
 To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
@@ -297,7 +307,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Payment processed successfully |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **409** | Conflict - a payment with this merchantTransactionId has already been received for this account. Duplicate submissions are rejected deterministically instead of double-charging (per-account idempotency on merchantTransactionId). Retrieve the payment&#39;s status via GET /transactions/merchant/{merchantTransactionId}. Exception: a submission previously rejected with a 5xx carrying code &#x60;not_processed&#x60; released the id — resubmitting it is permitted and will not conflict. |  * X-Correlation-ID -  <br>  |
@@ -394,7 +404,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Refund or cancellation processed successfully |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
@@ -488,7 +498,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Refund processed successfully |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
@@ -583,7 +593,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Payment voided successfully |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |

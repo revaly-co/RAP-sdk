@@ -109,10 +109,12 @@ func main() {
 	}
 
 	// buildCharge assembles a charge request with the minimal live-approving
-	// field set (staging-verified 2026-07-18): paymentMethodType + a cardholder
-	// name are SERVER-required (business validation; spec marks them optional —
-	// recorded in ADR-SDK-024), and orderId + email are additionally required
-	// by the staging simulator for an approval. One synthetic test PAN; the
+	// field set (staging-verified 2026-07-18): a cardholder name is
+	// SERVER-required for creditCard (per-type rule, spec-documented since
+	// 2.3.0); paymentMethodType is optional since spec 2.3.0 (Backbone #251
+	// inference) — sent explicitly here to keep the wire shape deterministic
+	// across the six languages. orderId + email are additionally required by
+	// the staging simulator for an approval. One synthetic test PAN; the
 	// EXPIRY drives the outcome (12/2027 approves, 12/2020 declines).
 	buildCharge := func(mtid, number, year string, withName bool) revaly.PaymentRequest {
 		request := *revaly.NewPaymentRequest(1999, mtid)

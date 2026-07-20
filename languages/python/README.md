@@ -54,7 +54,9 @@ request = PaymentRequest(
     amount=1999,
     currency="USD",
     merchant_transaction_id="order-1042",  # required on every payment — it is your reconcile handle
+    # paymentMethodType is omitted — inferred from the one populated method object
     payment_method=PaymentMethod(
+        full_name="Ada Lovelace",  # creditCard requires a cardholder name
         credit_card=CreditCard(
             number="4111111111111111",  # sandbox test PAN
             card_verification_code="999",

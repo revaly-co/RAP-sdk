@@ -31,6 +31,8 @@ one correct reaction:
 
 ```java
 import co.revaly.sdk.RapClient;
+import co.revaly.sdk.core.model.CreditCard;
+import co.revaly.sdk.core.model.PaymentMethod;
 import co.revaly.sdk.core.model.PaymentRequest;
 import co.revaly.sdk.core.model.TransactionResponse;
 import co.revaly.sdk.errors.OutcomeUnknownException;
@@ -57,8 +59,16 @@ public class Quickstart {
         PaymentRequest request = new PaymentRequest()
                 .merchantTransactionId(merchantTransactionId)
                 .amount(1999L)
-                .currency("USD");
-                // ... payment method fields per the API reference
+                .currency("USD")
+                // paymentMethodType is omitted — inferred from the one populated
+                // method object. creditCard requires a cardholder name.
+                .paymentMethod(new PaymentMethod()
+                        .fullName("Ada Lovelace")
+                        .creditCard(new CreditCard()
+                                .number("4111111111111111") // sandbox test card
+                                .expiryMonth("12")
+                                .expiryYear("2030")
+                                .cardVerificationCode("123")));
 
         try {
             TransactionResponse response = client.charge(request);

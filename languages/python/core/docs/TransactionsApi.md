@@ -94,7 +94,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;.  |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **404** | Resource not found |  * X-Correlation-ID -  <br>  |
@@ -205,7 +205,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;. Returns a &#x60;PendingTransactionResponse&#x60; (&#x60;state: pending&#x60;) when the payment intent was accepted but no transaction record is visible yet.  |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **404** | Resource not found |  * X-Correlation-ID -  <br>  |
@@ -310,7 +310,7 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Successfully retrieved transactions |  * X-Correlation-ID -  <br>  |
-**400** | Bad request - invalid parameters or request body |  * X-Correlation-ID -  <br>  |
+**400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
 **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
