@@ -50,7 +50,7 @@ public class Quickstart {
                 // URL — your key's scope selects the environment (no separate sandbox host).
                 .apiKey(System.getenv("REVALY_API_KEY"))
                 .connectTimeout(Duration.ofSeconds(2))      // no SDK default — see timeout note below
-                .overallDeadline(Duration.ofSeconds(10))    // default 30 s (ADR-SDK-027); expiry AFTER send = OutcomeUnknown
+                .overallDeadline(Duration.ofSeconds(10))    // default 75 s (ADR-SDK-027); expiry AFTER send = OutcomeUnknown
                 .build();
 
         // merchantTransactionId is required on every payment request — it is also the
@@ -134,9 +134,10 @@ public class Quickstart {
 
 ### Timeouts
 
-The overall deadline defaults to **30 seconds**, ratified from production latency
-telemetry (ADR-SDK-027): it clips ~1 in 9,500 charges at the platform's observed tail
-while staying above the real slow-gateway stall band. Tighten it per your checkout
+The overall deadline defaults to **75 seconds**, ratified from production latency
+telemetry (ADR-SDK-027): it clears every observed gateway tail cluster (the worst
+non-hung tail seen in 14 fleet days was 64 s), clips ≲0.007% of charges, and still
+classifies well before the platform's own ≈100 s ceiling. Tighten it per your checkout
 budget (RAP routes gateways server-side, so the default must cover the slowest common
 class — per-gateway tuning is your override), or disable it with `noOverallDeadline()`.
 The connect timeout ships **no SDK default** — a client-side value needs edge telemetry

@@ -59,9 +59,9 @@ DEFAULT_BASE_URL = "https://api.revaly.co"
 DEFAULT_API_VERSION = "2.1"
 
 #: The overall-deadline default (seconds) applied when the argument is omitted:
-#: 30 seconds, ratified from production latency telemetry (ADR-SDK-027). Pass an
+#: 75 seconds, ratified from production latency telemetry (ADR-SDK-027). Pass an
 #: explicit ``overall_deadline=None`` to disable the SDK deadline entirely.
-DEFAULT_OVERALL_DEADLINE = 30.0
+DEFAULT_OVERALL_DEADLINE = 75.0
 
 _LOGGER_NAME = "revaly_sdk"
 
@@ -94,10 +94,10 @@ class RapClient:
     :param overall_deadline: Overall per-request deadline in seconds. Expiry
         after the request was sent classifies as OutcomeUnknown (reconcile before
         acting) — never TransientFailure. Default:
-        :data:`DEFAULT_OVERALL_DEADLINE` (30 seconds, ratified from production
-        latency telemetry — ADR-SDK-027; it clips ~1 in 9,500 charges at the
-        platform's observed tail). Pass an explicit ``None`` to disable the SDK
-        deadline entirely.
+        :data:`DEFAULT_OVERALL_DEADLINE` (75 seconds, ratified from production
+        latency telemetry — ADR-SDK-027; it clears every observed gateway tail
+        cluster and clips ≲0.007% of charges). Pass an explicit ``None`` to
+        disable the SDK deadline entirely.
     :param logger: A standard :mod:`logging` logger. Default output is
         VALUES-FREE: operation, status, class, and correlation id only; DEBUG
         level carries allowlist-scrubbed payloads (ADR-SDK-020). Defaults to

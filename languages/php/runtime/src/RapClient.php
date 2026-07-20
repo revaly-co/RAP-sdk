@@ -69,11 +69,11 @@ final class RapClient
     private readonly RapReconciler $reconciler;
 
     /**
-     * The overall-deadline default applied when the parameter is omitted: 30 seconds,
+     * The overall-deadline default applied when the parameter is omitted: 75 seconds,
      * ratified from production latency telemetry (ADR-SDK-027). Pass an explicit
      * `overallDeadline: null` to disable the SDK deadline entirely.
      */
-    public const DEFAULT_OVERALL_DEADLINE_SECONDS = 30.0;
+    public const DEFAULT_OVERALL_DEADLINE_SECONDS = 75.0;
 
     /**
      * @param string $apiKey the merchant API key (required). Sent as
@@ -99,10 +99,10 @@ final class RapClient
      * @param float|null $overallDeadline overall per-request deadline in seconds.
      *        Expiry after the request was sent classifies as OutcomeUnknown (reconcile
      *        before acting) — never TransientFailure. Default:
-     *        {@see self::DEFAULT_OVERALL_DEADLINE_SECONDS} (30 seconds, ratified from
-     *        production latency telemetry — ADR-SDK-027; it clips ~1 in 9,500 charges
-     *        at the platform's observed tail). Pass an explicit null to disable the
-     *        SDK deadline (the transport then waits indefinitely).
+     *        {@see self::DEFAULT_OVERALL_DEADLINE_SECONDS} (75 seconds, ratified from
+     *        production latency telemetry — ADR-SDK-027; it clears every observed
+     *        gateway tail cluster and clips ≲0.007% of charges). Pass an explicit
+     *        null to disable the SDK deadline (the transport then waits indefinitely).
      * @param LoggerInterface|null $logger PSR-3 logger. Default output is VALUES-FREE:
      *        operation, status, class, and correlation id only; debug level carries
      *        allowlist-scrubbed payloads (ADR-SDK-020).

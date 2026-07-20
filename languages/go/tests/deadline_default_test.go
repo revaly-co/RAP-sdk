@@ -1,5 +1,5 @@
 // ADR-SDK-027 deadline-default semantics: a zero-value Config resolves to the
-// 30 s ratified default, NoOverallDeadline opts out entirely, explicit values
+// 75 s ratified default, NoOverallDeadline opts out entirely, explicit values
 // pass through, and negative values are still rejected.
 package tests
 
@@ -52,12 +52,12 @@ func chargeDeadline(t *testing.T, mutate func(*revaly.Config)) time.Duration {
 }
 
 func TestZeroValueConfigAppliesTheRatifiedDefault(t *testing.T) {
-	if revaly.DefaultOverallDeadline != 30*time.Second {
-		t.Fatalf("DefaultOverallDeadline = %v, want 30s", revaly.DefaultOverallDeadline)
+	if revaly.DefaultOverallDeadline != 75*time.Second {
+		t.Fatalf("DefaultOverallDeadline = %v, want 75s", revaly.DefaultOverallDeadline)
 	}
 	got := chargeDeadline(t, nil)
-	if got <= 29*time.Second || got > 30*time.Second {
-		t.Fatalf("request context deadline %v away, want ~30s (ADR-SDK-027 default)", got)
+	if got <= 74*time.Second || got > 75*time.Second {
+		t.Fatalf("request context deadline %v away, want ~75s (ADR-SDK-027 default)", got)
 	}
 }
 

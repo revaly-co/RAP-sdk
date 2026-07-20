@@ -5,13 +5,13 @@ import { mockedClient, syntheticCardPayment } from './support/TestClients';
 
 /**
  * ADR-SDK-027 deadline-default semantics: an omitted overallDeadlineMs resolves to the
- * 30-second ratified default, an explicit null opts out entirely, explicit values pass
+ * 75-second ratified default, an explicit null opts out entirely, explicit values pass
  * through, and zero/negative values are still rejected.
  */
 
 describe('deadline defaults (ADR-SDK-027)', () => {
-    test('the ratified default is 30 seconds', () => {
-        expect(DEFAULT_OVERALL_DEADLINE_MS).toBe(30_000);
+    test('the ratified default is 75 seconds', () => {
+        expect(DEFAULT_OVERALL_DEADLINE_MS).toBe(75_000);
     });
 
     test('omitted resolves to the default, null disables, values pass through', () => {

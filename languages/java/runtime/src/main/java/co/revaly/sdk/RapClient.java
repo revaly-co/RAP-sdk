@@ -64,11 +64,11 @@ public final class RapClient {
     private static final Logger LOG = LoggerFactory.getLogger(RapClient.class);
 
     /**
-     * The overall-deadline default applied when the builder does not set one: 30 seconds, ratified
+     * The overall-deadline default applied when the builder does not set one: 75 seconds, ratified
      * from production latency telemetry (ADR-SDK-027). Disable with {@link
      * Builder#noOverallDeadline()}.
      */
-    public static final Duration DEFAULT_OVERALL_DEADLINE = Duration.ofSeconds(30);
+    public static final Duration DEFAULT_OVERALL_DEADLINE = Duration.ofSeconds(75);
 
     private final String apiVersion;
     private final HttpClient httpClient;
@@ -499,9 +499,9 @@ public final class RapClient {
         /**
          * Overall per-request deadline. Expiry after the request was sent classifies as
          * <b>OutcomeUnknown</b> (reconcile before acting) — never TransientFailure. Default: {@link
-         * RapClient#DEFAULT_OVERALL_DEADLINE} (30 seconds, ratified from production latency
-         * telemetry — ADR-SDK-027; it clips ~1 in 9,500 charges at the platform's observed tail).
-         * Passing null is equivalent to {@link #noOverallDeadline()}.
+         * RapClient#DEFAULT_OVERALL_DEADLINE} (75 seconds, ratified from production latency
+         * telemetry — ADR-SDK-027; it clears every observed gateway tail cluster and clips ≲0.007%
+         * of charges). Passing null is equivalent to {@link #noOverallDeadline()}.
          */
         public Builder overallDeadline(Duration overallDeadline) {
             this.overallDeadline = overallDeadline;

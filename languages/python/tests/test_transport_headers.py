@@ -134,7 +134,7 @@ def test_core_convention_number_and_tuple_honored():
 
 
 def test_no_timeouts_configured_applies_the_ratified_default():
-    # ADR-SDK-027: an omitted overall_deadline resolves to the 30 s ratified
+    # ADR-SDK-027: an omitted overall_deadline resolves to the 75 s ratified
     # default; connect stays unset (no SDK default until OQ-11 edge data exists).
     wire = _TimeoutCapturingWire()
     wire.charge().returns_approved()
@@ -145,7 +145,7 @@ def test_no_timeouts_configured_applies_the_ratified_default():
 
 
 def test_deadline_default_constant_is_the_ratified_value():
-    assert DEFAULT_OVERALL_DEADLINE == 30.0
+    assert DEFAULT_OVERALL_DEADLINE == 75.0
 
 
 def test_explicit_none_disables_the_sdk_deadline():

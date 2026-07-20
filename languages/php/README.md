@@ -123,9 +123,10 @@ has no defaults). On sustained `NotFoundYet`, escalate per your risk policy — 
 
 ### Timeouts
 
-`overallDeadline` defaults to **30 seconds** — ratified from production latency
-telemetry (ADR-SDK-027): it clips ~1 in 9,500 charges at the platform's observed tail
-while staying above the real slow-gateway stall band. Tighten it per your checkout
+`overallDeadline` defaults to **75 seconds** — ratified from production latency
+telemetry (ADR-SDK-027): it clears every observed gateway tail cluster (the worst
+non-hung tail seen in 14 fleet days was 64 s), clips ≲0.007% of charges, and still
+classifies well before the platform's own ≈100 s ceiling. Tighten it per your checkout
 budget (RAP routes gateways server-side, so the default must cover the slowest common
 class), or pass an explicit `overallDeadline: null` to disable the SDK deadline.
 `connectTimeout` still ships **no SDK default** — a client-side value needs edge

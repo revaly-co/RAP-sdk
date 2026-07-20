@@ -48,10 +48,10 @@ export interface RapClientConfig {
     /**
      * Overall per-request deadline in milliseconds. Expiry after the request was sent
      * classifies as OutcomeUnknown (reconcile before acting) — never TransientFailure.
-     * Default: {@link DEFAULT_OVERALL_DEADLINE_MS} (30 seconds, ratified from
-     * production latency telemetry — ADR-SDK-027; it clips ~1 in 9,500 charges at the
-     * platform's observed tail). Pass `null` to disable the SDK deadline and ride the
-     * platform's own behaviour.
+     * Default: {@link DEFAULT_OVERALL_DEADLINE_MS} (75 seconds, ratified from
+     * production latency telemetry — ADR-SDK-027; it clears every observed gateway
+     * tail cluster and clips ≲0.007% of charges). Pass `null` to disable the SDK
+     * deadline and ride the platform's own behaviour.
      *
      * There is no `connectTimeout` option: WHATWG fetch cannot bound the connect phase
      * per request. On Node the platform's own connect timeout applies (undici, default
@@ -97,11 +97,11 @@ export interface RapCallOptions {
 }
 
 /**
- * The overall-deadline default applied when `overallDeadlineMs` is omitted: 30 seconds,
+ * The overall-deadline default applied when `overallDeadlineMs` is omitted: 75 seconds,
  * ratified from production latency telemetry (ADR-SDK-027). Pass `overallDeadlineMs:
  * null` to disable the SDK deadline entirely.
  */
-export const DEFAULT_OVERALL_DEADLINE_MS = 30_000;
+export const DEFAULT_OVERALL_DEADLINE_MS = 75_000;
 
 /**
  * Resolves the configured overall deadline: omitted (`undefined`) → the ratified

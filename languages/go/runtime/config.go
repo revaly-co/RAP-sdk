@@ -19,10 +19,10 @@ const DefaultBaseURL = "https://api.revaly.co"
 const DefaultAPIVersion = "2.1"
 
 // DefaultOverallDeadline is applied when Config.OverallDeadline is zero:
-// 30 seconds, ratified from production latency telemetry (ADR-SDK-027) — it
-// clips ~1 in 9,500 charges at the platform's observed tail. Set
-// NoOverallDeadline to disable the client deadline entirely.
-const DefaultOverallDeadline = 30 * time.Second
+// 75 seconds, ratified from production latency telemetry (ADR-SDK-027) — it
+// clears every observed gateway tail cluster and clips ≲0.007% of charges.
+// Set NoOverallDeadline to disable the client deadline entirely.
+const DefaultOverallDeadline = 75 * time.Second
 
 // NoOverallDeadline disables the client-imposed overall deadline — the
 // pre-ADR-SDK-027 zero-value behaviour. Callers can still bound calls with
@@ -60,7 +60,7 @@ type Config struct {
 	// OverallDeadline bounds each client operation end to end, applied as a
 	// context timeout per call (callers can also bound calls with their own
 	// context). Expiry AFTER send classifies OutcomeUnknown, never
-	// TransientFailure. Zero applies DefaultOverallDeadline (30 s, ratified
+	// TransientFailure. Zero applies DefaultOverallDeadline (75 s, ratified
 	// from production latency telemetry — ADR-SDK-027); NoOverallDeadline
 	// disables the client deadline entirely.
 	OverallDeadline time.Duration

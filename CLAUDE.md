@@ -46,7 +46,7 @@ build stories.
    ownership/namespaces), OQ-11 (AFD/WAF edge behaviour) have owners and gates in
    `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
    OQ. (OQ-1 is decided — ADR-SDK-023; generator changes are ADR revisions, never quiet
-   pipeline edits. OQ-6 is decided — ADR-SDK-027: overall-deadline default 30 s ×6,
+   pipeline edits. OQ-6 is decided — ADR-SDK-027: overall-deadline default 75 s ×6,
    telemetry-ratified; the connect default rides OQ-11 and reconcile-policy defaults ride
    SC-261 — still do not invent either.)
 5. **Safety-contract invariants** (`failover-contract.md` §2/§5; ADR-SDK-002/003/004/007/009):

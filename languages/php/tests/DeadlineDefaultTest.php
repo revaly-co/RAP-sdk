@@ -12,7 +12,7 @@ use Revaly\Sdk\Testing\RapMockTransport;
 
 /**
  * ADR-SDK-027 deadline-default semantics: an omitted overallDeadline resolves to the
- * 30-second ratified default, an explicit null opts out entirely, explicit values pass
+ * 75-second ratified default, an explicit null opts out entirely, explicit values pass
  * through, and zero/negative values are rejected at construction.
  */
 final class DeadlineDefaultTest extends TestCase
@@ -27,13 +27,13 @@ final class DeadlineDefaultTest extends TestCase
         return $guzzle->getConfig(RequestOptions::TIMEOUT);
     }
 
-    public function testOmittedResolvesToTheRatified30sDefault(): void
+    public function testOmittedResolvesToTheRatifiedDefault(): void
     {
-        self::assertSame(30.0, RapClient::DEFAULT_OVERALL_DEADLINE_SECONDS);
+        self::assertSame(75.0, RapClient::DEFAULT_OVERALL_DEADLINE_SECONDS);
 
         $client = new RapClient(apiKey: 'sk-synthetic-test', transport: new RapMockTransport());
 
-        self::assertSame(30.0, self::wiredTimeout($client));
+        self::assertSame(75.0, self::wiredTimeout($client));
     }
 
     public function testExplicitNullOptsOutOfAnySdkDeadline(): void

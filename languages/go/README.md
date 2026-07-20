@@ -58,7 +58,7 @@ import (
 func main() {
 	client, err := revaly.NewClient(revaly.Config{
 		APIKey: "YOUR_SANDBOX_API_KEY",
-		// OverallDeadline defaults to 30 s when zero (telemetry-ratified —
+		// OverallDeadline defaults to 75 s when zero (telemetry-ratified —
 		// ADR-SDK-027); revaly.NoOverallDeadline disables it. ConnectTimeout
 		// has no SDK default (OQ-11) — set it: it makes a connect-phase
 		// expiry provably never-sent.
@@ -157,7 +157,7 @@ func reconcileBeforeActing(client *revaly.Client, merchantTransactionID string) 
 | `BaseURL` | `https://api.revaly.co` | Sandbox and live share it (key-scoped); override only for internal targets |
 | `APIVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request. On `"2.0"` the `code` field is not part of the documented contract, so 503 + `not_processed` classifies **OutcomeUnknown** — fast failover narrows to provable never-sent failures |
 | `ConnectTimeout` | Go defaults | Maps to `net.Dialer.Timeout`; setting it makes connect-phase expiries **provably never-sent** (`TransientFailure`). No SDK default — a client-side value needs edge telemetry (OQ-11; ADR-SDK-027) |
-| `OverallDeadline` | 30 s (ADR-SDK-027) | Per-call context timeout; expiry **after send** is `OutcomeUnknown`, never `TransientFailure`. Zero applies the telemetry-ratified default; `revaly.NoOverallDeadline` disables it |
+| `OverallDeadline` | 75 s (ADR-SDK-027) | Per-call context timeout; expiry **after send** is `OutcomeUnknown`, never `TransientFailure`. Zero applies the telemetry-ratified default; `revaly.NoOverallDeadline` disables it |
 | `Logger` | discard | `*slog.Logger`; output is values-free at every level |
 | `WireTrace` | off | Scrubbed request/response observer for support escalations |
 | `Wire` | real HTTP | The mock-transport injection point |

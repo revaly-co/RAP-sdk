@@ -8,15 +8,15 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /**
- * ADR-SDK-027 deadline-default semantics: unset resolves to the 30-second ratified default,
+ * ADR-SDK-027 deadline-default semantics: unset resolves to the 75-second ratified default,
  * noOverallDeadline() opts out entirely, explicit values pass through, and zero/negative values are
  * rejected at build.
  */
 class DeadlineDefaultTests {
 
     @Test
-    void unsetResolvesToTheRatified30sDefault() {
-        assertEquals(Duration.ofSeconds(30), RapClient.DEFAULT_OVERALL_DEADLINE);
+    void unsetResolvesToTheRatifiedDefault() {
+        assertEquals(Duration.ofSeconds(75), RapClient.DEFAULT_OVERALL_DEADLINE);
         assertEquals(
                 RapClient.DEFAULT_OVERALL_DEADLINE, RapClient.builder().effectiveOverallDeadline());
     }

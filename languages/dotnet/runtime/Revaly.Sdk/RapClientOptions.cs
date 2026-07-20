@@ -46,9 +46,9 @@ public sealed class RapClientOptions
     /// <summary>
     /// Overall per-request deadline. Expiry after the request was sent classifies as
     /// <b>OutcomeUnknown</b> (reconcile before acting) — never TransientFailure.
-    /// Default: <see cref="DefaultOverallDeadline"/> (30 seconds, ratified from
-    /// production latency telemetry — ADR-SDK-027; it clips ~1 in 9,500 charges at the
-    /// platform's observed tail). Set
+    /// Default: <see cref="DefaultOverallDeadline"/> (75 seconds, ratified from
+    /// production latency telemetry — ADR-SDK-027; it clears every observed gateway
+    /// tail cluster and clips ≲0.007% of charges). Set
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to disable the SDK
     /// deadline and ride the transport's own behaviour (<c>HttpClient</c>'s 100-second
     /// default).
@@ -57,9 +57,9 @@ public sealed class RapClientOptions
 
     /// <summary>
     /// The overall-deadline default applied when <see cref="OverallDeadline"/> is
-    /// unset: 30 seconds (ADR-SDK-027).
+    /// unset: 75 seconds (ADR-SDK-027).
     /// </summary>
-    public static readonly TimeSpan DefaultOverallDeadline = TimeSpan.FromSeconds(30);
+    public static readonly TimeSpan DefaultOverallDeadline = TimeSpan.FromSeconds(75);
 
     internal TimeSpan? EffectiveOverallDeadline =>
         OverallDeadline == System.Threading.Timeout.InfiniteTimeSpan
