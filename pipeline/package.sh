@@ -394,6 +394,14 @@ ASSET_TABLE="$(
   done
 )"
 
+if [ "$GATE_VALUE" = "pass" ]; then
+  GATE_SENTENCE="Stages 1–4 (validate, generate ×6, build+test ×6, contract smoke ×6) passed on
+this run before packaging — any language red blocks every language's release."
+else
+  GATE_SENTENCE="**Local build — stages 1–4 were NOT verified on this run** (provenance gates
+read \`$GATE_VALUE\`). Only CI runs from a release tag publish releases."
+fi
+
 cat > "$OUT/RELEASE_NOTES.md" <<EOF
 Interim distribution artifact (ADR-SDK-026): registry publish remains embargoed
 (repo rule 3) and package names are **[Proposed]** until OQ-3 registry
@@ -409,8 +417,7 @@ provisioning — this GitHub release is the supported install channel.
 | Generator | $GEN_NAME \`$GEN_VERSION\` (digest-pinned) |
 | Pipeline run | $CI_RUN_URL |
 
-Stages 1–4 (validate, generate ×6, build+test ×6, contract smoke ×6) passed on
-this run before packaging — any language red blocks every language's release.
+$GATE_SENTENCE
 
 ## Assets
 
