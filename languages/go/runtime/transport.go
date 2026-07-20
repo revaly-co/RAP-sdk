@@ -64,9 +64,9 @@ func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 // ConnectTimeout onto net.Dialer.Timeout — the mapping that makes a
 // connect-phase expiry surface as a dial-phase *net.OpError, i.e. the provable
 // never-sent signal (see ClassifyTransportError). With ConnectTimeout unset the
-// stdlib defaults apply — the OQ-6 telemetry-derived recommendations land
-// before Wave-1 GA and are deliberately not invented here
-// (docs/open-items.md).
+// stdlib defaults apply — a client-side connect default cannot be derived from
+// server-side telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027)
+// and is deliberately not invented here.
 func newBaseWire(connectTimeout time.Duration) http.RoundTripper {
 	base, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {

@@ -3,9 +3,9 @@ namespace Revaly.Sdk.Reconcile;
 /// <summary>
 /// The caller-bounded polling policy for <c>RapClient.ReconcileAsync</c> — the ONLY loop
 /// this SDK owns (ADR-SDK-004). All bounds are explicit constructor arguments: the SDK
-/// ships no default attempt counts, budgets, or delays until the OQ-6 telemetry-derived
-/// recommendations land (docs/open-items.md — deliberately not invented here). The
-/// backoff shape is exponential with jitter.
+/// deliberately ships no default attempt counts, budgets, or delays — reconcile defaults
+/// need post-charge visibility-lag telemetry, not charge latency (ADR-SDK-027 residual,
+/// tracked under SC-261). The backoff shape is exponential with jitter.
 /// </summary>
 public sealed class ReconcilePolicy
 {

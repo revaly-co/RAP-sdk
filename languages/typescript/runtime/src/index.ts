@@ -7,7 +7,12 @@
  */
 
 // Client
-export { RapClient, type RapCallOptions, type RapClientConfig } from './RapClient';
+export {
+    DEFAULT_OVERALL_DEADLINE_MS,
+    RapClient,
+    type RapCallOptions,
+    type RapClientConfig,
+} from './RapClient';
 
 // Typed failure classes + classification (failover-contract §2)
 export {

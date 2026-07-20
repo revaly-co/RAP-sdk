@@ -95,10 +95,15 @@ except RapOutcomeUnknown:
         escalate_to_operator(verdict)
 ```
 
-### Timeouts are yours to choose (for now)
+### Timeouts
 
-The SDK ships **no default deadlines** — the telemetry-derived recommendations are an
-open item (OQ-6) and land before Wave-1 GA. All timeouts are seconds:
+`overall_deadline` defaults to **30 seconds** (`DEFAULT_OVERALL_DEADLINE`) — ratified
+from production latency telemetry (ADR-SDK-027): it clips ~1 in 9,500 charges at the
+platform's observed tail while staying above the real slow-gateway stall band. Tighten
+it per your checkout budget (RAP routes gateways server-side, so the default must
+cover the slowest common class), or pass an explicit `overall_deadline=None` to
+disable the SDK deadline. `connect_timeout` still ships **no SDK default** — a
+client-side value needs edge telemetry (OQ-11). All timeouts are seconds:
 
 ```python
 client = RapClient(api_key, connect_timeout=3.0, overall_deadline=10.0)

@@ -26,6 +26,10 @@ using var rap = new RapClient(new RapClientOptions
     // ApiVersion defaults to "2.1". Selecting "2.0" narrows fast failover: without the
     // ErrorResponse.code contract, a 503 + not_processed classifies OutcomeUnknown
     // (reconcile) instead of TransientFailure (immediate failover). Keep 2.1.
+    // OverallDeadline defaults to 30 s (telemetry-ratified — ADR-SDK-027); expiry after
+    // send classifies OutcomeUnknown, never TransientFailure. Tighten it to your checkout
+    // budget, or opt out with Timeout.InfiniteTimeSpan (HttpClient's 100 s then applies).
+    // ConnectTimeout has no SDK default — that needs client-side edge data (OQ-11).
 });
 ```
 
@@ -96,8 +100,8 @@ async Task ReconcileBeforeActing(RapClient rap, string merchantTransactionId)
     var verdict = await rap.ReconcileAsync(
         merchantTransactionId,
         // All bounds are explicit and yours to choose: this loop is how long your
-        // checkout holds before escalating. (Telemetry-derived recommended defaults
-        // ship before GA — OQ-6.)
+        // checkout holds before escalating. (Deliberately explicit — reconcile defaults
+        // await visibility-lag telemetry; ADR-SDK-027 ratified only the request deadline.)
         new ReconcilePolicy(
             maxAttempts: 6,
             overallBudget: TimeSpan.FromSeconds(45),

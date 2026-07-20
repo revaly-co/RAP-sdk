@@ -112,11 +112,14 @@ if (!result.ok) {
 }
 ```
 
-### Timeouts are yours to choose (for now)
+### Timeouts
 
-The SDK ships **no default deadlines** — the telemetry-derived recommendations are an
-open item (OQ-6) and land before Wave-1 GA. Set `overallDeadlineMs` per your checkout
-budget; expiry after send classifies `RapOutcomeUnknown` (reconcile), never
+`overallDeadlineMs` defaults to **30 seconds** (`DEFAULT_OVERALL_DEADLINE_MS`) —
+ratified from production latency telemetry (ADR-SDK-027): it clips ~1 in 9,500 charges
+at the platform's observed tail while staying above the real slow-gateway stall band.
+Tighten it per your checkout budget (RAP routes gateways server-side, so the default
+must cover the slowest common class), or pass `overallDeadlineMs: null` to disable the
+SDK deadline. Expiry after send classifies `RapOutcomeUnknown` (reconcile), never
 TransientFailure.
 
 There is deliberately **no `connectTimeout` option**: WHATWG fetch cannot bound the

@@ -24,7 +24,12 @@ from ._scrub import REDACTED, SCRUBBED, scrub_headers, scrub_json, scrub_value
 from ._useragent import user_agent_value
 from ._version import SDK_VERSION
 from ._wire_trace import RapWireTraceEvent, RapWireTraceHook
-from .client import DEFAULT_API_VERSION, DEFAULT_BASE_URL, RapClient
+from .client import (
+    DEFAULT_API_VERSION,
+    DEFAULT_BASE_URL,
+    DEFAULT_OVERALL_DEADLINE,
+    RapClient,
+)
 from .errors import (
     RapError,
     RapOutcomeUnknown,

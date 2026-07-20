@@ -58,6 +58,11 @@ from .transport import (
 DEFAULT_BASE_URL = "https://api.revaly.co"
 DEFAULT_API_VERSION = "2.1"
 
+#: The overall-deadline default (seconds) applied when the argument is omitted:
+#: 30 seconds, ratified from production latency telemetry (ADR-SDK-027). Pass an
+#: explicit ``overall_deadline=None`` to disable the SDK deadline entirely.
+DEFAULT_OVERALL_DEADLINE = 30.0
+
 _LOGGER_NAME = "revaly_sdk"
 
 
@@ -82,13 +87,17 @@ class RapClient:
         frozen 2.0 integration.
     :param connect_timeout: Connect-phase timeout in seconds. A connect-phase
         expiry is provably never-sent and classifies TransientFailure. Default:
-        none set by this SDK (the OS default applies) — the telemetry-derived
-        recommended default is OQ-6 (docs/open-items.md) and lands before Wave-1
-        GA; this SDK deliberately does not invent one.
+        none set by this SDK (the OS default applies) — a client-side connect
+        default cannot be derived from server-side telemetry; it awaits the
+        OQ-11 edge verification (ADR-SDK-027) and this SDK deliberately does not
+        invent one.
     :param overall_deadline: Overall per-request deadline in seconds. Expiry
         after the request was sent classifies as OutcomeUnknown (reconcile before
-        acting) — never TransientFailure. Default: none set by this SDK (OQ-6,
-        as above).
+        acting) — never TransientFailure. Default:
+        :data:`DEFAULT_OVERALL_DEADLINE` (30 seconds, ratified from production
+        latency telemetry — ADR-SDK-027; it clips ~1 in 9,500 charges at the
+        platform's observed tail). Pass an explicit ``None`` to disable the SDK
+        deadline entirely.
     :param logger: A standard :mod:`logging` logger. Default output is
         VALUES-FREE: operation, status, class, and correlation id only; DEBUG
         level carries allowlist-scrubbed payloads (ADR-SDK-020). Defaults to
@@ -120,7 +129,7 @@ class RapClient:
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
         connect_timeout: Optional[float] = None,
-        overall_deadline: Optional[float] = None,
+        overall_deadline: Optional[float] = DEFAULT_OVERALL_DEADLINE,
         logger: Optional[logging.Logger] = None,
         wire_trace_hook: Optional[RapWireTraceHook] = None,
         transport: Optional[Any] = None,
