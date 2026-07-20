@@ -92,10 +92,12 @@ function freshId(label: string): string {
 
 /**
  * Charge request with the minimal live-approving field set (staging-verified
- * 2026-07-18): paymentMethodType + a cardholder name are SERVER-required
- * (business validation; the spec marks them optional — ADR-SDK-024), and
- * orderId + email are additionally required by the staging simulator for an
- * approval. Synthetic test cards only.
+ * 2026-07-18): a cardholder name is SERVER-required for creditCard (per-type
+ * rule, spec-documented since 2.3.0); paymentMethodType is optional since
+ * spec 2.3.0 (Backbone #251 inference) — sent explicitly here to keep the
+ * wire shape deterministic across the six languages. orderId + email are
+ * additionally required by the staging simulator for an approval. Synthetic
+ * test cards only.
  */
 function buildCharge(merchantTransactionId: string, pan: string, expiryYear: string, withName = true) {
     return {

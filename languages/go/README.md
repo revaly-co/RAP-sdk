@@ -74,7 +74,9 @@ func main() {
 	card := revaly.NewCreditCard("4111111111111111", "12", "2030") // sandbox test card
 	card.SetCardVerificationCode("123")
 	method := revaly.NewPaymentMethod()
+	method.SetFullName("Ada Lovelace") // creditCard requires a cardholder name
 	method.SetCreditCard(*card)
+	// paymentMethodType is omitted — inferred from the one populated method object.
 	request.SetPaymentMethod(*method)
 
 	transaction, err := client.Charge(context.Background(), request)

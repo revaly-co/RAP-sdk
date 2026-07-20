@@ -41,6 +41,8 @@ example is part of the quickstart because it is the safety-critical path:
 ```php
 <?php
 
+use Revaly\Sdk\Core\Model\CreditCard;
+use Revaly\Sdk\Core\Model\PaymentMethod;
 use Revaly\Sdk\Core\Model\PaymentRequest;
 use Revaly\Sdk\Errors\OutcomeUnknownException;
 use Revaly\Sdk\Errors\PermanentRejectionException;
@@ -62,6 +64,18 @@ $request = new PaymentRequest();
 $request->setAmount(1999);                     // smallest currency unit (cents)
 $request->setCurrency('USD');
 $request->setMerchantTransactionId('order-1042-attempt-1'); // required — reconcile key
+
+$card = new CreditCard();
+$card->setNumber('4111111111111111');          // sandbox test card
+$card->setExpiryMonth('12');
+$card->setExpiryYear('2030');
+$card->setCardVerificationCode('123');
+
+$method = new PaymentMethod();
+$method->setFullName('Ada Lovelace');          // creditCard requires a cardholder name
+$method->setCreditCard($card);
+$request->setPaymentMethod($method);           // paymentMethodType is omitted —
+                                               // inferred from the one populated method object
 
 try {
     $transaction = $client->charge($request);
