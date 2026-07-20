@@ -160,10 +160,15 @@ package_dotnet() {
   local src="$WORK/languages/dotnet"
   # -p:Version stamps the assembly informational version RapUserAgent.ResolveSemver
   # reads, the nupkg version, and the runtime→core package-dependency version.
+  # PackageOutputPath as a property, not -o: under Git Bash (MSYS) the -o form
+  # mis-parses when the project path is also being converted (verified 2026-07-20);
+  # the property form behaves identically on the Linux runners.
   dotnet pack "$src/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj" \
-    -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true -o "$OUT"
+    -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
+    -p:PackageOutputPath="$OUT"
   dotnet pack "$src/runtime/Revaly.Sdk/Revaly.Sdk.csproj" \
-    -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true -o "$OUT"
+    -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
+    -p:PackageOutputPath="$OUT"
   [ -f "$OUT/Revaly.Sdk.$VERSION.nupkg" ] && [ -f "$OUT/Revaly.Sdk.Core.$VERSION.nupkg" ] \
     || die "expected nupkgs missing from $OUT"
 }
@@ -218,7 +223,12 @@ package_typescript() {
   stage_tree
   local src="$WORK/languages/typescript"
   cp "$WORK/LICENSE" "$WORK/NOTICE" "$src/"
-  jq --arg v "$VERSION" '.version = $v' "$src/package.json" > "$src/package.json.tmp"
+  # Version stamp + "type" flip to commonjs: tsconfig.build.json emits under
+  # `nodenext`, where format follows package.json "type" — commonjs keeps the
+  # generated core's extensionless relative imports legal (see that file's
+  # header). The committed manifest keeps "type": "module" for dev.
+  jq --arg v "$VERSION" '.version = $v | .type = "commonjs"' \
+    "$src/package.json" > "$src/package.json.tmp"
   mv "$src/package.json.tmp" "$src/package.json"
   stamp "$src/runtime/src/version.ts" \
     "s/export const SDK_VERSION = '0\\.0\\.0';/export const SDK_VERSION = '$VERSION';/" \
