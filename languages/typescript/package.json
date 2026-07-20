@@ -8,13 +8,24 @@
   "engines": {
     "node": ">=20.3"
   },
+  "main": "./dist/runtime/src/index.js",
+  "types": "./dist/runtime/src/index.d.ts",
   "exports": {
-    ".": "./runtime/src/index.ts"
+    ".": {
+      "types": "./dist/runtime/src/index.d.ts",
+      "default": "./dist/runtime/src/index.js"
+    }
   },
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "smoke": "vitest run --config vitest.smoke.config.ts"
+    "smoke": "vitest run --config vitest.smoke.config.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@types/node": "24.13.3",

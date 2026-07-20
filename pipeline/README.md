@@ -1,9 +1,12 @@
 # `pipeline/` — Generation & Release Pipeline
 
 One deterministic pipeline (`../docs/pipeline-and-release.md`): **validate → generate ×6 →
-build+test → contract smoke → package → publish**. Stages 1–4 run on every PR
-(`../.github/workflows/pipeline.yml`); 5–6 only from release tags on `main` — and **publish is
-embargoed** until its gates close (repo rule 3; ADR-SDK-011/013/019/022).
+build+test → contract smoke → package → publish**. Stages 1–3 run on every PR
+(`../.github/workflows/pipeline.yml`); stage 4 runs on release tags (blocking), the nightly
+schedule (advisory) and manual dispatch; stage 5 and the **interim** stage 6 (GitHub release,
+ADR-SDK-026) run only from per-language release tags on `main`. **Registry publish stays
+embargoed** until its gates close (repo rule 3; ADR-SDK-011/013/019/022) — the GitHub release
+IS the sanctioned interim distribution channel.
 
 ## What exists today
 
@@ -13,6 +16,7 @@ embargoed** until its gates close (repo rule 3; ADR-SDK-011/013/019/022).
 | `spec-tooling/` | Lockfile-pinned `@redocly/cli` — `npm ci` verifies the pinned tarball's integrity hash; the workflow cross-checks the installed version against `REDOCLY_VERSION` and refuses drift |
 | `generator-pin.yaml` | Generator toolchain pin (ADR-SDK-023) — stage 2's input; upgrades are ADR revisions riding PRs where the regeneration diff makes the blast radius reviewable |
 | `generate.sh` | The only generation entry point (local and CI): downloads the pinned artifact (or takes `--spec`), **sha256-verifies it against `../spec/pin.yaml` before generating** (ADR-SDK-006), wipes each `core/` and regenerates it with the digest-pinned image — never a floating tag, never a local install |
+| `package.sh` | The only stage-5 packaging entry point (local and CI, ADR-SDK-026): `package.sh <language> <version>` packages **exactly the committed tree at HEAD** (`git archive` — untracked files can never leak into an artifact), stamps the tag version into the ephemeral staging copy only (committed manifests keep their `0.0.0-dev` placeholders), refuses pre-release version suffixes, and emits `dist/<language>/`: the distributable asset(s) + one `.sha256` per asset + `provenance.json` (spec pin + generator pin + gate trail — the platform `spec/v*` release model) + generated `RELEASE_NOTES.md` mapping the version to the spec commit SHA. Talks to **no** registry, ever |
 | `typescript/compile-check/` | Stage-3 compile harness for the TS core: lockfile-pinned `typescript` (`npm ci`, same trust posture as `spec-tooling/`), strict no-emit `tsc` over `../languages/typescript/core/`. Exists because the core is generated **bare** (no `npmName` → no package scaffolding, see `typescript/config.yaml`): the core ships inside the runtime's package (runtime-tdd.md §2), so the harness never becomes a publishable package — the npm identity is [Proposed] until OQ-3 and belongs to the runtime |
 | `<language>/` (×6: `dotnet` `java` `php` `typescript` `python` `go`) | Per-language generation config (ADR-SDK-023 flag table): `config.yaml` (flags, [Proposed] OQ-3 package identities, explicit Apache-2.0 license fields per ADR-SDK-019), `.openapi-generator-ignore` (exclusions — note: patterns need a `**/` prefix, this matcher is narrower than gitignore), `templates/` (generated-code banner partial per ADR-SDK-016; python additionally forks `model_generic.mustache` to make enum validators open-vocabulary; all six fork their auth-example templates so every generated README/api-doc shows the RAP scheme — an API key in the `Authorization` header with the **required `ApiKey` prefix**, `Authorization: ApiKey <key>` — instead of the stock Bearer-style or prefix-less samples (java native's stock samples didn't even compile); dotnet additionally forks the generichost `JsonConverter.mustache` (2026-07-16) to guard optional inner-enum serialization with `Option.IsSet` — the stock template dereferences the unset Option, crashing any request that omits e.g. `paymentMethodType`/`cardType`; each `config.yaml` header lists its exact fork set — re-diff forks against the embedded originals on any generator upgrade) |
 
@@ -53,8 +57,13 @@ dev-scope transitive) tracked for dismissal.
 ## Stage roadmap (build order)
 
 Stage 2 (generate ×6 — **built 2026-07-15**, cores committed from `spec/v2.1.3+e75c71a`) →
-stage 3 (build + test, any language red blocks all — **first increment built 2026-07-16**:
-compile ×6 on every PR; tests/linters/scrub tests attach when the runtime lands) → stage 4
-(contract smoke vs Sandbox, Enablement-issued key, ADR-SDK-014) → stages 5–6 (package /
-publish — embargoed; per-language release tags drive the matrix). Each stage appends a job
-to `pipeline.yml` chained with `needs:`.
+stage 3 (build + test, any language red blocks all — **first increment built 2026-07-16**,
+runtime tests/linters/scrub tests attached per language as each runtime landed) → stage 4
+(contract smoke ×6 — **built 2026-07-18**, ADR-SDK-024: staging-scoped secrets interim,
+merchant sandbox key at the GA retarget) → stage 5 + stage 6 interim (package + GitHub
+release — **built 2026-07-20**, ADR-SDK-026: per-language release tags `<lang>/vX.Y.Z` on
+`main` drive `package.sh` and `gh release create`; go tags as `go/vX.Y.Z`, its
+module-activating `languages/go/v*` form is reserved for the gated Go registry publish).
+Registry stage 6 (npm / PyPI / NuGet / Packagist / Maven Central / pkg.go.dev) remains
+**embargoed** until OQ-3 + ADR-SDK-013 machine gates + ADR-SDK-019 Legal ratification close.
+Each stage appends a job to `pipeline.yml` chained with `needs:`.

@@ -72,6 +72,23 @@
                 <version>3.13.0</version>
             </plugin>
             <plugin>
+                <!-- Implementation-Version in the jar manifest is what
+                     RapUserAgent.resolveSemver() reports (ADR-SDK-005 telemetry).
+                     It rides ${project.version}: 0.0.0-SNAPSHOT in dev builds,
+                     the tag version once stage 5 stamps the release copy
+                     (pipeline/package.sh). Classes-dir runs (surefire, IDEs)
+                     still fall back to the 0.0.0 placeholder. -->
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>${spotless-version}</version>

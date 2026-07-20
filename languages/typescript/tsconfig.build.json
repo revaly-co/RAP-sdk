@@ -1,0 +1,25 @@
+{
+  // Stage-5 packaging emit only (pipeline/package.sh → npm pack): compiles core +
+  // runtime into dist/ as CommonJS + declarations. CommonJS deliberately: the
+  // generated core uses extensionless relative imports (ADR-SDK-001 — never
+  // hand-edited), which plain-Node ESM cannot resolve; CJS output loads from both
+  // require() and import via Node's interop.
+  //
+  // Emit format under `nodenext` follows the nearest package.json "type":
+  // package.sh flips the STAGED copy's package.json to "type": "commonjs" before
+  // building, so every file compiles as CJS and the extensionless relative
+  // imports stay legal. The committed package.json keeps "type": "module" for
+  // dev (vitest), which means `npm run build` straight from the working tree
+  // fails on the core's extensionless imports — packaging always goes through
+  // pipeline/package.sh (ADR-SDK-026).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  },
+  "include": ["core/**/*.ts", "runtime/**/*.ts"]
+}

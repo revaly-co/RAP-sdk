@@ -23,3 +23,11 @@ languages/python/build/
 languages/python/*.egg-info/
 languages/python/**/__pycache__/
 languages/python/.pytest_cache/
+
+# Stage-5 packaging output (pipeline/package.sh) — release assets are published as
+# GitHub release artifacts (ADR-SDK-026), never committed.
+dist/
+
+# Stage-5 emitted TypeScript build (tsconfig.build.json) — exists only inside the
+# packaging staging copy in CI; ignored here for local package.sh runs.
+languages/typescript/dist/
