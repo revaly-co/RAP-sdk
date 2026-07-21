@@ -934,15 +934,17 @@ jobs:
       - name: Download Stage-5 Output
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1 (node24)
         with:
+          # A release run uploads exactly one artifact (release-<lang>). merge-multiple
+          # flattens its contents straight into dist/ — deterministic across artifact-action
+          # majors (v4 nested under dist/release-<lang>/; v8 already flattens to dist/).
           pattern: release-*
           path: dist
-          merge-multiple: false
+          merge-multiple: true
 
       - name: Re-Verify Checksums After Artifact Transfer
         run: |
           set -euo pipefail
-          DIR=$(ls -d dist/release-*)
-          cd "$DIR"
+          cd dist
           sha256sum -c ./*.sha256
           echo "Checksums verified post-transfer."
 
@@ -954,7 +956,7 @@ jobs:
           REF="${GITHUB_REF#refs/tags/}"
           LANG_ID="${REF%/v*}"
           VERSION="${REF##*/v}"
-          DIR="dist/release-${LANG_ID}"
+          DIR="dist"
           ASSETS=$(find "$DIR" -maxdepth 1 -type f ! -name RELEASE_NOTES.md)
           # --latest=false: per-language releases must not fight over the repo's
           # "latest" pointer; --verify-tag refuses to mint a release for a tag
