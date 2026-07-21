@@ -76,6 +76,13 @@ final class RapClient
     public const DEFAULT_OVERALL_DEADLINE_SECONDS = 75.0;
 
     /**
+     * The connect-timeout default applied when the parameter is omitted: 10 seconds,
+     * ratified from the OQ-11 edge verification (ADR-SDK-029). Pass an explicit
+     * `connectTimeout: null` to disable the SDK connect bound entirely.
+     */
+    public const DEFAULT_CONNECT_TIMEOUT_SECONDS = 10.0;
+
+    /**
      * @param string $apiKey the merchant API key (required). Sent as
      *        `Authorization: ApiKey <key>` on every request; never persisted, never
      *        logged, never present in exception messages (ADR-SDK-020).
@@ -90,12 +97,13 @@ final class RapClient
      *        OutcomeUnknown (reconcile) instead of TransientFailure (immediate
      *        failover). Pin 2.1 unless you have a frozen 2.0 integration.
      * @param float|null $connectTimeout TCP/TLS connection-establishment timeout in
-     *        seconds. Default: none set by this SDK — the transport waits per its own
-     *        default. A client-side connect default cannot be derived from server-side
-     *        telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027) and this
-     *        SDK deliberately does not invent one. Note: curl reports a connect-phase
-     *        timeout and an after-send timeout with the same error, so BOTH classify
-     *        OutcomeUnknown (never TransientFailure).
+     *        seconds. Default: {@see self::DEFAULT_CONNECT_TIMEOUT_SECONDS} (10 seconds,
+     *        ratified from the OQ-11 edge verification — ADR-SDK-029). Pass an explicit
+     *        null to disable the SDK connect bound (the transport then applies no
+     *        connect timeout of its own). Note: curl reports a connect-phase timeout
+     *        and an after-send timeout with the same error (errno 28), so BOTH classify
+     *        OutcomeUnknown (never TransientFailure) — a connection REFUSED (errno 7)
+     *        stays provably never-sent and classifies TransientFailure.
      * @param float|null $overallDeadline overall per-request deadline in seconds.
      *        Expiry after the request was sent classifies as OutcomeUnknown (reconcile
      *        before acting) — never TransientFailure. Default:
@@ -121,7 +129,7 @@ final class RapClient
         string $apiKey,
         string $baseUrl = 'https://api.revaly.co',
         string $apiVersion = '2.1',
-        ?float $connectTimeout = null,
+        ?float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT_SECONDS,
         ?float $overallDeadline = self::DEFAULT_OVERALL_DEADLINE_SECONDS,
         ?LoggerInterface $logger = null,
         ?callable $wireTraceHook = null,
