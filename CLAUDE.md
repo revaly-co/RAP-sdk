@@ -30,8 +30,9 @@ build stories.
 
 1. **Never hand-edit generated code.** `languages/*/core/` is generator output only (ADR-SDK-001);
    it changes exclusively by regeneration against a newly pinned spec artifact, and CI enforces
-   this with a regeneration-diff check. The hand-written runtime (`languages/*/runtime/`) is the
-   only product code.
+   this with a regeneration-diff check. The hand-written runtime (`languages/*/runtime/`; go:
+   `languages/go/{revaly.go, internal/runtime/, raptest/}` per ADR-SDK-028) is the only product
+   code.
 2. **Spec input = pinned gated artifact only** (ADR-SDK-006): a `spec/v*` release tag from the
    platform repo, verified against its `.sha256` and `provenance.json` (pin lives in `spec/`).
    Never generate from a branch checkout, a URL, or a locally edited spec.
@@ -76,7 +77,7 @@ rap-sdk/
     php/        { core/, runtime/, tests/ }
     typescript/ { core/, runtime/, tests/ }
     python/     { core/, runtime/, tests/ }
-    go/         { core/, runtime/, tests/ }   # subdir module: github.com/revaly-co/rap-sdk/languages/go
+    go/         { core/, revaly.go + internal/runtime/ + raptest/, tests/ }   # subdir module: github.com/revaly-co/rap-sdk/languages/go (layout per ADR-SDK-028)
   pipeline/                # generation configs, templates, publish workflows
   docs/                    # ADRs + design docs (source of truth)
 ```

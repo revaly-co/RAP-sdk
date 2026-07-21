@@ -69,6 +69,14 @@ rap-sdk/
   docs/                  # this ADR set + design docs (relocated from the platform repo)
 ```
 
+> **Amendment (2026-07-21, ADR-SDK-028):** Go's hand-written layout deviates from the generic
+> `runtime/` shape above — the §a idiom review moved the internals behind Go's compiler-enforced
+> fence and lifted the mock to the merchant-importable surface:
+> `go/ { core/ (generated), revaly.go (root package), internal/runtime/, raptest/, smoke/, tests/ }`.
+> The root `package revaly` re-export is the one supported merchant surface; `internal/runtime/`
+> is unimportable outside the module by construction; `raptest/` follows the `httptest`
+> companion-package convention. The other five languages keep the layout as drawn.
+
 - Each `core/` carries a generated-code banner and is protected by the CI regeneration-diff check
   (ADR-SDK-001).
 - Confirm the Go module path shape (root vs subdir module) during the OQ-1 bake-off — if a root
