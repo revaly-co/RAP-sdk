@@ -16,7 +16,7 @@ TDD-level design to finalize in Epic SC-234 build stories without re-opening dec
 | `apiKey` | — required | Merchant-held; injected per request; never persisted/logged (ADR-SDK-020) |
 | `baseUrl` | `https://api.revaly.co` | Sandbox and live share this URL — the environment is selected by the API key's scope, not the URL (ADR-SDK-024); override only for internal/pre-release targets |
 | `apiVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request; `"2.0"` selectable |
-| `connectTimeout` | none (transport default) | No SDK default — not derivable from server-side telemetry; awaits OQ-11 edge data (ADR-SDK-027) |
+| `connectTimeout` | **10 s** (ADR-SDK-029) | Edge-verified 2026-07-21; per-language opt-out sentinel documented in the ADR (TypeScript: documentation-level per ADR-SDK-028 §4). Expiry classifies TransientFailure where the stack proves the connect phase; PHP errno-28 stays OutcomeUnknown |
 | `overallDeadline` | **75 s** (ADR-SDK-027) | Telemetry-ratified 2026-07-20; per-language opt-out sentinel documented in the ADR. Expiry **after send** classifies as OutcomeUnknown, never TransientFailure |
 | `logger` | ecosystem-native | Values-free by default (§6) |
 | `wireTraceHook` | off | Scrubbed request/response observer (§6) |
