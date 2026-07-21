@@ -124,17 +124,19 @@ SDK deadline. Expiry after send classifies `RapOutcomeUnknown` (reconcile), neve
 TransientFailure.
 
 There is deliberately **no `connectTimeout` option**: WHATWG fetch cannot bound the
-connect phase per request. On Node the platform's own connect timeout applies (undici
-default 10s), is reported structurally, and — because a connect-phase timeout proves
-the request never left — classifies `RapTransientFailure`. To tune it, pass a
-dispatcher:
+connect phase per request. The OQ-11-ratified connect default is **10 seconds**
+(ADR-SDK-029) — exactly undici's own default, so on Node you are bounded at the
+ratified number with zero configuration. A connect-phase timeout is reported
+structurally and — because it proves the request never left — classifies
+`RapTransientFailure`. To tune the bound, pass a dispatcher (the example pins the
+ratified 10 s explicitly; tighten per your own budget):
 
 ```ts
 import { Agent } from 'undici'; // your app's dependency, not the SDK's
 
 const client = new RapClient({
     apiKey: process.env.RAP_API_KEY!,
-    dispatcher: new Agent({ connect: { timeout: 3_000 } }),
+    dispatcher: new Agent({ connect: { timeout: 10_000 } }),
 });
 ```
 
