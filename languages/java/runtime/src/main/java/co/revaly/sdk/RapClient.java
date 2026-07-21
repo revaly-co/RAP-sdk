@@ -503,10 +503,10 @@ public final class RapClient {
 
         /**
          * TCP/TLS connection-establishment timeout. Default: {@link
-         * RapClient#DEFAULT_CONNECT_TIMEOUT} (10 seconds, ratified from the OQ-11 edge
-         * verification — ADR-SDK-029). Expiry surfaces as {@code HttpConnectTimeoutException} —
-         * provably never-sent — and classifies as <b>TransientFailure</b> (safe to fail over
-         * immediately). Passing null is equivalent to {@link #noConnectTimeout()}.
+         * RapClient#DEFAULT_CONNECT_TIMEOUT} (10 seconds, ratified from the OQ-11 edge verification
+         * — ADR-SDK-029). Expiry surfaces as {@code HttpConnectTimeoutException} — provably
+         * never-sent — and classifies as <b>TransientFailure</b> (safe to fail over immediately).
+         * Passing null is equivalent to {@link #noConnectTimeout()}.
          */
         public Builder connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
