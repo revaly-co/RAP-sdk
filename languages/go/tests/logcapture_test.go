@@ -17,7 +17,7 @@ import (
 
 	revaly "github.com/revaly-co/rap-sdk/languages/go"
 	core "github.com/revaly-co/rap-sdk/languages/go/core"
-	"github.com/revaly-co/rap-sdk/languages/go/runtime"
+	"github.com/revaly-co/rap-sdk/languages/go/internal/runtime"
 )
 
 const (
@@ -56,14 +56,14 @@ func (h *capturingHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 
 func (h *capturingHandler) WithGroup(string) slog.Handler { return h }
 
-func cardChargeRequest() core.PaymentRequest {
+func cardChargeRequest() *core.PaymentRequest {
 	card := core.NewCreditCard(syntheticPAN, "12", "2030")
 	card.SetCardVerificationCode(syntheticCVV)
 	method := core.NewPaymentMethod()
 	method.SetCreditCard(*card)
 	request := core.NewPaymentRequest(1099, "mock-mtx-log-1")
 	request.SetPaymentMethod(*method)
-	return *request
+	return request
 }
 
 func TestValuesFreeLoggingAndScrubbedTraces(t *testing.T) {

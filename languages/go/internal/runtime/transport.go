@@ -20,9 +20,9 @@
 //     transport only ever re-dials a request whose bytes were never written,
 //     which preserves single-send semantics).
 //
-// The wire itself is replaceable (Config.Wire): the mock transport substitutes
-// the wire only, so header injection — the safety-relevant code — runs
-// identically in merchant tests (DX contract §d).
+// The transport itself is replaceable (Config.Transport): the mock transport
+// substitutes the wire only, so header injection — the safety-relevant code —
+// runs identically in merchant tests (DX contract §d).
 package runtime
 
 import (
@@ -41,12 +41,12 @@ const (
 	apiVersionHeader    = "X-Api-Version"
 )
 
-// roundTripper injects the RAP headers and delegates to the wire.
+// roundTripper injects the RAP headers and delegates to the transport.
 type roundTripper struct {
 	apiKey     string
 	apiVersion string
 	userAgent  string
-	wire       http.RoundTripper
+	transport  http.RoundTripper
 }
 
 func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -56,26 +56,26 @@ func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if injected.Header.Get(apiVersionHeader) == "" {
 		injected.Header.Set(apiVersionHeader, t.apiVersion)
 	}
-	return t.wire.RoundTrip(injected)
+	return t.transport.RoundTrip(injected)
 }
 
-// newBaseWire builds the real HTTP wire. It starts from a clone of the stdlib
-// default transport (keeping proxy/HTTP2/pool behaviour) and maps
+// newBaseTransport builds the real HTTP transport. It starts from a clone of
+// the stdlib default transport (keeping proxy/HTTP2/pool behaviour) and maps
 // ConnectTimeout onto net.Dialer.Timeout — the mapping that makes a
 // connect-phase expiry surface as a dial-phase *net.OpError, i.e. the provable
 // never-sent signal (see ClassifyTransportError). With ConnectTimeout unset the
 // stdlib defaults apply — a client-side connect default cannot be derived from
 // server-side telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027)
 // and is deliberately not invented here.
-func newBaseWire(connectTimeout time.Duration) http.RoundTripper {
+func newBaseTransport(connectTimeout time.Duration) http.RoundTripper {
 	base, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
 		return http.DefaultTransport
 	}
-	wire := base.Clone()
+	transport := base.Clone()
 	if connectTimeout > 0 {
 		dialer := &net.Dialer{Timeout: connectTimeout}
-		wire.DialContext = dialer.DialContext
+		transport.DialContext = dialer.DialContext
 	}
-	return wire
+	return transport
 }

@@ -12,7 +12,7 @@ import (
 
 	revaly "github.com/revaly-co/rap-sdk/languages/go"
 	core "github.com/revaly-co/rap-sdk/languages/go/core"
-	"github.com/revaly-co/rap-sdk/languages/go/runtime/raptest"
+	"github.com/revaly-co/rap-sdk/languages/go/raptest"
 )
 
 const syntheticKey = "sk_synthetic_test_key_123"
@@ -20,7 +20,7 @@ const syntheticKey = "sk_synthetic_test_key_123"
 func newMockClient(t *testing.T, mutate func(*revaly.Config)) (*revaly.Client, *raptest.MockTransport) {
 	t.Helper()
 	mock := raptest.NewMockTransport()
-	cfg := revaly.Config{APIKey: syntheticKey, Wire: mock}
+	cfg := revaly.Config{APIKey: syntheticKey, Transport: mock}
 	if mutate != nil {
 		mutate(&cfg)
 	}
@@ -31,8 +31,28 @@ func newMockClient(t *testing.T, mutate func(*revaly.Config)) (*revaly.Client, *
 	return client, mock
 }
 
-func chargeRequest(merchantTransactionID string) core.PaymentRequest {
-	return *core.NewPaymentRequest(1099, merchantTransactionID)
+func chargeRequest(merchantTransactionID string) *core.PaymentRequest {
+	return core.NewPaymentRequest(1099, merchantTransactionID)
+}
+
+// A nil request is a plain programming error (ADR-SDK-028 G1) — never one of
+// the three typed failure classes: nothing was attempted, so nothing gets
+// classified, and no request reaches the wire.
+func TestNilRequestIsAPlainError(t *testing.T) {
+	client, mock := newMockClient(t, nil)
+	_, err := client.Charge(context.Background(), nil)
+	if err == nil {
+		t.Fatal("Charge(nil) succeeded, want a plain error")
+	}
+	var rejection *revaly.PermanentRejection
+	var transient *revaly.TransientFailure
+	var unknown *revaly.OutcomeUnknown
+	if errors.As(err, &rejection) || errors.As(err, &transient) || errors.As(err, &unknown) {
+		t.Fatalf("Charge(nil) returned a typed failure class (%T) — want a plain error", err)
+	}
+	if got := len(mock.Requests()); got != 0 {
+		t.Fatalf("nil request reached the wire (%d requests recorded)", got)
+	}
 }
 
 func TestPermanentRejectionStatuses(t *testing.T) {

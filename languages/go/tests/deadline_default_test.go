@@ -10,7 +10,7 @@ import (
 	"time"
 
 	revaly "github.com/revaly-co/rap-sdk/languages/go"
-	"github.com/revaly-co/rap-sdk/languages/go/runtime/raptest"
+	"github.com/revaly-co/rap-sdk/languages/go/raptest"
 )
 
 // deadlineCapture wraps the mock wire and records the context deadline each
@@ -34,7 +34,7 @@ func chargeDeadline(t *testing.T, mutate func(*revaly.Config)) time.Duration {
 	mock := raptest.NewMockTransport()
 	mock.Charge().ReturnsApproved()
 	capture := &deadlineCapture{inner: mock}
-	cfg := revaly.Config{APIKey: syntheticKey, Wire: capture}
+	cfg := revaly.Config{APIKey: syntheticKey, Transport: capture}
 	if mutate != nil {
 		mutate(&cfg)
 	}
