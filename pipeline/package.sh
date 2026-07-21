@@ -182,8 +182,12 @@ package_java() {
   # in the staging copy that becomes the artifact.
   mvn -B -ntp -f "$src/pom.xml" versions:set \
     -DnewVersion="$VERSION" -DprocessAllModules -DgenerateBackupPoms=false
+  # -Dmaven.javadoc.skip=true: skip the generated core's attach-javadocs execution —
+  # it doclints undocumented generated members into hundreds of "no comment" warnings,
+  # and the interim file-repo bundle does not ship javadoc jars (sources jar is kept).
+  # GA/Maven-Central javadoc is handled at the generator-template level, not here.
   mvn -B -ntp -f "$src/pom.xml" -pl runtime -am -DskipTests \
-    -Dmaven.repo.local="$m2" install
+    -Dmaven.repo.local="$m2" -Dmaven.javadoc.skip=true install
   # Maven-repository bundle: exactly our two artifacts, consumable via a
   # file:// repository or an unzip into ~/.m2/repository.
   mkdir -p "$bundle/co/revaly"

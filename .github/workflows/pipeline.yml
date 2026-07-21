@@ -635,7 +635,11 @@ jobs:
       - name: Run Contract Smoke
         run: |
           set -euo pipefail
-          mvn -B -ntp -f languages/java/pom.xml -pl smoke -am -DskipTests install
+          # -Dmaven.javadoc.skip=true: the generated core's maven-javadoc-plugin
+          # (core/pom.xml attach-javadocs) doclints undocumented generated members and
+          # emits hundreds of "warning: no comment" annotations; the smoke build needs
+          # no javadoc jar. (GA/Maven-Central javadoc is a generator-template concern.)
+          mvn -B -ntp -f languages/java/pom.xml -pl smoke -am -DskipTests -Dmaven.javadoc.skip=true install
           mvn -B -ntp -f languages/java/pom.xml -pl smoke exec:java
 
   smoke-php:
@@ -903,7 +907,7 @@ jobs:
         run: bash pipeline/package.sh "$LANG_ID" "$VERSION"
 
       - name: Upload Stage-5 Output
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (node24)
         with:
           name: release-${{ steps.tag.outputs.lang }}
           path: dist/${{ steps.tag.outputs.lang }}/
@@ -928,7 +932,7 @@ jobs:
 
     steps:
       - name: Download Stage-5 Output
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1 (node24)
         with:
           pattern: release-*
           path: dist

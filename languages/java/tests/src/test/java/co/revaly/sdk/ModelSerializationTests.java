@@ -35,7 +35,11 @@ class ModelSerializationTests {
         assertTrue(json.contains(TestClient.MTX));
     }
 
+    // EnumOrdinal is intentional here: any generated constant exercises the serializer, and
+    // values()[0] deliberately avoids pinning a spec-specific enum NAME that a regeneration
+    // could drop — the test is order-independent by design.
     @Test
+    @SuppressWarnings("EnumOrdinal")
     void optionalInnerEnumPresentSerializesItsWireValue() throws Exception {
         PaymentRequest.PaymentMethodTypeEnum first =
                 PaymentRequest.PaymentMethodTypeEnum.values()[0];
