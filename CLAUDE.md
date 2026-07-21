@@ -100,8 +100,9 @@ Scaffolding rules:
 ## Pipeline (docs/pipeline-and-release.md)
 
 validate → generate ×6 → build+test → contract smoke (Sandbox) → package → publish.
-Stages 1–4 run on every PR; 5–6 only from release tags on `main`. Any language red blocks the
-release for all six. Semver per package; per-language tags (`dotnet/v1.0.0`) drive the publish
+Stages 1–3 run on every PR; stage 4 runs on release tags (blocking), the nightly schedule
+(advisory), and manual dispatch — never plain PRs (ADR-SDK-024); 5–6 only from release tags on
+`main`. Any language red blocks the release for all six. Semver per package; per-language tags (`dotnet/v1.0.0`) drive the publish
 matrix; every version maps to a spec commit SHA in release notes. A failed release never resumes
 via manual re-run — fix, then cut a new tag.
 

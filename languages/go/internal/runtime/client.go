@@ -151,9 +151,9 @@ func (c *Client) RefundCancel(ctx context.Context, merchantTransactionID string,
 }
 
 // errNilRequest is the guard for a nil request struct — a plain programming
-// error in the same class as the nil-ctx guard in executeOp, deliberately NOT
-// one of the three typed failure classes: no request was ever attempted, so
-// there is no wire outcome to classify (failover-contract §2 untouched).
+// error, deliberately NOT one of the three typed failure classes: no request
+// was ever attempted, so there is no wire outcome to classify
+// (failover-contract §2 untouched).
 func errNilRequest(op string) error {
 	return errors.New("revaly: " + op + ": request must not be nil")
 }
