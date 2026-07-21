@@ -63,10 +63,10 @@ func (t *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 // the stdlib default transport (keeping proxy/HTTP2/pool behaviour) and maps
 // ConnectTimeout onto net.Dialer.Timeout — the mapping that makes a
 // connect-phase expiry surface as a dial-phase *net.OpError, i.e. the provable
-// never-sent signal (see ClassifyTransportError). With ConnectTimeout unset the
-// stdlib defaults apply — a client-side connect default cannot be derived from
-// server-side telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027)
-// and is deliberately not invented here.
+// never-sent signal (see ClassifyTransportError). Config resolution applies
+// DefaultConnectTimeout (10 s — ADR-SDK-029) when the field is zero; with
+// NoConnectTimeout the value arrives negative, no dialer bound is set, and the
+// stdlib defaults apply.
 func newBaseTransport(connectTimeout time.Duration) http.RoundTripper {
 	base, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {

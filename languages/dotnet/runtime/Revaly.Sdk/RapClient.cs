@@ -119,7 +119,7 @@ public sealed class RapClient : IDisposable
         }
 
         var handler = new SocketsHttpHandler();
-        if (options.ConnectTimeout is { } connectTimeout)
+        if (options.EffectiveConnectTimeout is { } connectTimeout)
         {
             handler.ConnectTimeout = connectTimeout;
         }

@@ -77,6 +77,15 @@ public final class RapClient {
      */
     public static final Duration DEFAULT_OVERALL_DEADLINE = Duration.ofSeconds(75);
 
+    /**
+     * The connect-timeout default applied when the builder never sets one: 10 seconds, ratified
+     * from the OQ-11 edge verification (ADR-SDK-029; ~25× the observed cold client→edge TLS
+     * envelope and 65 s below the overall deadline). Connect-phase expiry surfaces as {@code
+     * HttpConnectTimeoutException} — provably never-sent — and classifies as
+     * <b>TransientFailure</b> (safe to fail over immediately).
+     */
+    public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+
     private final String apiVersion;
     private final HttpClient httpClient;
     private final ObjectMapper coreMapper;
@@ -451,7 +460,7 @@ public final class RapClient {
         private String apiKey;
         private String baseUrl = "https://api.revaly.co";
         private String apiVersion = "2.1";
-        private Duration connectTimeout;
+        private Duration connectTimeout = DEFAULT_CONNECT_TIMEOUT;
         private Duration overallDeadline = DEFAULT_OVERALL_DEADLINE;
         private String userAgentSuffix;
         private Consumer<RapWireTrace> wireTraceHook;
@@ -493,13 +502,24 @@ public final class RapClient {
         }
 
         /**
-         * TCP/TLS connection-establishment timeout. Default: none set by this SDK — the transport's
-         * own default applies. A client-side connect default cannot be derived from server-side
-         * telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027) and this SDK deliberately
-         * does not invent one.
+         * TCP/TLS connection-establishment timeout. Default: {@link
+         * RapClient#DEFAULT_CONNECT_TIMEOUT} (10 seconds, ratified from the OQ-11 edge verification
+         * — ADR-SDK-029). Expiry surfaces as {@code HttpConnectTimeoutException} — provably
+         * never-sent — and classifies as <b>TransientFailure</b> (safe to fail over immediately).
+         * Passing null is equivalent to {@link #noConnectTimeout()}.
          */
         public Builder connectTimeout(Duration connectTimeout) {
             this.connectTimeout = connectTimeout;
+            return this;
+        }
+
+        /**
+         * Disables the SDK connect bound entirely: {@code java.net.http} then applies no connect
+         * timeout of its own. Prefer tuning {@link #connectTimeout(Duration)} instead — an
+         * unbounded connect phase forfeits the fastest provable failover signal.
+         */
+        public Builder noConnectTimeout() {
+            this.connectTimeout = null;
             return this;
         }
 
@@ -576,11 +596,20 @@ public final class RapClient {
                 throw new IllegalArgumentException(
                         "overallDeadline must be positive; use noOverallDeadline() to disable");
             }
+            if (connectTimeout != null
+                    && (connectTimeout.isZero() || connectTimeout.isNegative())) {
+                throw new IllegalArgumentException(
+                        "connectTimeout must be positive; use noConnectTimeout() to disable");
+            }
             return new RapClient(this);
         }
 
         Duration effectiveOverallDeadline() {
             return overallDeadline;
+        }
+
+        Duration effectiveConnectTimeout() {
+            return connectTimeout;
         }
     }
 }

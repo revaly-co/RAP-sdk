@@ -29,6 +29,16 @@ const DefaultOverallDeadline = 75 * time.Second
 // their own context.
 const NoOverallDeadline time.Duration = -1
 
+// DefaultConnectTimeout is applied when Config.ConnectTimeout is zero:
+// 10 seconds, ratified from the OQ-11 edge verification (ADR-SDK-029) — ~25×
+// the observed cold client→edge TLS envelope and 65 s below the overall
+// deadline. Set NoConnectTimeout to disable the client connect bound entirely.
+const DefaultConnectTimeout = 10 * time.Second
+
+// NoConnectTimeout disables the client-imposed connect bound — the
+// pre-ADR-SDK-029 zero-value behaviour (the stdlib dial defaults apply).
+const NoConnectTimeout time.Duration = -1
+
 // Config is the client configuration (runtime-tdd §1). One client per
 // configuration; the client is safe for concurrent use and there are no global
 // singletons.
@@ -48,13 +58,13 @@ type Config struct {
 	// OutcomeUnknown under that pin.
 	APIVersion string
 
-	// ConnectTimeout bounds the dial phase (TCP connect). Zero leaves the
-	// stdlib defaults. Setting it is what makes a connect-phase expiry
-	// PROVABLY never-sent (a dial-phase *net.OpError → TransientFailure); a
-	// context deadline expiring during the dial is not phase-provable and
-	// classifies OutcomeUnknown. A client-side connect default cannot be
-	// derived from server-side telemetry; it awaits the OQ-11 edge
-	// verification (ADR-SDK-027) and is deliberately not invented here.
+	// ConnectTimeout bounds the dial phase (TCP connect). Zero applies
+	// DefaultConnectTimeout (10 s, ratified from the OQ-11 edge verification
+	// — ADR-SDK-029); NoConnectTimeout disables the client connect bound
+	// entirely (the stdlib dial defaults apply). The bound is what makes a
+	// connect-phase expiry PROVABLY never-sent (a dial-phase *net.OpError →
+	// TransientFailure); a context deadline expiring during the dial is not
+	// phase-provable and classifies OutcomeUnknown.
 	ConnectTimeout time.Duration
 
 	// OverallDeadline bounds each client operation end to end, applied as a
@@ -104,8 +114,14 @@ func (c Config) withDefaults() (Config, error) {
 	if strings.TrimSpace(c.APIVersion) == "" {
 		return c, errors.New("revaly: Config.APIVersion cannot be blank")
 	}
-	if c.ConnectTimeout < 0 {
-		return c, errors.New("revaly: Config.ConnectTimeout cannot be negative")
+	switch {
+	case c.ConnectTimeout == 0:
+		c.ConnectTimeout = DefaultConnectTimeout
+	case c.ConnectTimeout == NoConnectTimeout:
+		// Explicit opt-out: the dialer applies no client connect bound.
+	case c.ConnectTimeout < 0:
+		return c, errors.New(
+			"revaly: Config.ConnectTimeout must be positive, or NoConnectTimeout to disable")
 	}
 	switch {
 	case c.OverallDeadline == 0:

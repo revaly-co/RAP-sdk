@@ -45,6 +45,8 @@ const (
 	DefaultAPIVersion      = runtime.DefaultAPIVersion
 	DefaultOverallDeadline = runtime.DefaultOverallDeadline
 	NoOverallDeadline      = runtime.NoOverallDeadline
+	DefaultConnectTimeout  = runtime.DefaultConnectTimeout
+	NoConnectTimeout       = runtime.NoConnectTimeout
 )
 
 // The three typed failure classes (runtime-tdd §3, failover-contract §2).

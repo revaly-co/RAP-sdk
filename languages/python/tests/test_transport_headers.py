@@ -9,7 +9,12 @@ import pytest
 import urllib3
 
 from conftest import SYNTHETIC_API_KEY, make_client, payment_request
-from revaly_sdk import DEFAULT_OVERALL_DEADLINE, SDK_VERSION, user_agent_value
+from revaly_sdk import (
+    DEFAULT_CONNECT_TIMEOUT,
+    DEFAULT_OVERALL_DEADLINE,
+    SDK_VERSION,
+    user_agent_value,
+)
 from revaly_sdk.testing import RapMockTransport
 
 UA_GRAMMAR = re.compile(r"^revaly-sdk-python/\S+ \(python \d+\.\d+; (windows|linux|darwin|other)\)")
@@ -131,19 +136,39 @@ def test_core_convention_number_and_tuple_honored():
     assert wire.timeouts[-1].read_timeout == 4.0
 
 
-def test_no_timeouts_configured_applies_the_ratified_default():
-    # ADR-SDK-027: an omitted overall_deadline resolves to the 75 s ratified
-    # default; connect stays unset (no SDK default until OQ-11 edge data exists).
+def test_no_timeouts_configured_applies_the_ratified_defaults():
+    # ADR-SDK-027 + ADR-SDK-029: an omitted overall_deadline resolves to the
+    # 75 s ratified default; an omitted connect_timeout resolves to the 10 s
+    # edge-ratified default.
     wire = _TimeoutCapturingWire()
     wire.charge().returns_approved()
     make_client(wire).charge(payment_request())
     timeout = wire.timeouts[-1]
     assert timeout.total == DEFAULT_OVERALL_DEADLINE
-    assert timeout._connect in (None, urllib3.Timeout.DEFAULT_TIMEOUT)
+    assert timeout._connect == DEFAULT_CONNECT_TIMEOUT
 
 
 def test_deadline_default_constant_is_the_ratified_value():
     assert DEFAULT_OVERALL_DEADLINE == 75.0
+
+
+def test_connect_default_constant_is_the_ratified_value():
+    assert DEFAULT_CONNECT_TIMEOUT == 10.0
+
+
+def test_explicit_none_disables_the_sdk_connect_bound():
+    # The pre-ADR-029 unset behaviour, now an explicit opt-out.
+    wire = _TimeoutCapturingWire()
+    wire.charge().returns_approved()
+    make_client(wire, connect_timeout=None).charge(payment_request())
+    assert wire.timeouts[-1]._connect in (None, urllib3.Timeout.DEFAULT_TIMEOUT)
+
+
+def test_zero_and_negative_connect_timeouts_are_rejected():
+    with pytest.raises(ValueError):
+        make_client(RapMockTransport(), connect_timeout=0.0)
+    with pytest.raises(ValueError):
+        make_client(RapMockTransport(), connect_timeout=-5.0)
 
 
 def test_explicit_none_disables_the_sdk_deadline():

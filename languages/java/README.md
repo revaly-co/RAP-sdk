@@ -143,10 +143,13 @@ non-hung tail seen in 14 fleet days was 64 s), clips ≲0.007% of charges, and s
 classifies well before the platform's own ≈100 s ceiling. Tighten it per your checkout
 budget (RAP routes gateways server-side, so the default must cover the slowest common
 class — per-gateway tuning is your override), or disable it with `noOverallDeadline()`.
-The connect timeout ships **no SDK default** — a client-side value needs edge telemetry
-(OQ-11). The one rule that is not yours to choose: an overall deadline that expires
-**after the request was sent** classifies as `OutcomeUnknown` — reconcile, never
-resubmit.
+The connect timeout defaults to **10 seconds**, ratified from the OQ-11 edge
+verification (ADR-SDK-029): roughly 25× the observed cold client→edge TLS envelope, and
+65 s below the overall deadline so the connect bound always fires first during connect.
+Expiry surfaces as `HttpConnectTimeoutException` — provably never-sent — and classifies
+as `TransientFailure` (safe to fail over immediately); disable with `noConnectTimeout()`.
+The one rule that is not yours to choose: an overall deadline that expires **after the
+request was sent** classifies as `OutcomeUnknown` — reconcile, never resubmit.
 
 One semantic caveat: the deadline bounds **time-to-response**, per `java.net.http`'s
 `HttpRequest.timeout()` semantics — the wait through the response status and headers. A

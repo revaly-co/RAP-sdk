@@ -30,7 +30,9 @@ using var rap = new RapClient(new RapClientOptions
     // send classifies OutcomeUnknown, never TransientFailure. Set OverallDeadline to tighten
     // it to your checkout budget, or opt out with Timeout.InfiniteTimeSpan (HttpClient's 100 s
     // then applies).
-    // ConnectTimeout has no SDK default — that needs client-side edge data (OQ-11).
+    // ConnectTimeout defaults to 10 s (edge-verified — ADR-SDK-029); expiry is provably
+    // never-sent and classifies TransientFailure (safe to fail over immediately). Opt out
+    // with Timeout.InfiniteTimeSpan (SocketsHttpHandler then applies no connect bound).
 });
 ```
 

@@ -36,12 +36,27 @@ public sealed class RapClientOptions
     public string ApiVersion { get; init; } = "2.1";
 
     /// <summary>
-    /// TCP/TLS connection-establishment timeout. Default: none set by this SDK — the
-    /// transport's own default applies. A client-side connect default cannot be derived
-    /// from server-side telemetry; it awaits the OQ-11 edge verification (ADR-SDK-027)
-    /// and this SDK deliberately does not invent one.
+    /// TCP/TLS connection-establishment timeout. Default:
+    /// <see cref="DefaultConnectTimeout"/> (10 seconds, ratified from the OQ-11 edge
+    /// verification — ADR-SDK-029; ~25× the observed cold client→edge TLS envelope and
+    /// 65 s below the overall deadline). Expiry classifies as <b>TransientFailure</b>
+    /// (the connect phase is provably never-sent). Set
+    /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to disable the SDK bound
+    /// and ride the transport's own behaviour (<c>SocketsHttpHandler</c> has no connect
+    /// timeout of its own).
     /// </summary>
     public TimeSpan? ConnectTimeout { get; init; }
+
+    /// <summary>
+    /// The connect-timeout default applied when <see cref="ConnectTimeout"/> is
+    /// unset: 10 seconds (ADR-SDK-029).
+    /// </summary>
+    public static readonly TimeSpan DefaultConnectTimeout = TimeSpan.FromSeconds(10);
+
+    internal TimeSpan? EffectiveConnectTimeout =>
+        ConnectTimeout == System.Threading.Timeout.InfiniteTimeSpan
+            ? null
+            : ConnectTimeout ?? DefaultConnectTimeout;
 
     /// <summary>
     /// Overall per-request deadline. Expiry after the request was sent classifies as
@@ -106,6 +121,15 @@ public sealed class RapClientOptions
             throw new ArgumentException(
                 "OverallDeadline must be positive, or Timeout.InfiniteTimeSpan to disable the SDK deadline.",
                 nameof(OverallDeadline));
+        }
+
+        if (ConnectTimeout is { } connect
+            && connect != System.Threading.Timeout.InfiniteTimeSpan
+            && connect <= TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                "ConnectTimeout must be positive, or Timeout.InfiniteTimeSpan to disable the SDK connect bound.",
+                nameof(ConnectTimeout));
         }
     }
 }

@@ -148,8 +148,14 @@ sequenceDiagram
 
 ## 6. Verification obligations
 
-- **OQ-11 (hard pre-GA gate):** the 502/504/reset rows above are design assumptions until
-  Front Door / WAF edge behaviour is verified against them.
+- **OQ-11 — verified 2026-07-21 (ADR-SDK-029):** the 502/504/reset rows above are confirmed
+  against live Front Door / WAF behaviour (30-day production edge census + live probes; full
+  evidence in the ADR). Two verified nuances: an edge **504 can fire in ~4 s** (AFD's
+  origin-connect bound) — a 504 never implies the deadline elapsed, classification stays
+  status-only; and edge-generated error bodies are **HTML, never `ErrorResponse`** — the
+  open-string `code` fallthrough (absent → OutcomeUnknown) is load-bearing. Only the
+  platform's own `503 {code: "not_processed"}` licenses fast failover; it passes through the
+  edge unmodified, and the edge cannot mint it.
 - **Mock transport** (DX contract §d) must simulate every row of the §2 table, both §3 verdicts,
   and — post-P-2 — pending-then-terminal and pending-then-absent scenarios: a merchant must be
   able to unit-test their failover handler with no network.

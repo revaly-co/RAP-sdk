@@ -64,6 +64,11 @@ DEFAULT_API_VERSION = "2.1"
 #: explicit ``overall_deadline=None`` to disable the SDK deadline entirely.
 DEFAULT_OVERALL_DEADLINE = 75.0
 
+#: The connect-timeout default (seconds) applied when the argument is omitted:
+#: 10 seconds, ratified from the OQ-11 edge verification (ADR-SDK-029). Pass an
+#: explicit ``connect_timeout=None`` to disable the SDK connect bound entirely.
+DEFAULT_CONNECT_TIMEOUT = 10.0
+
 _LOGGER_NAME = "revaly_sdk"
 
 
@@ -88,10 +93,10 @@ class RapClient:
         frozen 2.0 integration.
     :param connect_timeout: Connect-phase timeout in seconds. A connect-phase
         expiry is provably never-sent and classifies TransientFailure. Default:
-        none set by this SDK (the OS default applies) — a client-side connect
-        default cannot be derived from server-side telemetry; it awaits the
-        OQ-11 edge verification (ADR-SDK-027) and this SDK deliberately does not
-        invent one.
+        :data:`DEFAULT_CONNECT_TIMEOUT` (10 seconds, ratified from the OQ-11
+        edge verification — ADR-SDK-029; roughly 25× the observed cold
+        client→edge TLS envelope and 65 s below the overall deadline). Pass an
+        explicit ``None`` to disable the SDK connect bound entirely.
     :param overall_deadline: Overall per-request deadline in seconds. Expiry
         after the request was sent classifies as OutcomeUnknown (reconcile before
         acting) — never TransientFailure. Default:
@@ -126,7 +131,8 @@ class RapClient:
     call means "use the client's configured value", never "disable" — disabling
     the deadline is a client-construction decision only
     (``RapClient(..., overall_deadline=None)``), deliberately without a per-call
-    equivalent (the safe direction).
+    equivalent (the safe direction). The same asymmetry applies to
+    ``connect_timeout``.
     """
 
     def __init__(
@@ -135,7 +141,7 @@ class RapClient:
         *,
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
-        connect_timeout: Optional[float] = None,
+        connect_timeout: Optional[float] = DEFAULT_CONNECT_TIMEOUT,
         overall_deadline: Optional[float] = DEFAULT_OVERALL_DEADLINE,
         logger: Optional[logging.Logger] = None,
         wire_trace_hook: Optional[RapWireTraceHook] = None,

@@ -69,11 +69,11 @@ export interface RapClientConfig {
      * deadline and ride the platform's own behaviour.
      *
      * There is no `connectTimeout` option (Decided per ADR-SDK-028): WHATWG fetch
-     * cannot bound the connect phase per request. On Node the platform's own connect
-     * timeout applies (undici, default 10s), is reported structurally, and classifies
-     * TransientFailure (provably never sent); to tune it, pass a `dispatcher` (see the
-     * README's Agent recipe). A client-side connect default awaits the OQ-11 edge
-     * verification and would be absorbed at documentation level (ADR-SDK-028 §4).
+     * cannot bound the connect phase per request. The OQ-11-ratified connect default
+     * is 10 seconds (ADR-SDK-029) — exactly undici's own default, so Node merchants
+     * are bounded at the ratified number with zero configuration. Connect-phase expiry
+     * is reported structurally and classifies TransientFailure (provably never sent);
+     * to tune the bound, pass a `dispatcher` (see the README's Agent recipe).
      */
     readonly overallDeadlineMs?: number | null;
     /**

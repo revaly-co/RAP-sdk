@@ -129,12 +129,14 @@ non-hung tail seen in 14 fleet days was 64 s), clips ≲0.007% of charges, and s
 classifies well before the platform's own ≈100 s ceiling. Tighten it per your checkout
 budget (RAP routes gateways server-side, so the default must cover the slowest common
 class), or pass an explicit `overallDeadline: null` to disable the SDK deadline.
-`connectTimeout` still ships **no SDK default** — a client-side value needs edge
-telemetry (OQ-11). One PHP-specific caveat: curl reports connect-phase timeouts and
-after-send deadline expiry with the **same error**, so this SDK classifies **every
-timeout as `OutcomeUnknown`** (reconcile), never as safe-to-failover — it cannot prove
-the request was never sent. Provable never-sent (connection refused, DNS, TLS
-handshake) still classifies `TransientFailureException`.
+`connectTimeout` defaults to **10 seconds** — ratified from the OQ-11 edge verification
+(ADR-SDK-029): roughly 25× the observed cold client→edge TLS envelope, and 65 s below
+the overall deadline. Pass an explicit `connectTimeout: null` to disable the SDK
+connect bound. One PHP-specific caveat: curl reports connect-phase timeouts and
+after-send deadline expiry with the **same error** (errno 28), so this SDK classifies
+**every timeout as `OutcomeUnknown`** (reconcile), never as safe-to-failover — it
+cannot prove the request was never sent. Provable never-sent (connection refused, DNS,
+TLS handshake) still classifies `TransientFailureException`.
 
 ### API versioning
 

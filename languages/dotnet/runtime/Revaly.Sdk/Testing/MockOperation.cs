@@ -77,7 +77,7 @@ public sealed class MockOperation
         => EnqueueJson(HttpStatusCode.ServiceUnavailable,
             "{\"error\":\"synthetic upstream failure after dispatch\",\"code\":\"outcome_unknown\"}");
 
-    /// <summary>OutcomeUnknown row: bare 503 with no code at all (edge/WAF shape — OQ-11).</summary>
+    /// <summary>OutcomeUnknown row: bare 503 with no code at all (edge shape verified — ADR-SDK-029).</summary>
     public MockOperation ReturnsBare503()
         => EnqueueJson(HttpStatusCode.ServiceUnavailable, "{\"error\":\"synthetic bare 503\"}");
 
