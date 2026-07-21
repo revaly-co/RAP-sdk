@@ -61,12 +61,11 @@ import (
 func main() {
 	client, err := revaly.NewClient(revaly.Config{
 		APIKey: "YOUR_SANDBOX_API_KEY",
-		// OverallDeadline is deliberately not set: unset (zero) applies the
-		// telemetry-ratified 75 s default (ADR-SDK-027);
-		// revaly.NoOverallDeadline disables it. ConnectTimeout has no SDK
-		// default (OQ-11) — set it: it makes a connect-phase expiry provably
-		// never-sent.
-		ConnectTimeout: 5 * time.Second,
+		// Timeouts are deliberately not set: unset (zero) applies the ratified
+		// defaults — the 75 s overall deadline (ADR-SDK-027) and the 10 s
+		// connect timeout (ADR-SDK-029; a connect-phase expiry is provably
+		// never-sent → TransientFailure). revaly.NoOverallDeadline /
+		// revaly.NoConnectTimeout disable them.
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -159,7 +158,7 @@ func reconcileBeforeActing(client *revaly.Client, merchantTransactionID string) 
 | `APIKey` | — required | Injected per request at the transport; never logged, never in errors |
 | `BaseURL` | `https://api.revaly.co` | Sandbox and live share it (key-scoped); override only for internal targets |
 | `APIVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request. On `"2.0"` the `code` field is not part of the documented contract, so 503 + `not_processed` classifies **OutcomeUnknown** — fast failover narrows to provable never-sent failures |
-| `ConnectTimeout` | Go defaults | Maps to `net.Dialer.Timeout`; setting it makes connect-phase expiries **provably never-sent** (`TransientFailure`). No SDK default — a client-side value needs edge telemetry (OQ-11; ADR-SDK-027) |
+| `ConnectTimeout` | 10 s (ADR-SDK-029) | Maps to `net.Dialer.Timeout`; the bound makes connect-phase expiries **provably never-sent** (`TransientFailure`). Zero applies the edge-ratified default; `revaly.NoConnectTimeout` disables it (stdlib dial defaults) |
 | `OverallDeadline` | 75 s (ADR-SDK-027) | Per-call context timeout; expiry **after send** is `OutcomeUnknown`, never `TransientFailure`. Zero applies the telemetry-ratified default; `revaly.NoOverallDeadline` disables it |
 | `Logger` | discard | `*slog.Logger`; output is values-free at every level |
 | `WireTrace` | off | Scrubbed request/response observer for support escalations |
