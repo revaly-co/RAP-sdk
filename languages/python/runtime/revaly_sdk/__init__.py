@@ -29,6 +29,7 @@ from ._wire_trace import RapWireTraceEvent, RapWireTraceHook
 from .client import (
     DEFAULT_API_VERSION,
     DEFAULT_BASE_URL,
+    DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_OVERALL_DEADLINE,
     RapClient,
 )
@@ -58,6 +59,7 @@ __all__ = [
     "ApiResponse",
     "DEFAULT_API_VERSION",
     "DEFAULT_BASE_URL",
+    "DEFAULT_CONNECT_TIMEOUT",
     "DEFAULT_OVERALL_DEADLINE",
     "Found",
     "NotFoundYet",

@@ -103,8 +103,11 @@ tail cluster (the worst non-hung tail seen in 14 fleet days was 64 s), clips ≲
 of charges, and still classifies well before the platform's own ≈100 s ceiling.
 Tighten it per your checkout budget (RAP routes gateways server-side, so the default
 must cover the slowest common class), or pass an explicit `overall_deadline=None` to
-disable the SDK deadline. `connect_timeout` still ships **no SDK default** — a
-client-side value needs edge telemetry (OQ-11). All timeouts are seconds:
+disable the SDK deadline. `connect_timeout` defaults to **10 seconds**
+(`DEFAULT_CONNECT_TIMEOUT`) — ratified from the OQ-11 edge verification (ADR-SDK-029):
+roughly 25× the observed cold client→edge TLS envelope, and 65 s below the overall
+deadline. Pass an explicit `connect_timeout=None` to disable the SDK connect bound.
+All timeouts are seconds:
 
 ```python
 client = RapClient(api_key, connect_timeout=3.0, overall_deadline=10.0)
@@ -115,7 +118,8 @@ client.charge(request, overall_deadline=5.0)
 Note the per-call asymmetry: passing `overall_deadline=None` (or omitting it) on a call
 means "use the client's configured value", never "disable" — disabling the deadline is
 a client-construction decision only (`RapClient(..., overall_deadline=None)`),
-deliberately without a per-call equivalent (the safe direction).
+deliberately without a per-call equivalent (the safe direction). The same asymmetry
+applies to `connect_timeout`.
 
 - `overall_deadline` expiry **after send** classifies `RapOutcomeUnknown` (reconcile),
   never TransientFailure.

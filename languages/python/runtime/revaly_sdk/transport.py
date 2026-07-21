@@ -289,8 +289,8 @@ class RapTransport:
 
         - ``None`` → the configured defaults: overall deadline as ``total``,
           connect timeout as ``connect``. The transport itself defaults both to
-          None — RapClient resolves the 75 s ratified overall default before
-          construction (ADR-SDK-027); connect awaits OQ-11 edge data.
+          None — RapClient resolves the ratified defaults before construction
+          (75 s overall — ADR-SDK-027; 10 s connect — ADR-SDK-029).
         - ``_PerCallTimeout`` → RapClient per-call overrides layered over config.
         - number / (connect, read) tuple → the core convention, honored verbatim
           for callers using the generated apis directly.
