@@ -143,7 +143,7 @@ export class RapReconciler {
         });
 
         const verdict: NotFoundYet = {
-            kind: 'notFoundYet',
+            kind: 'NotFoundYet',
             attempts,
             elapsedMs,
             lastCorrelationId,
@@ -178,7 +178,7 @@ export class RapReconciler {
             if (instanceOfPendingTransactionResponse(root)) {
                 this.logger.info('rap.reconcile verdict=Found outcome=Pending', { correlation: correlationId });
                 return {
-                    kind: 'found',
+                    kind: 'Found',
                     outcome: 'Pending',
                     pending: PendingTransactionResponseFromJSON(root),
                     correlationId,
@@ -186,7 +186,7 @@ export class RapReconciler {
             }
             // A pending-shaped record this SDK version cannot bind is still a
             // sighting — surface it conservatively rather than polling on.
-            return { kind: 'found', outcome: 'Unknown', correlationId };
+            return { kind: 'Found', outcome: 'Unknown', correlationId };
         }
 
         // Terminal records bind DIRECTLY to TransactionResponse — never through the
@@ -196,7 +196,7 @@ export class RapReconciler {
         const transaction = TransactionResponseFromJSON(root);
         const outcome = mapOutcome(transaction.transactionStatus);
         this.logger.info('rap.reconcile verdict=Found', { outcome, correlation: correlationId });
-        return { kind: 'found', outcome, transaction, correlationId };
+        return { kind: 'Found', outcome, transaction, correlationId };
     }
 
     private trace(
@@ -243,11 +243,13 @@ function mapOutcome(transactionStatus: number | null | undefined): RapTransactio
 function abortableSleep(ms: number, signal: AbortSignal | undefined): Promise<void> {
     return new Promise((resolve, reject) => {
         if (signal?.aborted) {
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- safety contract: the caller's abort reason propagates VERBATIM (cancellation is not a payment outcome and is never rewrapped), and a reason can be any value
             reject(abortReason(signal));
             return;
         }
         const onAbort = (): void => {
             clearTimeout(timer);
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- safety contract: the caller's abort reason propagates VERBATIM (cancellation is not a payment outcome and is never rewrapped), and a reason can be any value
             reject(abortReason(signal));
         };
         const timer = setTimeout(() => {

@@ -18,8 +18,23 @@ import { RapReconciler, type ReconcileOptions } from './reconcile/RapReconciler'
 import type { ReconcilePolicy } from './reconcile/ReconcilePolicy';
 import type { RapReconcileVerdict } from './reconcile/verdicts';
 import { CORRELATION_ID } from './transport/RapHeaders';
-import { buildFetchApi, classificationMiddleware, type RapTransportLike } from './transport/RapTransport';
+import {
+    buildFetchApi,
+    classificationMiddleware,
+    type RapDispatcherLike,
+    type RapTransportLike,
+} from './transport/RapTransport';
 import { userAgentValue } from './transport/RapUserAgent';
+
+// Type-only imports for symbols referenced by {@link} doc tags in this module (the
+// config and class docs): erased at emit, present so editor and typedoc links resolve.
+// The usage is doc-only, which unused-vars cannot see — hence the narrow disables.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- {@link} doc targets only
+import type { RapOutcomeUnknown, RapPermanentRejection, RapTransientFailure } from './errors/RapError';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- {@link} doc target only
+import type { toRapResult } from './errors/RapResult';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- {@link} doc target only
+import type { RapMockTransport } from './testing/RapMockTransport';
 
 export interface RapClientConfig {
     /**
@@ -53,11 +68,12 @@ export interface RapClientConfig {
      * tail cluster and clips ≲0.007% of charges). Pass `null` to disable the SDK
      * deadline and ride the platform's own behaviour.
      *
-     * There is no `connectTimeout` option: WHATWG fetch cannot bound the connect phase
-     * per request. On Node the platform's own connect timeout applies (undici, default
-     * 10s), is reported structurally, and classifies TransientFailure (provably never
-     * sent); to tune it, pass a `dispatcher` (see the README's Agent recipe). A
-     * client-side connect default awaits the OQ-11 edge verification (ADR-SDK-027).
+     * There is no `connectTimeout` option (Decided per ADR-SDK-028): WHATWG fetch
+     * cannot bound the connect phase per request. On Node the platform's own connect
+     * timeout applies (undici, default 10s), is reported structurally, and classifies
+     * TransientFailure (provably never sent); to tune it, pass a `dispatcher` (see the
+     * README's Agent recipe). A client-side connect default awaits the OQ-11 edge
+     * verification and would be absorbed at documentation level (ADR-SDK-028 §4).
      */
     readonly overallDeadlineMs?: number | null;
     /**
@@ -86,8 +102,10 @@ export interface RapClientConfig {
     /**
      * Optional undici dispatcher (Node only), passed through to fetch — the idiomatic
      * place to tune connection pooling and the connect-phase timeout (README recipe).
+     * Typed structurally ({@link RapDispatcherLike}) so any real undici `Agent` /
+     * `ProxyAgent` / `MockAgent` fits without the SDK referencing undici types.
      */
-    readonly dispatcher?: unknown;
+    readonly dispatcher?: RapDispatcherLike;
 }
 
 /** Per-call options for the payment operations and reconcile. */
@@ -302,7 +320,7 @@ export class RapClient {
             const correlationId = apiResponse.raw.headers.get(CORRELATION_ID) ?? undefined;
             this.logger.info('rap.request', { operation, status, correlation: correlationId });
             if (this.emitPayloadTraces) {
-                const responseValue = await apiResponse.raw
+                const responseValue: unknown = await apiResponse.raw
                     .clone()
                     .json()
                     .catch(() => undefined);

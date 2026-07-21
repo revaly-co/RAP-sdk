@@ -165,9 +165,11 @@ export class MockOperation {
                         return;
                     }
                     if (signal.aborted) {
+                        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- mirrors real fetch exactly: the abort reason surfaces VERBATIM (it can be any value), so the transport's caller-cancellation path is exercised unaltered
                         reject(abortReason(signal));
                         return;
                     }
+                    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- mirrors real fetch exactly: the abort reason surfaces VERBATIM (it can be any value), so the transport's caller-cancellation path is exercised unaltered
                     signal.addEventListener('abort', () => reject(abortReason(signal)), { once: true });
                 }),
         );
@@ -211,6 +213,7 @@ export class MockOperation {
 
     /** A raw scripted transport failure (rejected without a response). */
     throwsIo(failure: unknown): this {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- documented raw escape: merchants script arbitrary rejection SHAPES (classification is structural, failover-contract §2), so the value is deliberately unconstrained
         this.queue.push(() => Promise.reject(failure));
         return this;
     }

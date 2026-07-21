@@ -122,7 +122,7 @@ export function scrubHeaders(
 function scrubNode(node: unknown, parentKeyAllowlisted: boolean): unknown {
     if (Array.isArray(node)) {
         // Scalars inside arrays keep only their parent key's status.
-        return node.map((element) =>
+        return node.map((element: unknown) =>
             typeof element === 'object' && element !== null
                 ? scrubNode(element, parentKeyAllowlisted)
                 : parentKeyAllowlisted

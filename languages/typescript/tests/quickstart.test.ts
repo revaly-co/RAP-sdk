@@ -49,10 +49,10 @@ describe('quickstart flow', () => {
             initialDelayMs: 1,
         });
         switch (verdict.kind) {
-            case 'found':
+            case 'Found':
                 journal.push(`found:${verdict.outcome}`);
                 break;
-            case 'notFoundYet':
+            case 'NotFoundYet':
                 journal.push(`hold:${verdict.attempts}`);
                 break;
             default:

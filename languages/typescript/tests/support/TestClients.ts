@@ -1,5 +1,5 @@
-import type { PaymentRequest, RapClientConfig } from '../../runtime/src/index';
-import { RapClient, RapMockTransport } from '../../runtime/src/index';
+import type { PaymentRequest, RapClientConfig, RapMockTransport } from '../../runtime/src/index';
+import { RapClient } from '../../runtime/src/index';
 
 /** The synthetic merchant API key used across the suite (never a real credential). */
 export const SYNTHETIC_API_KEY = 'sk-synthetic-test-key-1';

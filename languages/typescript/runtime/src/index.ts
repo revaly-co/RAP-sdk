@@ -52,6 +52,7 @@ export { REDACTED, SCRUBBED, scrubHeaders, scrubJson, scrubValue } from './loggi
 export {
     buildFetchApi,
     classificationMiddleware,
+    type RapDispatcherLike,
     type RapTransportLike,
     type RapTransportOptions,
 } from './transport/RapTransport';

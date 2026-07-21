@@ -14,6 +14,18 @@ import { API_VERSION, AUTHORIZATION, AUTH_SCHEME, CORRELATION_ID, USER_AGENT } f
 /** A replacement wire transport: a fetch-compatible function, or an object exposing one (the mock transport). */
 export type RapTransportLike = FetchAPI | { fetch: FetchAPI };
 
+/**
+ * The minimal structural surface of an undici dispatcher (`Agent`, `ProxyAgent`,
+ * `MockAgent`, …). Declared structurally so the public config never references undici
+ * types and the SDK keeps zero runtime dependencies; any real undici `Dispatcher`
+ * satisfies it (method-parameter bivariance makes the concrete option/handler types
+ * assignable). The runtime never invokes it — the object is handed to `fetch`
+ * verbatim.
+ */
+export interface RapDispatcherLike {
+    dispatch(options: object, handler: object): boolean;
+}
+
 export interface RapTransportOptions {
     apiKey: string;
     apiVersion: string;
@@ -31,7 +43,7 @@ export interface RapTransportOptions {
      * `Agent` recipe). A connect-phase timeout is reported structurally
      * (`UND_ERR_CONNECT_TIMEOUT`) and classifies TransientFailure.
      */
-    dispatcher?: unknown;
+    dispatcher?: RapDispatcherLike;
 }
 
 /**
@@ -105,7 +117,10 @@ export function buildFetchApi(options: RapTransportOptions): FetchAPI {
  */
 export function classificationMiddleware(apiVersion: string): Middleware {
     return {
-        onError: async (context) => {
+        onError: (context) => {
+            // A synchronous rethrow: the core awaits this hook inside its own catch,
+            // so the propagation is identical to an async rejection — verbatim, before
+            // the core can wrap the rejection in its generic FetchError.
             throw context.error;
         },
         post: async ({ response }) => {

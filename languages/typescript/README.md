@@ -74,12 +74,12 @@ try {
             initialDelayMs: 500,
         });
         switch (verdict.kind) {
-            case 'found':
+            case 'Found':
                 // The record IS visible. Found(Approved) means the money moved —
                 // failing over now would double-charge.
                 console.log('resolved', verdict.outcome, verdict.transaction?.transactionId);
                 break;
-            case 'notFoundYet':
+            case 'NotFoundYet':
                 // Not visible YET — absence is not provable in V1. Hold and escalate
                 // per your risk policy; do not treat this as "safe to fail over".
                 console.log('hold', verdict.attempts, verdict.lastCorrelationId);
@@ -134,7 +134,6 @@ import { Agent } from 'undici'; // your app's dependency, not the SDK's
 
 const client = new RapClient({
     apiKey: process.env.RAP_API_KEY!,
-    overallDeadlineMs: 10_000,
     dispatcher: new Agent({ connect: { timeout: 3_000 } }),
 });
 ```

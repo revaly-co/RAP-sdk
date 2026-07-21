@@ -23,8 +23,8 @@ describe('values-free logging (default verbosity)', () => {
 
         const info = logger.ofLevel('info');
         expect(info).toHaveLength(1);
-        expect(info[0]!.message).toBe('rap.request');
-        expect(info[0]!.context).toEqual({ operation: 'charge', status: 200, correlation: 'corr-synthetic-1' });
+        expect(info[0].message).toBe('rap.request');
+        expect(info[0].context).toEqual({ operation: 'charge', status: 200, correlation: 'corr-synthetic-1' });
     });
 
     test('a failed charge warns with class, status, code, correlation — no payload', async () => {
@@ -36,7 +36,7 @@ describe('values-free logging (default verbosity)', () => {
 
         const warn = logger.ofLevel('warn');
         expect(warn).toHaveLength(1);
-        expect(warn[0]!.context).toEqual({
+        expect(warn[0].context).toEqual({
             operation: 'charge',
             class: 'TransientFailure',
             status: 503,
@@ -117,7 +117,7 @@ describe('wire-trace hook (runtime-tdd §6)', () => {
         await mockedClient(mock, { wireTraceHook: (trace) => traces.push(trace) }).charge(syntheticCardPayment());
 
         expect(traces).toHaveLength(1);
-        const trace = traces[0]!;
+        const trace = traces[0];
         expect(trace.operation).toBe('charge');
         expect(trace.method).toBe('POST');
         expect(trace.path).toBe('/payments');
@@ -143,9 +143,9 @@ describe('wire-trace hook (runtime-tdd §6)', () => {
         });
 
         expect(traces).toHaveLength(1);
-        expect(traces[0]!.operation).toBe('reconcile');
+        expect(traces[0].operation).toBe('reconcile');
         // The template path never embeds the live merchant transaction id.
-        expect(traces[0]!.path).toBe('/transactions/merchant/{merchantTransactionId}');
+        expect(traces[0].path).toBe('/transactions/merchant/{merchantTransactionId}');
     });
 
     test('a throwing observer is swallowed and the payment still succeeds', async () => {
