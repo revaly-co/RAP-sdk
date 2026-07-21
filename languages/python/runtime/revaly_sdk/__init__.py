@@ -12,6 +12,8 @@ failure classes → reconcile.
 
 import logging as _logging
 
+import revaly_sdk_core.models as _core_models
+
 # The generated core's full model surface, re-exported (§2 one-package).
 from revaly_sdk_core.models import *  # noqa: F401,F403
 from revaly_sdk_core.api.notify_api import NotifyApi
@@ -44,7 +46,59 @@ from .reconcile import (
     RapTransactionOutcome,
     ReconcilePolicy,
 )
-from .transport import RapTransport, RapWireRequest, RapWireResponse
+from .transport import RapTransport, RapWire, RapWireRequest, RapWireResponse
+
+__version__ = SDK_VERSION
+"""The installed SDK version (the conventional dunder; equals :data:`SDK_VERSION`)."""
+
+# The explicit runtime surface (runtime-tdd §§1-6): client + constants, the three
+# typed failure classes, reconcile verdicts + policy, transport seam types, hooks,
+# scrub helpers, and the generated api classes re-exported above.
+__all__ = [
+    "ApiResponse",
+    "DEFAULT_API_VERSION",
+    "DEFAULT_BASE_URL",
+    "DEFAULT_OVERALL_DEADLINE",
+    "Found",
+    "NotFoundYet",
+    "NotifyApi",
+    "PaymentMethodsApi",
+    "PaymentsApi",
+    "REDACTED",
+    "RapClient",
+    "RapError",
+    "RapOutcomeUnknown",
+    "RapPermanentRejection",
+    "RapReconcileVerdict",
+    "RapReconciler",
+    "RapTransactionOutcome",
+    "RapTransientFailure",
+    "RapTransport",
+    "RapWire",
+    "RapWireRequest",
+    "RapWireResponse",
+    "RapWireTraceEvent",
+    "RapWireTraceHook",
+    "ReconcilePolicy",
+    "SCRUBBED",
+    "SDK_VERSION",
+    "TransactionsApi",
+    "__version__",
+    "scrub_headers",
+    "scrub_json",
+    "scrub_value",
+    "user_agent_value",
+]
+
+# Extend DYNAMICALLY with the generated core models' public names so the §2
+# one-package surface tracks regeneration and never silently shrinks behind a
+# static list: the core's own __all__ when it defines one, otherwise every
+# non-underscore name — exactly what the star re-export above surfaces.
+__all__ += [
+    name
+    for name in (getattr(_core_models, "__all__", None) or dir(_core_models))
+    if not name.startswith("_") and name not in __all__
+]
 
 # Library logging etiquette: silent unless the application configures handlers.
 _logging.getLogger("revaly_sdk").addHandler(_logging.NullHandler())

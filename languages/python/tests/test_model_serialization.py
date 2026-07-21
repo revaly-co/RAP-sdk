@@ -128,15 +128,11 @@ def test_unknown_reason_type_on_response_raises_validation_error():
     # StoredCredentialReasonType enum on a RESPONSE model. The runtime contains
     # this as OutcomeUnknown post-dispatch (see test_classification).
     with pytest.raises(ValidationError):
-        TransactionResponse.from_json(
-            '{"storedCredential": {"reasonType": "future_reason_v9"}}'
-        )
+        TransactionResponse.from_json('{"storedCredential": {"reasonType": "future_reason_v9"}}')
 
 
 def test_known_reason_type_binds():
-    transaction = TransactionResponse.from_json(
-        '{"storedCredential": {"reasonType": "recurring"}}'
-    )
+    transaction = TransactionResponse.from_json('{"storedCredential": {"reasonType": "recurring"}}')
     assert transaction.stored_credential is not None
     assert transaction.stored_credential.reason_type == "recurring"
 
@@ -171,9 +167,7 @@ def test_explicit_none_on_nullable_field_is_kept():
 
 
 def test_payment_request_requires_amount_and_merchant_transaction_id():
-    required = {
-        name for name, field in PaymentRequest.model_fields.items() if field.is_required()
-    }
+    required = {name for name, field in PaymentRequest.model_fields.items() if field.is_required()}
     assert required == {"amount", "merchant_transaction_id"}
 
 

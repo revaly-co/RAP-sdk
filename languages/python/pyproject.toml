@@ -46,5 +46,21 @@ packages = [
 "revaly_sdk" = "runtime/revaly_sdk"
 "revaly_sdk_core" = "core/revaly_sdk_core"
 
+# PEP 561: both packages ship inline type information; the py.typed markers must be
+# declared here or wheels silently drop them (declaring the core's marker is a
+# hand-written packaging-config change, not a core edit — ADR-SDK-028).
+[tool.setuptools.package-data]
+"revaly_sdk" = ["py.typed"]
+"revaly_sdk_core" = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# Lint/format scope is the hand-written surface only (ADR-SDK-028): CI passes
+# runtime/ tests/ smoke/ explicitly; the excludes are belt-and-braces so a broad
+# local invocation can never touch the generated core (ADR-SDK-001) or stale
+# build artifacts. Rule set: ruff defaults (kept minimal deliberately).
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+extend-exclude = ["core", "build", "*.egg-info"]

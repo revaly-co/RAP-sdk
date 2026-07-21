@@ -51,6 +51,7 @@ from .reconcile import RapReconciler, RapReconcileVerdict, ReconcilePolicy
 from .transport import (
     CORRELATION_ID_HEADER,
     RapTransport,
+    RapWire,
     _PerCallTimeout,
     get_header,
 )
@@ -108,7 +109,8 @@ class RapClient:
         allowlist scrubber — never raw material. Observer exceptions are
         swallowed.
     :param transport: Replacement wire (the mock transport,
-        :class:`revaly_sdk.testing.RapMockTransport`, in merchant tests). Only
+        :class:`revaly_sdk.testing.RapMockTransport`, in merchant tests) — any
+        :class:`RapWire` implementation; the protocol is structural. Only
         the wire is replaced — header injection and failure classification run
         identically, so tests exercise the production code path. Omit for real
         HTTP.
@@ -120,6 +122,11 @@ class RapClient:
     with ``connect_timeout`` / ``overall_deadline`` (per client or per call) and
     bound reconciliation with the :class:`ReconcilePolicy` budget. A deadline
     expiring after send is an OutcomeUnknown payment outcome, not a cancellation.
+    Note the per-call asymmetry: ``overall_deadline=None`` (or omitting it) on a
+    call means "use the client's configured value", never "disable" — disabling
+    the deadline is a client-construction decision only
+    (``RapClient(..., overall_deadline=None)``), deliberately without a per-call
+    equivalent (the safe direction).
     """
 
     def __init__(
@@ -132,7 +139,7 @@ class RapClient:
         overall_deadline: Optional[float] = DEFAULT_OVERALL_DEADLINE,
         logger: Optional[logging.Logger] = None,
         wire_trace_hook: Optional[RapWireTraceHook] = None,
-        transport: Optional[Any] = None,
+        transport: Optional[RapWire] = None,
         user_agent_suffix: Optional[str] = None,
     ) -> None:
         if not isinstance(api_key, str) or api_key.strip() == "":
@@ -335,8 +342,13 @@ class RapClient:
                 failure.correlation_id,
             )
             self._trace(
-                operation, method, path, failure.status, failure.correlation_id,
-                request_model, failure.raw_body,
+                operation,
+                method,
+                path,
+                failure.status,
+                failure.correlation_id,
+                request_model,
+                failure.raw_body,
             )
             raise
         except (ValidationError, OpenApiException) as failure:
@@ -357,8 +369,13 @@ class RapClient:
                 meta.correlation_id,
             )
             self._trace(
-                operation, method, path, meta.status, meta.correlation_id,
-                request_model, meta.raw_body,
+                operation,
+                method,
+                path,
+                meta.status,
+                meta.correlation_id,
+                request_model,
+                meta.raw_body,
             )
             raise RapOutcomeUnknown(
                 "OutcomeUnknown: the 2xx response body could not be read as the expected "

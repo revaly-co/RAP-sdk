@@ -112,6 +112,11 @@ client = RapClient(api_key, connect_timeout=3.0, overall_deadline=10.0)
 client.charge(request, overall_deadline=5.0)
 ```
 
+Note the per-call asymmetry: passing `overall_deadline=None` (or omitting it) on a call
+means "use the client's configured value", never "disable" — disabling the deadline is
+a client-construction decision only (`RapClient(..., overall_deadline=None)`),
+deliberately without a per-call equivalent (the safe direction).
+
 - `overall_deadline` expiry **after send** classifies `RapOutcomeUnknown` (reconcile),
   never TransientFailure.
 - `connect_timeout` expiry proves the request never left the client and classifies

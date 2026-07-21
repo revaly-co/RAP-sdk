@@ -199,12 +199,8 @@ def test_unknown_transport_exception_is_outcome_unknown():
 def test_connect_family_single_check_covers_subclasses():
     # urllib3 hierarchy fact the classifier relies on (probed): the never-sent
     # family shares ConnectTimeoutError as base.
-    assert issubclass(
-        urllib3.exceptions.NewConnectionError, urllib3.exceptions.ConnectTimeoutError
-    )
-    assert issubclass(
-        urllib3.exceptions.NameResolutionError, urllib3.exceptions.NewConnectionError
-    )
+    assert issubclass(urllib3.exceptions.NewConnectionError, urllib3.exceptions.ConnectTimeoutError)
+    assert issubclass(urllib3.exceptions.NameResolutionError, urllib3.exceptions.NewConnectionError)
     assert not issubclass(
         urllib3.exceptions.ReadTimeoutError, urllib3.exceptions.ConnectTimeoutError
     )

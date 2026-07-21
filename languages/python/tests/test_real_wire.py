@@ -216,7 +216,9 @@ def test_connect_phase_timeout_is_transient_failure_when_provable():
     from revaly_sdk import RapClient, RapError
 
     client = RapClient(
-        SYNTHETIC_API_KEY, base_url="http://10.255.255.1:81", connect_timeout=0.4,
+        SYNTHETIC_API_KEY,
+        base_url="http://10.255.255.1:81",
+        connect_timeout=0.4,
         overall_deadline=2.0,
     )
     try:

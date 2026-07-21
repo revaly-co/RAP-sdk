@@ -19,7 +19,10 @@ def test_records_requests_with_final_headers():
     recorded = mock.recorded_requests[0]
     assert recorded.method == "POST"
     assert recorded.url.endswith("/payments")
-    assert recorded.body is not None and synthetic_data.DEFAULT_MERCHANT_TRANSACTION_ID.split("_")[0] in recorded.body
+    assert (
+        recorded.body is not None
+        and synthetic_data.DEFAULT_MERCHANT_TRANSACTION_ID.split("_")[0] in recorded.body
+    )
 
 
 def test_missing_user_agent_is_asserted():
@@ -82,9 +85,7 @@ def test_routing_separates_payment_operations():
     client = make_client(mock)
 
     client.charge(payment_request())
-    client.authorize(
-        AuthorizeRequest(amount=2500, merchant_transaction_id="mtx_synthetic_0002")
-    )
+    client.authorize(AuthorizeRequest(amount=2500, merchant_transaction_id="mtx_synthetic_0002"))
     client.capture(
         "06SYNTHETIC00000000000000001",
         CaptureRequest(merchant_transaction_id="mtx_synthetic_0003"),

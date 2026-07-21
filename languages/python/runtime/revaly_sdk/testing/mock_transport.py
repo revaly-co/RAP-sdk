@@ -16,7 +16,7 @@ from __future__ import annotations
 import socket
 import ssl
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 from urllib.parse import urlsplit
 
 import urllib3.exceptions
@@ -98,7 +98,8 @@ class MockOperation:
         """Connection refused — provably never sent (``NewConnectionError``)."""
         return self._push_raise(
             urllib3.exceptions.NewConnectionError(
-                None, "synthetic: failed to establish a new connection"  # type: ignore[arg-type]
+                None,
+                "synthetic: failed to establish a new connection",  # type: ignore[arg-type]
             )
         )
 
@@ -157,7 +158,9 @@ class MockOperation:
         no never-sent proof: OutcomeUnknown."""
         return self._push_raise(
             urllib3.exceptions.ReadTimeoutError(
-                None, "/payments", "synthetic: read timed out"  # type: ignore[arg-type]
+                None,
+                "/payments",
+                "synthetic: read timed out",  # type: ignore[arg-type]
             )
         )
 

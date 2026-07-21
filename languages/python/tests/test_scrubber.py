@@ -99,7 +99,9 @@ def test_headers_allowlist_and_redaction():
 
 
 def test_headers_multi_value_join():
-    scrubbed = scrub_headers({"api-supported-versions": ["2.0", "2.1"], "User-Agent": ["a/1", "b/2"]})
+    scrubbed = scrub_headers(
+        {"api-supported-versions": ["2.0", "2.1"], "User-Agent": ["a/1", "b/2"]}
+    )
     assert scrubbed["api-supported-versions"] == "2.0, 2.1"
     assert scrubbed["User-Agent"] == "a/1 b/2"
 

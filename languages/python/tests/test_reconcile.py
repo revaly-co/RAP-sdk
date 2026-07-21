@@ -198,9 +198,7 @@ def test_delay_growth_doubles_with_bounded_jitter():
 
 
 def test_delay_cap_applies_before_jitter():
-    policy = ReconcilePolicy(
-        max_attempts=10, overall_budget=600, initial_delay=1.0, max_delay=3.0
-    )
+    policy = ReconcilePolicy(max_attempts=10, overall_budget=600, initial_delay=1.0, max_delay=3.0)
     for _ in range(50):
         assert delay_for_attempt(policy, 6) <= 3.0 * 1.2
 
