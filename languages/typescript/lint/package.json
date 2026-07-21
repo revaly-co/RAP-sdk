@@ -1,0 +1,12 @@
+{
+  "name": "revaly-sdk-lint-toolchain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typed-lint toolchain for the TypeScript runtime (ADR-SDK-028), isolated in its own install root — same pattern as pipeline/typescript/compile-check. typescript-eslint requires the JS-API TypeScript line (peer range >=4.8.4 <6.1.0), while the package root deliberately pins the native tsc (typescript 7.x, no JS compiler API) for `npm run typecheck`; the two cannot share one npm root (npm ERESOLVE). The `typescript` pinned here is the LINTER'S type engine only — it never typechecks the build, never compiles, never ships. Consumed exclusively by ../eslint.config.mjs via `npm run lint` in the parent package.",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0"
+  }
+}

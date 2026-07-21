@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { RapMockTransport, RapOutcomeUnknown, SDK_VERSION } from '../runtime/src/index';
+import { RapMockTransport, RapOutcomeUnknown, SDK_VERSION, type RapDispatcherLike } from '../runtime/src/index';
 import { mockedClient, SYNTHETIC_API_KEY, syntheticCardPayment } from './support/TestClients';
 
 /**
@@ -13,7 +13,7 @@ async function firstRequest(mock: RapMockTransport, overrides = {}) {
     mock.charge().returnsApproved();
     await mockedClient(mock, overrides).charge(syntheticCardPayment());
     expect(mock.requests.length).toBeGreaterThan(0);
-    return mock.requests[0]!;
+    return mock.requests[0];
 }
 
 describe('Authorization', () => {
@@ -88,7 +88,7 @@ describe('X-Api-Version pin (runtime-tdd §1)', () => {
         const client = mockedClient(mock);
         await client.payments.chargePayment({ paymentRequest: syntheticCardPayment(), xApiVersion: '2.0' });
 
-        expect(mock.requests[0]!.headers.get('X-Api-Version')).toBe('2.0');
+        expect(mock.requests[0].headers.get('X-Api-Version')).toBe('2.0');
     });
 });
 
@@ -123,7 +123,9 @@ describe('transport shape', () => {
     });
 
     test('the dispatcher passthrough reaches the wire call', async () => {
-        const dispatcher = { synthetic: true };
+        // A minimal structural stand-in (RapDispatcherLike): passed through verbatim,
+        // never invoked — the identity assertion below is the whole contract.
+        const dispatcher: RapDispatcherLike = { dispatch: () => true };
         let observed: unknown;
         const mock = new RapMockTransport();
         mock.charge().returnsApproved();
@@ -167,6 +169,6 @@ describe('client construction', () => {
         const client = mockedClient(mock, { baseUrl: 'https://api.revaly.co///' });
         await client.charge(syntheticCardPayment());
 
-        expect(mock.requests[0]!.url).toBe('https://api.revaly.co/payments');
+        expect(mock.requests[0].url).toBe('https://api.revaly.co/payments');
     });
 });

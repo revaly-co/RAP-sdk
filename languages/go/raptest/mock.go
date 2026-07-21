@@ -1,9 +1,9 @@
 // Package raptest is the first-class mock transport (runtime-tdd §8, DX
 // contract §d): a no-network test double for merchant failover-handler tests.
 //
-// MockTransport replaces ONLY the wire (Config.Wire) — the runtime's header
-// injection and classification still run, so a merchant test exercises the
-// same safety-relevant code paths as production. It simulates every row of the
+// MockTransport replaces ONLY the transport (Config.Transport) — the runtime's
+// header injection and classification still run, so a merchant test exercises
+// the same safety-relevant code paths as production. It simulates every row of the
 // failover-contract §2 table (PermanentRejection statuses, TransientFailure
 // including 503+not_processed, the OutcomeUnknown family) and both reconcile
 // outcomes, supports scripting consecutive outcomes, records every request,

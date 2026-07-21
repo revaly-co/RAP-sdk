@@ -9,15 +9,18 @@ exists to implement.
 ```
 github.com/revaly-co/rap-sdk/languages/go          ← import this (package revaly)
 github.com/revaly-co/rap-sdk/languages/go/core     ← generated core (full V2 surface)
-github.com/revaly-co/rap-sdk/languages/go/runtime/raptest  ← mock transport for your tests
+github.com/revaly-co/rap-sdk/languages/go/raptest  ← mock transport for your tests
 ```
 
 > **Pre-release status.** Registry publish is embargoed until the release
-> gates close; the module carries the placeholder version `0.0.0-dev` and no
-> release tags exist yet. Until the first tagged release, consume the module
-> from a repository checkout (e.g. a `go.mod` `replace` directive or
-> `GOPRIVATE=github.com/revaly-co` for direct VCS fetches). Interim
-> distribution is per-language GitHub release artifacts from this repository.
+> gates close; interim releases ship as per-language **GitHub release
+> artifacts** from this repository under `go/vX.Y.Z` tags (`go/v0.1.0` and
+> `go/v0.2.0` shipped 2026-07-20 — asset + `.sha256` + `provenance.json`).
+> The source tree between releases carries the placeholder version
+> `0.0.0-dev`. To consume the module directly from a checkout, use a `go.mod`
+> `replace` directive or `GOPRIVATE=github.com/revaly-co` for VCS fetches.
+> The supported Go floor is **go 1.21** (the `go.mod` directive); it is
+> re-evaluated at the GA gate.
 
 ## Why this SDK is different: the failover contract
 
@@ -58,12 +61,12 @@ import (
 func main() {
 	client, err := revaly.NewClient(revaly.Config{
 		APIKey: "YOUR_SANDBOX_API_KEY",
-		// OverallDeadline defaults to 75 s when zero (telemetry-ratified —
-		// ADR-SDK-027); revaly.NoOverallDeadline disables it. ConnectTimeout
-		// has no SDK default (OQ-11) — set it: it makes a connect-phase
-		// expiry provably never-sent.
-		ConnectTimeout:  5 * time.Second,
-		OverallDeadline: 30 * time.Second,
+		// OverallDeadline is deliberately not set: unset (zero) applies the
+		// telemetry-ratified 75 s default (ADR-SDK-027);
+		// revaly.NoOverallDeadline disables it. ConnectTimeout has no SDK
+		// default (OQ-11) — set it: it makes a connect-phase expiry provably
+		// never-sent.
+		ConnectTimeout: 5 * time.Second,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +75,7 @@ func main() {
 	// merchantTransactionId is required — it is YOUR reconcile key. Use your
 	// order/attempt id; you will look the payment up by it if the outcome is
 	// ever unknown.
-	request := *revaly.NewPaymentRequest(1099, "order-0001-attempt-1")
+	request := revaly.NewPaymentRequest(1099, "order-0001-attempt-1")
 	card := revaly.NewCreditCard("4111111111111111", "12", "2030") // sandbox test card
 	card.SetCardVerificationCode("123")
 	method := revaly.NewPaymentMethod()
@@ -160,8 +163,8 @@ func reconcileBeforeActing(client *revaly.Client, merchantTransactionID string) 
 | `OverallDeadline` | 75 s (ADR-SDK-027) | Per-call context timeout; expiry **after send** is `OutcomeUnknown`, never `TransientFailure`. Zero applies the telemetry-ratified default; `revaly.NoOverallDeadline` disables it |
 | `Logger` | discard | `*slog.Logger`; output is values-free at every level |
 | `WireTrace` | off | Scrubbed request/response observer for support escalations |
-| `Wire` | real HTTP | The mock-transport injection point |
-| `HTTPClient` | — | Advanced: its `Transport` becomes the wire; redirects are always disabled by the runtime |
+| `Transport` | real HTTP | The mock-transport injection point (named for `http.Client.Transport` — the cross-language `transport` key) |
+| `HTTPClient` | — | Advanced: its `Transport` is used (ignored when `Transport` is set); redirects are always disabled by the runtime |
 
 Cancellation is idiomatic Go: every operation takes a `context.Context`, and
 `Reconcile` additionally enforces its caller-bounded policy budget.
@@ -173,14 +176,14 @@ explicit reconcile re-poll you bound.
 
 ## Testing your failover handler (no network)
 
-The mock transport replaces only the wire — header injection and
+The mock transport replaces only the transport — header injection and
 classification still run, so your tests exercise the same safety code as
 production. It ships in the companion package
-`github.com/revaly-co/rap-sdk/languages/go/runtime/raptest`:
+`github.com/revaly-co/rap-sdk/languages/go/raptest`:
 
 ```go
 mock := raptest.NewMockTransport()
-client, _ := revaly.NewClient(revaly.Config{APIKey: "sk_test_synthetic", Wire: mock})
+client, _ := revaly.NewClient(revaly.Config{APIKey: "sk_test_synthetic", Transport: mock})
 
 // Script the §2 taxonomy — consecutive calls script consecutive outcomes:
 mock.Charge().ReturnsNotProcessed503()          // → *TransientFailure (fast failover)
@@ -220,10 +223,12 @@ data is synthetic only.
 Vulnerability reports: see `SECURITY.md` at the repository root (added before
 the repository goes public).
 
-## Idiom notes for the pre-GA review ([Proposed])
+## Idiom notes (pre-GA review — ADR-SDK-028)
 
-Flagged for the experienced-Go review that gates GA (dx-contract §a): the
-root-package re-export (`package revaly` at the module root, internals under
-`runtime/`), `time.Duration` for all bounds, pointer-typed error classes
-dispatched via `errors.As`, the sealed-interface verdict pattern with a
-mandatory default branch, and the `raptest` companion-package name.
+Reviewed and ratified by the experienced-Go pre-GA review (dx-contract §a;
+ADR-SDK-028): the root-package re-export (`package revaly` at the module root,
+internals fenced under `internal/runtime/`), pointer request parameters on the
+payment operations, `time.Duration` for all bounds, pointer-typed error
+classes dispatched via `errors.As`, the sealed-interface verdict pattern with
+a mandatory default branch, and the `raptest` companion-package name (now at
+the module root, outside the internal fence).

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from conftest import SYNTHETIC_MTX, make_client, payment_request
+from conftest import make_client, payment_request
 from revaly_sdk import (
     Found,
     NotFoundYet,

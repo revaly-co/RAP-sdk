@@ -28,8 +28,8 @@ describe('Found verdicts', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy());
 
-        expect(verdict.kind).toBe('found');
-        if (verdict.kind === 'found') {
+        expect(verdict.kind).toBe('Found');
+        if (verdict.kind === 'Found') {
             expect(verdict.outcome).toBe(outcome);
             expect(verdict.transaction?.merchantTransactionId).toBe(MTX);
             expect(verdict.correlationId).toBe(SyntheticData.DEFAULT_CORRELATION_ID);
@@ -42,8 +42,8 @@ describe('Found verdicts', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy());
 
-        expect(verdict.kind).toBe('found');
-        if (verdict.kind === 'found') {
+        expect(verdict.kind).toBe('Found');
+        if (verdict.kind === 'Found') {
             expect(verdict.outcome).toBe('Pending');
             expect(verdict.pending?.state).toBe('pending');
             expect(verdict.pending?.merchantTransactionId).toBe(MTX);
@@ -57,8 +57,8 @@ describe('Found verdicts', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy());
 
-        expect(verdict.kind).toBe('found');
-        if (verdict.kind === 'found') {
+        expect(verdict.kind).toBe('Found');
+        if (verdict.kind === 'Found') {
             expect(verdict.outcome).toBe('Unknown');
         }
     });
@@ -69,8 +69,8 @@ describe('Found verdicts', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy());
 
-        expect(verdict.kind).toBe('found');
-        if (verdict.kind === 'found') {
+        expect(verdict.kind).toBe('Found');
+        if (verdict.kind === 'Found') {
             expect(verdict.outcome).toBe('Unknown');
         }
     });
@@ -87,7 +87,7 @@ describe('NotFoundYet and the poll loop', () => {
             initialDelayMs: 1,
         });
 
-        expect(verdict.kind).toBe('found');
+        expect(verdict.kind).toBe('Found');
         expect(mock.requests).toHaveLength(3);
     });
 
@@ -101,8 +101,8 @@ describe('NotFoundYet and the poll loop', () => {
             initialDelayMs: 0,
         });
 
-        expect(verdict.kind).toBe('notFoundYet');
-        if (verdict.kind === 'notFoundYet') {
+        expect(verdict.kind).toBe('NotFoundYet');
+        if (verdict.kind === 'NotFoundYet') {
             expect(verdict.attempts).toBe(3);
             expect(verdict.elapsedMs).toBeGreaterThanOrEqual(0);
             expect(verdict.lastHttpStatus).toBe(404);
@@ -122,8 +122,8 @@ describe('NotFoundYet and the poll loop', () => {
         });
 
         // The first wait (100ms) would already exceed the 30ms budget: stop after one attempt.
-        expect(verdict.kind).toBe('notFoundYet');
-        if (verdict.kind === 'notFoundYet') {
+        expect(verdict.kind).toBe('NotFoundYet');
+        if (verdict.kind === 'NotFoundYet') {
             expect(verdict.attempts).toBe(1);
         }
     });
@@ -134,7 +134,7 @@ describe('NotFoundYet and the poll loop', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy(3));
 
-        expect(verdict.kind).toBe('found');
+        expect(verdict.kind).toBe('Found');
         expect(mock.requests).toHaveLength(2);
     });
 
@@ -144,7 +144,7 @@ describe('NotFoundYet and the poll loop', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy(3));
 
-        expect(verdict.kind).toBe('found');
+        expect(verdict.kind).toBe('Found');
     });
 
     test('a 2xx with an unreadable body is an ambiguous read — poll again', async () => {
@@ -153,7 +153,7 @@ describe('NotFoundYet and the poll loop', () => {
 
         const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy(3));
 
-        expect(verdict.kind).toBe('found');
+        expect(verdict.kind).toBe('Found');
         expect(mock.requests).toHaveLength(2);
     });
 
@@ -222,10 +222,10 @@ describe('verdict handling pattern', () => {
         // The quickstart's switch shape: every merchant integration writes this default.
         let handled: string;
         switch (verdict.kind) {
-            case 'found':
+            case 'Found':
                 handled = `found:${verdict.outcome}`;
                 break;
-            case 'notFoundYet':
+            case 'NotFoundYet':
                 handled = 'hold';
                 break;
             default:

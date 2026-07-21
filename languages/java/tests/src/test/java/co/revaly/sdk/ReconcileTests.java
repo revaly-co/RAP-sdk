@@ -195,6 +195,85 @@ class ReconcileTests {
     }
 
     @Test
+    void builderRequiresEveryBoundExplicitly() {
+        // The builder ships no defaults (SC-261): every bound a constructor requires must
+        // be set, and build() rejects the omissions with the constructors' own validation.
+        assertThrows(IllegalArgumentException.class, () -> ReconcilePolicy.builder().build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        ReconcilePolicy.builder()
+                                .overallBudget(Duration.ofSeconds(10))
+                                .initialDelay(Duration.ofMillis(1))
+                                .build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        ReconcilePolicy.builder()
+                                .maxAttempts(3)
+                                .initialDelay(Duration.ofMillis(1))
+                                .build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        ReconcilePolicy.builder()
+                                .maxAttempts(3)
+                                .overallBudget(Duration.ofSeconds(10))
+                                .build());
+    }
+
+    @Test
+    void builderRejectsInvalidBoundsExactlyLikeTheConstructors() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        ReconcilePolicy.builder()
+                                .maxAttempts(0)
+                                .overallBudget(Duration.ofSeconds(1))
+                                .initialDelay(Duration.ZERO)
+                                .build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        ReconcilePolicy.builder()
+                                .maxAttempts(1)
+                                .overallBudget(Duration.ZERO)
+                                .initialDelay(Duration.ZERO)
+                                .build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        ReconcilePolicy.builder()
+                                .maxAttempts(1)
+                                .overallBudget(Duration.ofSeconds(1))
+                                .initialDelay(Duration.ofMillis(-1))
+                                .build());
+    }
+
+    @Test
+    void builderMatchesConstructorSemantics() {
+        ReconcilePolicy built =
+                ReconcilePolicy.builder()
+                        .maxAttempts(6)
+                        .overallBudget(Duration.ofSeconds(30))
+                        .initialDelay(Duration.ofSeconds(1))
+                        .build();
+        assertEquals(6, built.getMaxAttempts());
+        assertEquals(Duration.ofSeconds(30), built.getOverallBudget());
+        assertEquals(Duration.ofSeconds(1), built.getInitialDelay());
+        assertNull(built.getMaxDelay(), "unset maxDelay stays uncapped — the 3-arg ctor semantics");
+
+        ReconcilePolicy capped =
+                ReconcilePolicy.builder()
+                        .maxAttempts(6)
+                        .overallBudget(Duration.ofSeconds(30))
+                        .initialDelay(Duration.ofSeconds(1))
+                        .maxDelay(Duration.ofSeconds(5))
+                        .build();
+        assertEquals(Duration.ofSeconds(5), capped.getMaxDelay());
+    }
+
+    @Test
     void verdictBranchingAlwaysCarriesADefault() throws Exception {
         RapMockTransport mock = new RapMockTransport();
         mock.reconcile(TestClient.MTX).notFoundYet();

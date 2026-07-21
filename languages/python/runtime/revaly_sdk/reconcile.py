@@ -164,7 +164,9 @@ class RapReconciler:
         self._logger = logger
         self._wire_trace_hook = wire_trace_hook
 
-    def reconcile(self, merchant_transaction_id: str, policy: ReconcilePolicy) -> RapReconcileVerdict:
+    def reconcile(
+        self, merchant_transaction_id: str, policy: ReconcilePolicy
+    ) -> RapReconcileVerdict:
         if not merchant_transaction_id or merchant_transaction_id.strip() == "":
             raise ValueError("merchant_transaction_id is required")
 

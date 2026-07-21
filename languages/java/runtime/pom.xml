@@ -38,11 +38,13 @@
              pom.mustache fork rationale — Dependabot advisories). -->
         <jackson-version>2.21.5</jackson-version>
         <slf4j-version>2.0.17</slf4j-version>
-        <!-- Ecosystem linter for the hand-written modules (DX contract §a). Spotless +
-             google-java-format is [Proposed] pending the idiomatic-reviewer sign-off;
-             checkstyle is the alternative. Never applied to core/ (ADR-SDK-001). -->
+        <!-- Ecosystem lint for the hand-written modules (DX contract §a) — Decided per
+             ADR-SDK-028: spotless + google-java-format is the formatter, Error Prone with
+             its default ERROR-severity checks is the linter (no custom bugpatterns, no
+             config files). Never applied to core/ (ADR-SDK-001). -->
         <spotless-version>2.43.0</spotless-version>
         <google-java-format-version>1.17.0</google-java-format-version>
+        <error-prone-version>2.50.0</error-prone-version>
     </properties>
 
     <dependencies>
@@ -70,6 +72,37 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+                <!-- Error Prone (ADR-SDK-028), default ERROR-severity checks only. The
+                     compile is FORKED so the JDK-internal add-exports/add-opens flags
+                     Error Prone needs on JDK 17+ ride the javac invocation itself (the
+                     "-J" args below) — a .mvn/jvm.config would silently not load, because
+                     CI invokes `mvn -f languages/java/pom.xml` from the repo root. -->
+                <configuration>
+                    <fork>true</fork>
+                    <compilerArgs>
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+                        <arg>--should-stop=ifError=FLOW</arg>
+                        <arg>-Xplugin:ErrorProne</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>${error-prone-version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
             <plugin>
                 <!-- Implementation-Version in the jar manifest is what

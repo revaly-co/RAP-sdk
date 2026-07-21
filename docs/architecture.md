@@ -78,6 +78,8 @@ OIDC trusted publishing).
 rap-sdk/
   spec/                    # pinned gated spec artifact reference + checksums
   languages/<lang>/        # { core/ (generated), runtime/, tests/ } × 6
+                           #   (go: hand-written surface = revaly.go + internal/runtime/ +
+                           #    raptest/ — ADR-SDK-028 amendment to ADR-SDK-016)
   pipeline/                # generation configs, templates, publish workflows
   docs/                    # this documentation set (adr/ + design docs)
 ```

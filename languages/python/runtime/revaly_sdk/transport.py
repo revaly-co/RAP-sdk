@@ -32,7 +32,7 @@ from __future__ import annotations
 import json
 import threading
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Protocol, Union
 
 import urllib3
 import urllib3.exceptions
@@ -64,6 +64,24 @@ class RapWireResponse:
     headers: Mapping[str, str]
     data: bytes
     reason: str = ""
+
+
+class RapWire(Protocol):
+    """The replaceable wire seam, as a PEP 544 structural protocol.
+
+    ``RapTransport`` calls exactly one method on the injected wire; anything with
+    this shape satisfies the seam — the built-in urllib3 wire in production and
+    :class:`revaly_sdk.testing.RapMockTransport` in merchant tests (no
+    subclassing required; Protocols match structurally). Only the wire is
+    replaceable: header injection and failure classification always run in
+    ``RapTransport`` above it (DX contract §d).
+    """
+
+    def send(self, request: RapWireRequest) -> RapWireResponse:
+        """Performs one single-shot exchange: returns the fully materialized
+        response, or raises the transport failure exactly as the wire saw it
+        (never a classification — classifying is ``RapTransport``'s job)."""
+        ...
 
 
 @dataclass(frozen=True)
@@ -167,14 +185,14 @@ class RapTransport:
         user_agent: str,
         connect_timeout: Optional[float] = None,
         overall_deadline: Optional[float] = None,
-        wire: Optional[Any] = None,
+        wire: Optional[RapWire] = None,
     ) -> None:
         self._api_key = api_key
         self._api_version = api_version
         self._user_agent = user_agent
         self._connect_timeout = connect_timeout
         self._overall_deadline = overall_deadline
-        self._wire = wire if wire is not None else _Urllib3Wire()
+        self._wire: RapWire = wire if wire is not None else _Urllib3Wire()
         self._local = threading.local()
 
     # -- call-scope containment surface (used by RapClient) ---------------------

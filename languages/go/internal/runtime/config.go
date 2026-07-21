@@ -75,16 +75,17 @@ type Config struct {
 	// hook sees data.
 	WireTrace WireTraceHook
 
-	// Wire replaces the HTTP wire itself — the mock transport injection point
-	// (DX contract §d): header injection and classification still run. Nil
-	// uses the real transport.
-	Wire http.RoundTripper
+	// Transport replaces the HTTP transport itself (the runtime-tdd §1
+	// cross-language "transport" key, named for http.Client.Transport) — the
+	// mock transport injection point (DX contract §d): header injection and
+	// classification still run. Nil uses the real transport.
+	Transport http.RoundTripper
 
-	// HTTPClient supplies a base client whose Transport becomes the wire
-	// (ignored when Wire is set). The client is never mutated: its transport
-	// is wrapped and its other fields are not carried over — redirect
-	// following in particular is always disabled by the runtime (a 307
-	// re-POST would resubmit a payment).
+	// HTTPClient supplies a base client whose Transport is used (ignored when
+	// Config.Transport is set). The client is never mutated: its transport is
+	// wrapped and its other fields are not carried over — redirect following
+	// in particular is always disabled by the runtime (a 307 re-POST would
+	// resubmit a payment).
 	HTTPClient *http.Client
 }
 

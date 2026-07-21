@@ -157,7 +157,7 @@ async function expectFailure(run: () => Promise<unknown>, expectation: string): 
  * not a pass.
  */
 function expectFound(verdict: RapReconcileVerdict, want: RapTransactionOutcome): void {
-    if (verdict.kind === 'found') {
+    if (verdict.kind === 'Found') {
         if (verdict.outcome !== want) {
             throw new SmokeFailure(`expected outcome ${want}, got ${verdict.outcome}`);
         }
@@ -166,7 +166,7 @@ function expectFound(verdict: RapReconcileVerdict, want: RapTransactionOutcome):
         }
         return;
     }
-    if (verdict.kind === 'notFoundYet') {
+    if (verdict.kind === 'NotFoundYet') {
         throw new SmokeFailure(`charge not visible after ${verdict.attempts} attempts (${verdict.elapsedMs}ms) — expected Found`);
     }
     throw new SmokeFailure(`unrecognized verdict ${(verdict as { kind: string }).kind}`);
@@ -302,10 +302,10 @@ test('reconcile-not-found-yet', () =>
             overallBudgetMs: 10_000,
             initialDelayMs: 500,
         });
-        if (verdict.kind === 'found') {
+        if (verdict.kind === 'Found') {
             throw new SmokeFailure('a never-used id reconciled as Found');
         }
-        if (verdict.kind !== 'notFoundYet') {
+        if (verdict.kind !== 'NotFoundYet') {
             throw new SmokeFailure(`unrecognized verdict ${(verdict as { kind: string }).kind}`);
         }
         if (verdict.lastHttpStatus !== 404) {

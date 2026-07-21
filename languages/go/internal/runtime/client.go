@@ -33,12 +33,12 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, err
 	}
 
-	wire := cfg.Wire
-	if wire == nil && cfg.HTTPClient != nil && cfg.HTTPClient.Transport != nil {
-		wire = cfg.HTTPClient.Transport
+	transport := cfg.Transport
+	if transport == nil && cfg.HTTPClient != nil && cfg.HTTPClient.Transport != nil {
+		transport = cfg.HTTPClient.Transport
 	}
-	if wire == nil {
-		wire = newBaseWire(cfg.ConnectTimeout)
+	if transport == nil {
+		transport = newBaseTransport(cfg.ConnectTimeout)
 	}
 
 	userAgent := buildUserAgent()
@@ -47,7 +47,7 @@ func NewClient(cfg Config) (*Client, error) {
 			apiKey:     cfg.APIKey,
 			apiVersion: cfg.APIVersion,
 			userAgent:  userAgent,
-			wire:       wire,
+			transport:  transport,
 		},
 		// Never follow redirects: a 307 re-POST would resubmit a payment
 		// (probed); a 3xx comes back as-is and classifies OutcomeUnknown.
@@ -85,51 +85,77 @@ func (c *Client) Core() *core.APIClient { return c.coreClient }
 
 // Charge processes a payment (POST /payments). merchantTransactionId is
 // required on the request — it is the reconcile key (failover-contract §3).
-func (c *Client) Charge(ctx context.Context, request core.PaymentRequest) (*core.TransactionResponse, error) {
-	return executeOp(c, ctx, "charge", http.MethodPost, "/payments", &request,
+func (c *Client) Charge(ctx context.Context, request *core.PaymentRequest) (*core.TransactionResponse, error) {
+	if request == nil {
+		return nil, errNilRequest("Charge")
+	}
+	return executeOp(c, ctx, "charge", http.MethodPost, "/payments", request,
 		func(ctx context.Context) (*core.TransactionResponse, *http.Response, error) {
-			return c.coreClient.PaymentsAPI.ChargePayment(ctx).PaymentRequest(request).Execute()
+			return c.coreClient.PaymentsAPI.ChargePayment(ctx).PaymentRequest(*request).Execute()
 		})
 }
 
 // Authorize authorizes a payment (POST /payments/authorize).
-func (c *Client) Authorize(ctx context.Context, request core.AuthorizeRequest) (*core.TransactionResponse, error) {
-	return executeOp(c, ctx, "authorize", http.MethodPost, "/payments/authorize", &request,
+func (c *Client) Authorize(ctx context.Context, request *core.AuthorizeRequest) (*core.TransactionResponse, error) {
+	if request == nil {
+		return nil, errNilRequest("Authorize")
+	}
+	return executeOp(c, ctx, "authorize", http.MethodPost, "/payments/authorize", request,
 		func(ctx context.Context) (*core.TransactionResponse, *http.Response, error) {
-			return c.coreClient.PaymentsAPI.AuthorizePayment(ctx).AuthorizeRequest(request).Execute()
+			return c.coreClient.PaymentsAPI.AuthorizePayment(ctx).AuthorizeRequest(*request).Execute()
 		})
 }
 
 // Capture captures an authorized payment.
-func (c *Client) Capture(ctx context.Context, transactionID string, request core.CaptureRequest) (*core.TransactionResponse, error) {
-	return executeOp(c, ctx, "capture", http.MethodPost, "/payments/{transactionId}/capture", &request,
+func (c *Client) Capture(ctx context.Context, transactionID string, request *core.CaptureRequest) (*core.TransactionResponse, error) {
+	if request == nil {
+		return nil, errNilRequest("Capture")
+	}
+	return executeOp(c, ctx, "capture", http.MethodPost, "/payments/{transactionId}/capture", request,
 		func(ctx context.Context) (*core.TransactionResponse, *http.Response, error) {
-			return c.coreClient.PaymentsAPI.CapturePayment(ctx, transactionID).CaptureRequest(request).Execute()
+			return c.coreClient.PaymentsAPI.CapturePayment(ctx, transactionID).CaptureRequest(*request).Execute()
 		})
 }
 
 // Void voids an authorized payment.
-func (c *Client) Void(ctx context.Context, transactionID string, request core.VoidRequest) (*core.TransactionResponse, error) {
-	return executeOp(c, ctx, "void", http.MethodPost, "/payments/{transactionId}/void", &request,
+func (c *Client) Void(ctx context.Context, transactionID string, request *core.VoidRequest) (*core.TransactionResponse, error) {
+	if request == nil {
+		return nil, errNilRequest("Void")
+	}
+	return executeOp(c, ctx, "void", http.MethodPost, "/payments/{transactionId}/void", request,
 		func(ctx context.Context) (*core.TransactionResponse, *http.Response, error) {
-			return c.coreClient.PaymentsAPI.VoidPayment(ctx, transactionID).VoidRequest(request).Execute()
+			return c.coreClient.PaymentsAPI.VoidPayment(ctx, transactionID).VoidRequest(*request).Execute()
 		})
 }
 
 // Refund refunds a captured payment.
-func (c *Client) Refund(ctx context.Context, transactionID string, request core.RefundRequest) (*core.TransactionResponse, error) {
-	return executeOp(c, ctx, "refund", http.MethodPost, "/payments/{transactionId}/refund", &request,
+func (c *Client) Refund(ctx context.Context, transactionID string, request *core.RefundRequest) (*core.TransactionResponse, error) {
+	if request == nil {
+		return nil, errNilRequest("Refund")
+	}
+	return executeOp(c, ctx, "refund", http.MethodPost, "/payments/{transactionId}/refund", request,
 		func(ctx context.Context) (*core.TransactionResponse, *http.Response, error) {
-			return c.coreClient.PaymentsAPI.RefundPayment(ctx, transactionID).RefundRequest(request).Execute()
+			return c.coreClient.PaymentsAPI.RefundPayment(ctx, transactionID).RefundRequest(*request).Execute()
 		})
 }
 
 // RefundCancel cancels a refund by merchant transaction id.
-func (c *Client) RefundCancel(ctx context.Context, merchantTransactionID string, request core.RefundCancelRequest) (*core.TransactionResponse, error) {
-	return executeOp(c, ctx, "refund_cancel", http.MethodPost, "/payments/merchant/{merchantTransactionId}/refund-cancel", &request,
+func (c *Client) RefundCancel(ctx context.Context, merchantTransactionID string, request *core.RefundCancelRequest) (*core.TransactionResponse, error) {
+	if request == nil {
+		return nil, errNilRequest("RefundCancel")
+	}
+	return executeOp(c, ctx, "refund_cancel", http.MethodPost, "/payments/merchant/{merchantTransactionId}/refund-cancel", request,
 		func(ctx context.Context) (*core.TransactionResponse, *http.Response, error) {
-			return c.coreClient.PaymentsAPI.RefundCancelPaymentByMerchantTransactionId(ctx, merchantTransactionID).RefundCancelRequest(request).Execute()
+			return c.coreClient.PaymentsAPI.RefundCancelPaymentByMerchantTransactionId(ctx, merchantTransactionID).RefundCancelRequest(*request).Execute()
 		})
+}
+
+// errNilRequest is the guard for a nil request struct — a plain programming
+// error, deliberately NOT one of the three typed failure classes: no request
+// was ever attempted, so there is no wire outcome to classify
+// (failover-contract §2 untouched).
+func errNilRequest(op string) error {
+	return errors.New("revaly: " + op + ": request must not be nil")
 }
 
 // Reconcile runs the OutcomeUnknown reconciliation procedure

@@ -50,15 +50,15 @@ type errSkip struct{ reason string }
 
 func (e errSkip) Error() string { return e.reason }
 
-// headerInjectingWire is a real-HTTP wire that stamps one extra header on
-// every request. It sits at the Config.Wire seam, INSIDE the runtime's own
-// header injection, so auth/UA/version behaviour is unchanged.
-type headerInjectingWire struct {
+// headerInjectingTransport is a real-HTTP transport that stamps one extra
+// header on every request. It sits at the Config.Transport seam, INSIDE the
+// runtime's own header injection, so auth/UA/version behaviour is unchanged.
+type headerInjectingTransport struct {
 	name  string
 	value string
 }
 
-func (w *headerInjectingWire) RoundTrip(req *http.Request) (*http.Response, error) {
+func (w *headerInjectingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	cloned := req.Clone(req.Context())
 	cloned.Header.Set(w.name, w.value)
 	return http.DefaultTransport.RoundTrip(cloned)
@@ -95,8 +95,8 @@ func main() {
 		OverallDeadline: 15 * time.Second,
 	})
 
-	// A client whose wire stamps the platform's fault-inject header — every
-	// charge through it deterministically fails pre-dispatch (503 +
+	// A client whose transport stamps the platform's fault-inject header —
+	// every charge through it deterministically fails pre-dispatch (503 +
 	// code=not_processed). Only built when the scenario is enabled.
 	var faultClient *revaly.Client
 	if faultValue != "" {
@@ -104,7 +104,7 @@ func main() {
 			APIKey:          apiKey,
 			BaseURL:         baseURL,
 			OverallDeadline: 15 * time.Second,
-			Wire:            &headerInjectingWire{name: faultInjectHeader, value: faultValue},
+			Transport:       &headerInjectingTransport{name: faultInjectHeader, value: faultValue},
 		})
 	}
 
@@ -116,8 +116,8 @@ func main() {
 	// across the six languages. orderId + email are additionally required by
 	// the staging simulator for an approval. One synthetic test PAN; the
 	// EXPIRY drives the outcome (12/2027 approves, 12/2020 declines).
-	buildCharge := func(mtid, number, year string, withName bool) revaly.PaymentRequest {
-		request := *revaly.NewPaymentRequest(1999, mtid)
+	buildCharge := func(mtid, number, year string, withName bool) *revaly.PaymentRequest {
+		request := revaly.NewPaymentRequest(1999, mtid)
 		request.SetPaymentMethodType("creditCard")
 		request.SetCurrency("USD")
 		request.SetOrderId(mtid)

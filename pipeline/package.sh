@@ -266,7 +266,7 @@ package_go() {
   stage_tree
   local src="$WORK/languages/go"
   cp "$WORK/LICENSE" "$WORK/NOTICE" "$src/"
-  stamp "$src/runtime/version.go" \
+  stamp "$src/internal/runtime/version.go" \
     "s/const Version = \"0\\.0\\.0-dev\"/const Version = \"$VERSION\"/" \
     "const Version = \"$VERSION\""
   # Source-module zip (go.mod at the archive root). Consumed via unzip + a local

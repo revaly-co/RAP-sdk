@@ -10,7 +10,7 @@ import (
 	"time"
 
 	revaly "github.com/revaly-co/rap-sdk/languages/go"
-	"github.com/revaly-co/rap-sdk/languages/go/runtime/raptest"
+	"github.com/revaly-co/rap-sdk/languages/go/raptest"
 )
 
 func policy(attempts int) revaly.ReconcilePolicy {

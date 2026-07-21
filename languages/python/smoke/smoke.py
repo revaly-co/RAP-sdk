@@ -231,7 +231,9 @@ def main() -> int:
         # business validation: the rejection is proven to come from reality
         # (HTTP 400; 4xx carries no code).
         try:
-            client.charge(build_charge(fresh_id("validation"), TEST_PAN, "2027", routing_id, with_name=False))
+            client.charge(
+                build_charge(fresh_id("validation"), TEST_PAN, "2027", routing_id, with_name=False)
+            )
         except RapPermanentRejection as rejection:
             if rejection.status not in (400, 422):
                 raise SmokeFailure(f"expected HTTP 400/422, got {rejection.status}") from None
@@ -253,7 +255,9 @@ def main() -> int:
             return f" (status={rejection.status} correlation={rejection.correlation_id})"
         except Exception as err:  # noqa: BLE001
             raise classified("expected RapPermanentRejection", err) from None
-        raise SmokeFailure("server accepted a synthetic invalid key — expected RapPermanentRejection")
+        raise SmokeFailure(
+            "server accepted a synthetic invalid key — expected RapPermanentRejection"
+        )
 
     def charge_not_processed_503() -> str:
         # The fast-failover row (503 + code=not_processed): valid input cannot
@@ -270,7 +274,9 @@ def main() -> int:
             if transient.code != "not_processed":
                 raise SmokeFailure(f'expected code=not_processed, got "{transient.code}"') from None
             if not transient.correlation_id:
-                raise SmokeFailure("no X-Correlation-ID on the not-processed failure (DX §c)") from None
+                raise SmokeFailure(
+                    "no X-Correlation-ID on the not-processed failure (DX §c)"
+                ) from None
             return f" (status=503 code={transient.code} correlation={transient.correlation_id})"
         except Exception as err:  # noqa: BLE001
             raise classified("expected RapTransientFailure", err) from None

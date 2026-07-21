@@ -14,7 +14,7 @@ export type RapTransactionOutcome = 'Approved' | 'Declined' | 'Error' | 'Pending
  * `Found(Approved)` means the money moved — failing over now would double-charge.
  */
 export interface Found {
-    readonly kind: 'found';
+    readonly kind: 'Found';
     readonly outcome: RapTransactionOutcome;
     /** The terminal record, when the sighting was a terminal transaction. */
     readonly transaction?: TransactionResponse;
@@ -29,7 +29,7 @@ export interface Found {
  * NotFoundYet, escalate per merchant policy.
  */
 export interface NotFoundYet {
-    readonly kind: 'notFoundYet';
+    readonly kind: 'NotFoundYet';
     readonly attempts: number;
     readonly elapsedMs: number;
     readonly lastCorrelationId?: string;
@@ -44,7 +44,7 @@ export interface NotFoundYet {
  * it).
  */
 export interface ReconcileVerdictExtension {
-    readonly kind: 'reconcileVerdictExtension';
+    readonly kind: 'ReconcileVerdictExtension';
 }
 
 /**

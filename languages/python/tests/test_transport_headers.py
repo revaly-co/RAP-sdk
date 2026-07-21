@@ -12,9 +12,7 @@ from conftest import SYNTHETIC_API_KEY, make_client, payment_request
 from revaly_sdk import DEFAULT_OVERALL_DEADLINE, SDK_VERSION, user_agent_value
 from revaly_sdk.testing import RapMockTransport
 
-UA_GRAMMAR = re.compile(
-    r"^revaly-sdk-python/\S+ \(python \d+\.\d+; (windows|linux|darwin|other)\)"
-)
+UA_GRAMMAR = re.compile(r"^revaly-sdk-python/\S+ \(python \d+\.\d+; (windows|linux|darwin|other)\)")
 
 
 def _charge(mock, **client_kwargs):
