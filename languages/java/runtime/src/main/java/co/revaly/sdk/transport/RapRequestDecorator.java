@@ -40,7 +40,7 @@ public final class RapRequestDecorator implements Consumer<HttpRequest.Builder> 
     }
 
     /** The full User-Agent this decorator stamps (SDK token first, suffix appended). */
-    public String userAgent() {
+    public String getUserAgent() {
         return userAgent;
     }
 }

@@ -37,6 +37,7 @@ import co.revaly.sdk.core.model.PaymentRequest;
 import co.revaly.sdk.core.model.TransactionResponse;
 import co.revaly.sdk.errors.OutcomeUnknownException;
 import co.revaly.sdk.errors.PermanentRejectionException;
+import co.revaly.sdk.errors.RapCoreException;
 import co.revaly.sdk.errors.TransientFailureException;
 import co.revaly.sdk.reconcile.RapReconcileVerdict;
 import co.revaly.sdk.reconcile.RapTransactionOutcome;
@@ -44,7 +45,7 @@ import co.revaly.sdk.reconcile.ReconcilePolicy;
 import java.time.Duration;
 
 public class Quickstart {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws RapCoreException, InterruptedException {
         RapClient client = RapClient.builder()
                 // Enablement-issued sandbox-scoped key. Sandbox and live share the same
                 // URL — your key's scope selects the environment (no separate sandbox host).
@@ -87,10 +88,11 @@ public class Quickstart {
             // May have been processed — reconcile BEFORE acting (double-charge hazard).
             RapReconcileVerdict verdict = client.reconcile(
                     merchantTransactionId,
-                    new ReconcilePolicy(
-                            /* maxAttempts */ 6,
-                            /* overallBudget */ Duration.ofSeconds(30),
-                            /* initialDelay */ Duration.ofSeconds(1)));
+                    ReconcilePolicy.builder()
+                            .maxAttempts(6)
+                            .overallBudget(Duration.ofSeconds(30))
+                            .initialDelay(Duration.ofSeconds(1))
+                            .build());
 
             if (verdict instanceof RapReconcileVerdict.Found) {
                 RapReconcileVerdict.Found found = (RapReconcileVerdict.Found) verdict;
@@ -144,6 +146,13 @@ The connect timeout ships **no SDK default** — a client-side value needs edge 
 (OQ-11). The one rule that is not yours to choose: an overall deadline that expires
 **after the request was sent** classifies as `OutcomeUnknown` — reconcile, never
 resubmit.
+
+One semantic caveat: the deadline bounds **time-to-response**, per `java.net.http`'s
+`HttpRequest.timeout()` semantics — the wait through the response status and headers. A
+response body that stalls *after* headers arrive is not bounded by it; such a stall
+surfaces as `OutcomeUnknown` through a transport failure when the connection dies. If you
+need a hard wall-clock bound on the whole call, enforce it in your own execution layer —
+and treat expiry there exactly like any `OutcomeUnknown`: reconcile, never resubmit.
 
 ### API versioning
 

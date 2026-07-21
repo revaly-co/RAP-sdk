@@ -5,10 +5,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * The caller-bounded polling policy for {@code RapClient.reconcile} — the ONLY loop this SDK owns
- * (ADR-SDK-004). All bounds are explicit constructor arguments: the SDK deliberately ships no
- * default attempt counts, budgets, or delays — reconcile defaults need post-charge visibility-lag
- * telemetry (ADR-SDK-027 residual, tracked under SC-261). The backoff shape is exponential with
- * jitter ([Proposed]: multiplier 2.0, full jitter ±20%).
+ * (ADR-SDK-004). All bounds are explicit, via constructor arguments or the {@link #builder()}: the
+ * SDK deliberately ships no default attempt counts, budgets, or delays — reconcile defaults need
+ * post-charge visibility-lag telemetry (ADR-SDK-027 residual, tracked under SC-261). The backoff
+ * shape is exponential with jitter ([Proposed]: multiplier 2.0, full jitter ±20%).
  */
 public final class ReconcilePolicy {
 
@@ -59,6 +59,10 @@ public final class ReconcilePolicy {
         this.maxDelay = maxDelay;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /** Maximum GET attempts. */
     public int getMaxAttempts() {
         return maxAttempts;
@@ -93,5 +97,52 @@ public final class ReconcilePolicy {
         double jittered =
                 raw + ((ThreadLocalRandom.current().nextDouble() * 2.0) - 1.0) * jitterSpan;
         return Duration.ofMillis((long) Math.max(0, jittered));
+    }
+
+    /**
+     * Configures and creates one {@link ReconcilePolicy} — the fluent alternative to the
+     * constructors. Every bound a constructor requires stays required here: {@link #maxAttempts},
+     * {@link #overallBudget} and {@link #initialDelay} must be set explicitly, and the builder
+     * introduces no defaults (SC-261 — reconcile defaults await post-charge visibility-lag
+     * telemetry). {@link #maxDelay} stays optional exactly as in the four-argument constructor
+     * (unset leaves per-wait growth uncapped within the budget). {@link #build()} validates exactly
+     * as the constructors do.
+     */
+    public static final class Builder {
+
+        private int maxAttempts;
+        private Duration overallBudget;
+        private Duration initialDelay;
+        private Duration maxDelay;
+
+        private Builder() {}
+
+        /** Maximum GET attempts (≥ 1; required). */
+        public Builder maxAttempts(int maxAttempts) {
+            this.maxAttempts = maxAttempts;
+            return this;
+        }
+
+        /** Total wall-clock budget across all attempts and waits (required). */
+        public Builder overallBudget(Duration overallBudget) {
+            this.overallBudget = overallBudget;
+            return this;
+        }
+
+        /** Delay before the second attempt; doubles each attempt, with jitter (required). */
+        public Builder initialDelay(Duration initialDelay) {
+            this.initialDelay = initialDelay;
+            return this;
+        }
+
+        /** Optional cap on the per-wait delay; unset leaves growth uncapped within the budget. */
+        public Builder maxDelay(Duration maxDelay) {
+            this.maxDelay = maxDelay;
+            return this;
+        }
+
+        public ReconcilePolicy build() {
+            return new ReconcilePolicy(maxAttempts, overallBudget, initialDelay, maxDelay);
+        }
     }
 }

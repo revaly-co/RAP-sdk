@@ -81,6 +81,10 @@ public final class FailureClassifier {
      * non-connect {@link HttpTimeoutException} is the overall deadline expiring after send —
      * OutcomeUnknown by contract, never TransientFailure (runtime-tdd §1). Every other transport
      * failure (reset mid-flight, ambiguous IO) is OutcomeUnknown.
+     *
+     * <p>The typed error's cause is {@code failure} as received: the transport failures the
+     * generated core wraps keep their original exception as the cause, so the typed error carries
+     * only exception causes — never response bodies.
      */
     public static RapCoreException classifyTransportFailure(Throwable failure) {
         Throwable cause = failure;
@@ -92,12 +96,11 @@ public final class FailureClassifier {
                     || cause instanceof SSLHandshakeException) {
                 return new TransientFailureException(
                         "request provably never sent (" + cause.getClass().getSimpleName() + ")",
-                        rootException(failure));
+                        failure);
             }
             if (cause instanceof HttpTimeoutException) {
                 return new OutcomeUnknownException(
-                        "deadline exceeded after send; reconcile before acting",
-                        rootException(failure));
+                        "deadline exceeded after send; reconcile before acting", failure);
             }
             cause = cause.getCause();
         }
@@ -106,7 +109,7 @@ public final class FailureClassifier {
                 "transport failure without never-sent proof ("
                         + failure.getClass().getSimpleName()
                         + ")",
-                rootException(failure));
+                failure);
     }
 
     /**
@@ -151,12 +154,6 @@ public final class FailureClassifier {
         } catch (IOException e) {
             return ParsedError.EMPTY;
         }
-    }
-
-    // The transport failures the generated core wraps keep their original exception as
-    // the cause; keep only exception causes on the typed error (never response bodies).
-    private static Throwable rootException(Throwable failure) {
-        return failure;
     }
 
     static final class ParsedError {

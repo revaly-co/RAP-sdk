@@ -176,7 +176,8 @@ public final class MockOperation {
     private MockOperation enqueueBody(int status, String body) {
         Map<String, String> headers = new LinkedHashMap<>();
         headers.put("Content-Type", "application/json");
-        headers.put("X-Correlation-ID", "mock-corr-" + (++correlationCounter));
+        correlationCounter++;
+        headers.put("X-Correlation-ID", "mock-corr-" + correlationCounter);
         script.addLast(MockResult.response(status, body, headers));
         return this;
     }

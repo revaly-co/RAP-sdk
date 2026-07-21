@@ -67,6 +67,13 @@ public final class RapClient {
      * The overall-deadline default applied when the builder does not set one: 75 seconds, ratified
      * from production latency telemetry (ADR-SDK-027). Disable with {@link
      * Builder#noOverallDeadline()}.
+     *
+     * <p>The deadline bounds <b>time-to-response</b> per {@code java.net.http}'s {@link
+     * java.net.http.HttpRequest.Builder#timeout} semantics — the wait through the response status
+     * and headers. A body that stalls after headers is not bounded by it; such a stall surfaces as
+     * OutcomeUnknown via a transport failure when the connection dies. A merchant needing a hard
+     * wall-clock bound on the whole call should enforce it in their own execution layer and treat
+     * expiry as OutcomeUnknown — reconcile, never resubmit.
      */
     public static final Duration DEFAULT_OVERALL_DEADLINE = Duration.ofSeconds(75);
 
@@ -502,6 +509,13 @@ public final class RapClient {
          * RapClient#DEFAULT_OVERALL_DEADLINE} (75 seconds, ratified from production latency
          * telemetry — ADR-SDK-027; it clears every observed gateway tail cluster and clips ≲0.007%
          * of charges). Passing null is equivalent to {@link #noOverallDeadline()}.
+         *
+         * <p>The deadline bounds <b>time-to-response</b> per {@code java.net.http}'s {@link
+         * java.net.http.HttpRequest.Builder#timeout} semantics — the wait through the response
+         * status and headers. A body that stalls after headers is not bounded by it; such a stall
+         * surfaces as OutcomeUnknown via a transport failure when the connection dies. If you need
+         * a hard wall-clock bound on the whole call, enforce it in your own execution layer and
+         * treat expiry as OutcomeUnknown — reconcile, never resubmit.
          */
         public Builder overallDeadline(Duration overallDeadline) {
             this.overallDeadline = overallDeadline;

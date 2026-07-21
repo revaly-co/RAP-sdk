@@ -99,7 +99,11 @@ class QuickstartTests {
             RapReconcileVerdict verdict =
                     client.reconcile(
                             TestClient.MTX,
-                            new ReconcilePolicy(5, Duration.ofSeconds(10), Duration.ofMillis(1)));
+                            ReconcilePolicy.builder()
+                                    .maxAttempts(5)
+                                    .overallBudget(Duration.ofSeconds(10))
+                                    .initialDelay(Duration.ofMillis(1))
+                                    .build());
 
             if (verdict instanceof RapReconcileVerdict.Found) {
                 RapReconcileVerdict.Found found = (RapReconcileVerdict.Found) verdict;

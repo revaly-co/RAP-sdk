@@ -8,11 +8,10 @@ import com.fasterxml.jackson.databind.JsonNode;
  * PermanentRejectionException}, {@link TransientFailureException}, {@link OutcomeUnknownException}
  * — to branch failover logic.
  *
- * <p>Checked-vs-unchecked note: these are CHECKED exceptions, [Proposed] pending the DX-contract §a
- * idiomatic-reviewer sign-off (runtime-tdd §3 leaves the java idiom to the bake-off). Checked
- * mirrors the generated core's {@code ApiException} convention and forces the merchant to face the
- * three-way failover decision at compile time — the safety-critical branch this SDK exists to
- * teach.
+ * <p>Checked-vs-unchecked note: these are CHECKED exceptions — Decided per ADR-SDK-028 (DX-contract
+ * §a idiomatic review, 2026-07-21). Checked mirrors the generated core's {@code ApiException}
+ * convention and forces the merchant to face the three-way failover decision at compile time — the
+ * safety-critical branch this SDK exists to teach.
  *
  * <p>The exception message is values-free by construction (class, HTTP status, code, correlation id
  * only — ADR-SDK-020): it never embeds request payloads, API keys, or the raw response body. The
