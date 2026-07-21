@@ -51,7 +51,8 @@ public class Quickstart {
                 // URL — your key's scope selects the environment (no separate sandbox host).
                 .apiKey(System.getenv("REVALY_API_KEY"))
                 .connectTimeout(Duration.ofSeconds(2))      // no SDK default — see timeout note below
-                .overallDeadline(Duration.ofSeconds(10))    // default 75 s (ADR-SDK-027); expiry AFTER send = OutcomeUnknown
+                // overallDeadline not set — the 75 s ADR-SDK-027 default applies; tune it to your
+                // checkout budget with .overallDeadline(...) (see the Timeouts note below)
                 .build();
 
         // merchantTransactionId is required on every payment request — it is also the

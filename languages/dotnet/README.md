@@ -27,9 +27,9 @@ using var rap = new RapClient(new RapClientOptions
     // ErrorResponse.code contract, a 503 + not_processed classifies OutcomeUnknown
     // (reconcile) instead of TransientFailure (immediate failover). Keep 2.1.
     // OverallDeadline defaults to 75 s (telemetry-ratified — ADR-SDK-027); expiry after
-    // send classifies OutcomeUnknown, never TransientFailure. Tighten it to your checkout
-    // budget, or opt out with Timeout.InfiniteTimeSpan (HttpClient's 100 s then applies).
-    OverallDeadline = TimeSpan.FromSeconds(10),
+    // send classifies OutcomeUnknown, never TransientFailure. Set OverallDeadline to tighten
+    // it to your checkout budget, or opt out with Timeout.InfiniteTimeSpan (HttpClient's 100 s
+    // then applies).
     // ConnectTimeout has no SDK default — that needs client-side edge data (OQ-11).
 });
 ```
