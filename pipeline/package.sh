@@ -158,19 +158,58 @@ package_dotnet() {
   command -v dotnet > /dev/null || die "dotnet SDK not found"
   stage_tree
   local src="$WORK/languages/dotnet"
+  local core_csproj="$src/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj"
+  # Staged-copy fix to the GENERATED core csproj (external SDK audit 2026-07-23). Like
+  # package_java's versions:set on the generated pom, this edit exists only in the
+  # ephemeral staging copy that becomes the artifact — the committed tree is never
+  # hand-edited (ADR-SDK-001): drop the Microsoft.Extensions.Http.Polly PackageReference,
+  # generator-template baggage with zero code usage that a "no hidden retries" SDK must
+  # not carry in its dependency tree. Fail-closed both directions so a template change at
+  # the next regen can neither silently no-op nor silently reintroduce it. The
+  # generator-config-level fix (packageAuthors/gitUserId/…) is a pre-GA follow-up under
+  # ADR-SDK-023 discipline.
+  grep -q 'Microsoft\.Extensions\.Http\.Polly' "$core_csproj" \
+    || die "Polly PackageReference not found in staged core csproj — generator template changed; re-verify this strip"
+  sed -i.bak '/Microsoft\.Extensions\.Http\.Polly/d' "$core_csproj" && rm -f "$core_csproj.bak"
+  if grep -q 'Microsoft\.Extensions\.Http\.Polly' "$core_csproj"; then
+    die "Polly PackageReference still present in staged core csproj after strip"
+  fi
   # -p:Version stamps the assembly informational version RapUserAgent.ResolveSemver
   # reads, the nupkg version, and the runtime→core package-dependency version.
   # PackageOutputPath as a property, not -o: under Git Bash (MSYS) the -o form
   # mis-parses when the project path is also being converted (verified 2026-07-20);
   # the property form behaves identically on the Linux runners.
-  dotnet pack "$src/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj" \
+  # The -p:Authors/-p:Copyright/-p:PackageDescription/-p:RepositoryUrl overrides replace
+  # the generator's placeholder nuspec metadata (authors "OpenAPI", GIT_USER_ID repo URL,
+  # "No Copyright") in the packed artifact only — same staging-copy philosophy as above.
+  dotnet pack "$core_csproj" \
     -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
+    -p:Authors=Revaly -p:Company="Revaly, Inc." \
+    -p:Copyright="Copyright 2026 Revaly, Inc." \
+    -p:AssemblyTitle=Revaly.Sdk.Core \
+    -p:PackageDescription="Generated API core for the Revaly RAP V2 .NET SDK. Reference the Revaly.Sdk runtime package instead of using this package directly." \
+    -p:PackageReleaseNotes="See the GitHub release notes for the version-to-spec traceability table." \
+    -p:RepositoryUrl="https://github.com/revaly-co/rap-sdk" \
     -p:PackageOutputPath="$OUT"
   dotnet pack "$src/runtime/Revaly.Sdk/Revaly.Sdk.csproj" \
     -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
     -p:PackageOutputPath="$OUT"
   [ -f "$OUT/Revaly.Sdk.$VERSION.nupkg" ] && [ -f "$OUT/Revaly.Sdk.Core.$VERSION.nupkg" ] \
     || die "expected nupkgs missing from $OUT"
+  # Fail closed on the metadata too: the packed core nuspec must carry none of the
+  # placeholders this fix replaces (nor Polly). Read it with unzip or python zipfile.
+  local nuspec py
+  if command -v unzip > /dev/null; then
+    nuspec="$(unzip -p "$OUT/Revaly.Sdk.Core.$VERSION.nupkg" Revaly.Sdk.Core.nuspec)"
+  else
+    py="$(resolve_python)" || die "neither unzip nor a working python found to verify the packed nuspec"
+    nuspec="$("$py" -c "import sys,zipfile; sys.stdout.write(zipfile.ZipFile(sys.argv[1]).read('Revaly.Sdk.Core.nuspec').decode('utf-8'))" \
+      "$OUT/Revaly.Sdk.Core.$VERSION.nupkg")"
+  fi
+  case "$nuspec" in
+    *OpenAPI* | *GIT_USER_ID* | *"No Copyright"* | *Polly*)
+      die "generator placeholder metadata or Polly still present in the packed core nuspec" ;;
+  esac
 }
 
 package_java() {
