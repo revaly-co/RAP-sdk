@@ -66,7 +66,9 @@ export interface RapTransportOptions {
 export function buildFetchApi(options: RapTransportOptions): FetchAPI {
     const baseFetch = resolveTransport(options.transport);
 
-    return async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    // `string | URL | Request` spelled out (not the DOM alias `RequestInfo`): the packed
+    // d.ts must compile in Node-only projects whose libs don't declare the DOM aliases.
+    return async (input: string | URL | Request, init: RequestInit = {}) => {
         const headers = new Headers(init.headers ?? undefined);
         headers.set(AUTHORIZATION, `${AUTH_SCHEME} ${options.apiKey}`);
         headers.set(USER_AGENT, options.userAgent);

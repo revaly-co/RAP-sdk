@@ -14,13 +14,21 @@ github.com/revaly-co/rap-sdk/languages/go/raptest  ← mock transport for your t
 
 > **Pre-release status.** Registry publish is embargoed until the release
 > gates close; interim releases ship as per-language **GitHub release
-> artifacts** from this repository under `go/vX.Y.Z` tags (`go/v0.1.0` and
-> `go/v0.2.0` shipped 2026-07-20 — asset + `.sha256` + `provenance.json`).
-> The source tree between releases carries the placeholder version
-> `0.0.0-dev`. To consume the module directly from a checkout, use a `go.mod`
-> `replace` directive or `GOPRIVATE=github.com/revaly-co` for VCS fetches.
-> The supported Go floor is **go 1.21** (the `go.mod` directive); it is
-> re-evaluated at the GA gate.
+> artifacts** from this repository under `go/vX.Y.Z` tags — see the repo's
+> Releases page for the current version (each release ships the module zip
+> + `.sha256` + `provenance.json`). The source tree between releases carries
+> the placeholder version `0.0.0-dev`. To consume a release zip:
+>
+> ```bash
+> unzip revaly-sdk-go.zip -d third_party/revaly-sdk-go
+> go mod edit -replace github.com/revaly-co/rap-sdk/languages/go=./third_party/revaly-sdk-go
+> go get github.com/revaly-co/rap-sdk/languages/go
+> ```
+>
+> (From a repository checkout, the same `replace` directive pointed at the
+> checkout path — or `GOPRIVATE=github.com/revaly-co` for VCS fetches — works
+> identically.) The supported Go floor is **go 1.21** (the `go.mod`
+> directive); it is re-evaluated at the GA gate.
 
 ## Why this SDK is different: the failover contract
 
@@ -75,10 +83,13 @@ func main() {
 	// order/attempt id; you will look the payment up by it if the outcome is
 	// ever unknown.
 	request := revaly.NewPaymentRequest(1099, "order-0001-attempt-1")
+	// orderId + email: the sandbox simulator requires both for an approval.
+	request.SetOrderId("order-0001")
 	card := revaly.NewCreditCard("4111111111111111", "12", "2030") // sandbox test card
 	card.SetCardVerificationCode("123")
 	method := revaly.NewPaymentMethod()
 	method.SetFullName("Ada Lovelace") // creditCard requires a cardholder name
+	method.SetEmail("ada@example.com")
 	method.SetCreditCard(*card)
 	// paymentMethodType is omitted — inferred from the one populated method object.
 	request.SetPaymentMethod(*method)
@@ -208,6 +219,12 @@ data is synthetic only.
   log-capture tests): identifiers and statuses only, payload values never.
 - The wire-trace hook receives request/response events scrubbed by a central
   allowlist before your code sees them.
+- Calls made directly against the generated core (`…/languages/go/core`)
+  return the generator's `GenericOpenAPIError`, whose `Error()` string can
+  embed response-body content (and `.Body()` returns it raw). Response bodies
+  can contain PII (names, emails, masked card data) — never log raw core
+  errors or bodies; log the correlation id and the typed `revaly.*` errors
+  (values-free by design) instead.
 
 ## Support policy
 

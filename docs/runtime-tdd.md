@@ -69,6 +69,11 @@ requires a default/else branch (sealed base + documented default; non-exhaustive
 
 **[Decided]** `NotFoundYet` carries attempts, elapsed, last correlation id, last HTTP status.
 `Found` distinguishes terminal outcomes from (post-P-2) pending intent as distinct variants.
+(Explanatory note, 2026-07-23: a null/absent last HTTP status with attempts > 0 means no
+reconcile attempt ever received an HTTP response — the API-unreachable signal. Degraded reads
+(5xx/timeout/transport failure on the GET) keep polling within the caller's budget in every
+language — visibility is widest exactly when RAP-core is degraded; the merchant action on
+NotFoundYet is unchanged either way: hold + escalate.)
 
 **[Proposed]** `policy` = backoff schedule (default exponential + jitter), per-attempt deadline,
 overall budget; policy defaults deliberately not shipped in V1 — they need post-charge

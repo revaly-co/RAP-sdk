@@ -32,6 +32,14 @@ there is no separate sandbox host. Use the sandbox-scoped key issued by Enableme
 npm install ./revaly-sdk-typescript.tgz
 ```
 
+> **TypeScript config note:** the generated core's packaged typings reference WHATWG-fetch
+> type aliases (`RequestCredentials`, `WindowOrWorkerGlobalScope`) that `@types/node` does
+> not declare globally. A strict Node-only project compiling with `skipLibCheck: false`
+> and no `"DOM"` lib therefore fails on the packaged `.d.ts`; compile with
+> `skipLibCheck: true` (the `tsc --init` default) or add `"DOM"` to `compilerOptions.lib`.
+> The hand-written runtime typings are Node-clean; emitting the core's typings without
+> the DOM aliases is tracked for the pre-GA generator-template review (ADR-SDK-023).
+
 ```ts
 import {
     RapClient,
@@ -47,9 +55,11 @@ try {
         amount: 1999,
         currency: 'USD',
         merchantTransactionId: 'order-1042', // required on every payment — it is your reconcile handle
+        orderId: 'order-1042', // orderId + email below: the sandbox simulator requires both for an approval
         // paymentMethodType is omitted — inferred from the one populated method object
         paymentMethod: {
             fullName: 'Ada Lovelace', // creditCard requires a cardholder name
+            email: 'ada@example.com',
             creditCard: {
                 number: '4111111111111111', // sandbox test PAN
                 cardVerificationCode: '999',
@@ -198,3 +208,9 @@ transport, headers and classification:
 const methods = await client.paymentMethods.listPaymentMethods({ /* ... */ });
 const byId = await client.transactions.getTransactionByIdRaw({ transactionId: 'txn-1' });
 ```
+
+One logging caution on this surface: raw core operations reject with the generator's
+error types (e.g. `ResponseError`, carrying the full `Response`), not the three typed
+classes. Response bodies can contain PII (names, emails, masked card data) — never log
+raw core errors or response bodies; log the correlation id and the typed runtime errors
+(values-free by design) instead.

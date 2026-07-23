@@ -158,19 +158,86 @@ package_dotnet() {
   command -v dotnet > /dev/null || die "dotnet SDK not found"
   stage_tree
   local src="$WORK/languages/dotnet"
+  local core_csproj="$src/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj"
+  # Staged-copy fix to the GENERATED core csproj (external SDK audit 2026-07-23). Like
+  # package_java's versions:set on the generated pom, this edit exists only in the
+  # ephemeral staging copy that becomes the artifact — the committed tree is never
+  # hand-edited (ADR-SDK-001): drop the Microsoft.Extensions.Http.Polly PackageReference,
+  # generator-template baggage with zero code usage that a "no hidden retries" SDK must
+  # not carry in its dependency tree. Fail-closed both directions so a template change at
+  # the next regen can neither silently no-op nor silently reintroduce it. The
+  # generator-config-level fix (packageAuthors/gitUserId/…) is a pre-GA follow-up under
+  # ADR-SDK-023 discipline.
+  grep -q 'Microsoft\.Extensions\.Http\.Polly' "$core_csproj" \
+    || die "Polly PackageReference not found in staged core csproj — generator template changed; re-verify this strip"
+  # The strip is designed for exactly the shape the pinned template emits: ONE
+  # self-closing, single-line PackageReference. Refuse anything else — a
+  # multi-line emission after a template change would leave orphaned attribute
+  # fragments behind a single-line delete. (dotnet pack's MSB4025 would still
+  # reject the malformed csproj; these guards just fail earlier and clearer.)
+  [ "$(grep -c 'Microsoft\.Extensions\.Http\.Polly' "$core_csproj" || true)" = "1" ] \
+    || die "expected exactly one Polly reference line in the staged core csproj — template shape changed; re-verify this strip"
+  grep -Eq '^[[:space:]]*<PackageReference[[:space:]][^<>]*Microsoft\.Extensions\.Http\.Polly[^<>]*/>[[:space:]]*$' "$core_csproj" \
+    || die "the Polly PackageReference is not a single self-closing line — template shape changed; re-verify this strip"
+  sed -i.bak '/Microsoft\.Extensions\.Http\.Polly/d' "$core_csproj" && rm -f "$core_csproj.bak"
+  if grep -q 'Microsoft\.Extensions\.Http\.Polly' "$core_csproj"; then
+    die "Polly PackageReference still present in staged core csproj after strip"
+  fi
   # -p:Version stamps the assembly informational version RapUserAgent.ResolveSemver
   # reads, the nupkg version, and the runtime→core package-dependency version.
   # PackageOutputPath as a property, not -o: under Git Bash (MSYS) the -o form
   # mis-parses when the project path is also being converted (verified 2026-07-20);
   # the property form behaves identically on the Linux runners.
-  dotnet pack "$src/core/src/Revaly.Sdk.Core/Revaly.Sdk.Core.csproj" \
+  # The -p:Authors/-p:Copyright/-p:PackageDescription/-p:RepositoryUrl overrides replace
+  # the generator's placeholder nuspec metadata (authors "OpenAPI", GIT_USER_ID repo URL,
+  # "No Copyright") in the packed artifact only — same staging-copy philosophy as above.
+  # %2C = MSBuild's escaped comma: bare commas in -p: values are pair separators
+  # (MSB1006), so "Revaly, Inc." must ride through escaped.
+  dotnet pack "$core_csproj" \
     -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
+    -p:Authors=Revaly -p:Company="Revaly%2C Inc." \
+    -p:Copyright="Copyright 2026 Revaly%2C Inc." \
+    -p:AssemblyTitle=Revaly.Sdk.Core \
+    -p:PackageDescription="Generated API core for the Revaly RAP V2 .NET SDK. Reference the Revaly.Sdk runtime package instead of using this package directly." \
+    -p:PackageReleaseNotes="See the GitHub release notes for the version-to-spec traceability table." \
+    -p:RepositoryUrl="https://github.com/revaly-co/rap-sdk" \
     -p:PackageOutputPath="$OUT"
   dotnet pack "$src/runtime/Revaly.Sdk/Revaly.Sdk.csproj" \
     -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
     -p:PackageOutputPath="$OUT"
   [ -f "$OUT/Revaly.Sdk.$VERSION.nupkg" ] && [ -f "$OUT/Revaly.Sdk.Core.$VERSION.nupkg" ] \
     || die "expected nupkgs missing from $OUT"
+  # Fail closed on the metadata too: the packed core nuspec must carry none of
+  # the placeholders this fix replaces (nor Polly, nor an undecoded %2C), and
+  # MUST carry the injected values. Every read is guarded locally — an
+  # unreadable or empty nuspec is a verification failure, never a pass, no
+  # matter how this function is invoked (errexit is suppressed for the whole
+  # function body when a caller wraps it in a condition — never rely on it).
+  local nuspec py
+  if command -v unzip > /dev/null; then
+    nuspec="$(unzip -p "$OUT/Revaly.Sdk.Core.$VERSION.nupkg" Revaly.Sdk.Core.nuspec)" \
+      || die "failed to read Revaly.Sdk.Core.nuspec out of the packed nupkg — verification cannot proceed"
+  else
+    py="$(resolve_python)" || die "neither unzip nor a working python found to verify the packed nuspec"
+    nuspec="$("$py" -c "import sys,zipfile; sys.stdout.write(zipfile.ZipFile(sys.argv[1]).read('Revaly.Sdk.Core.nuspec').decode('utf-8'))" \
+      "$OUT/Revaly.Sdk.Core.$VERSION.nupkg")" \
+      || die "failed to read Revaly.Sdk.Core.nuspec out of the packed nupkg (python) — verification cannot proceed"
+  fi
+  [ -n "$nuspec" ] || die "extracted core nuspec is empty — verification cannot proceed"
+  case "$nuspec" in
+    *OpenAPI* | *GIT_USER_ID* | *"No Copyright"* | *%2C* | *Polly*)
+      die "generator placeholder metadata, an undecoded %2C, or Polly still present in the packed core nuspec" ;;
+  esac
+  # Positive assertions: absence of the old values is not proof the new ones
+  # landed — require the decoded replacements verbatim.
+  case "$nuspec" in
+    *"<authors>Revaly</authors>"*) ;;
+    *) die "packed core nuspec is missing <authors>Revaly</authors> — metadata override did not land" ;;
+  esac
+  case "$nuspec" in
+    *"Copyright 2026 Revaly, Inc."*) ;;
+    *) die "packed core nuspec is missing the decoded copyright line (comma-escape regression?)" ;;
+  esac
 }
 
 package_java() {
@@ -241,6 +308,41 @@ package_typescript() {
   # "private": true stays — it blocks npm publish (repo rule 3), not npm pack.
   (cd "$src" && npm ci --no-audit --no-fund && npm pack --pack-destination "$OUT")
   mv "$OUT/revaly-sdk-$VERSION.tgz" "$OUT/revaly-sdk-typescript.tgz"
+  # Packed-typings gate: the hand-written runtime's packed d.ts must compile
+  # Node-only (no DOM lib). The generated core's d.ts DOM aliases are the
+  # documented, deferred exception (README "TypeScript config note"), so only
+  # diagnostics touching dist/runtime fail the gate. Runs the staged
+  # devDependency tsc — no new tooling. Fail-closed: a nonzero tsc exit with
+  # no TypeScript diagnostics at all means the gate itself failed to run.
+  local checkdir="$src/.tgz-check" entry="package/dist/runtime/src/index.d.ts" tscout rc=0
+  mkdir -p "$checkdir"
+  tar -xzf "$OUT/revaly-sdk-typescript.tgz" -C "$checkdir"
+  [ -f "$checkdir/$entry" ] \
+    || die "packed tgz is missing $entry — cannot run the packed-typings gate"
+  [ -f "$src/node_modules/typescript/bin/tsc" ] \
+    || die "staged typescript devDependency missing — cannot run the packed-typings gate"
+  # --ignoreConfig is load-bearing: tsc 7's config discovery walks ANCESTOR
+  # directories, finds the dev tsconfig.json above the extraction dir, refuses
+  # the CLI-files invocation (TS5112) and checks NOTHING — a silent pass.
+  # Negative-control verified 2026-07-23: without the flag the v0.4.0 tgz's two
+  # known runtime DOM-alias errors go undetected; with it they are reported.
+  # (The staged tsc is the pinned 7.0.2 devDependency, so the flag is stable.)
+  # cwd = the extracted package root, so diagnostics print tgz-relative paths;
+  # @types/node resolves by walking up into the staged node_modules.
+  tscout="$(cd "$checkdir/package" && node ../../node_modules/typescript/bin/tsc --noEmit --strict \
+    --ignoreConfig --lib es2022 --types node dist/runtime/src/index.d.ts 2>&1)" || rc=$?
+  if [ "$rc" -ne 0 ] && printf '%s\n' "$tscout" | grep 'error TS' | grep -vq 'dist/'; then
+    printf '%s\n' "$tscout" | head -5 >&2
+    die "packed-typings gate hit non-file tsc diagnostics — the check itself did not run; verification cannot proceed"
+  fi
+  if [ "$rc" -ne 0 ] && ! printf '%s\n' "$tscout" | grep -q 'error TS'; then
+    printf '%s\n' "$tscout" >&2
+    die "packed-typings gate produced no TypeScript diagnostics — tsc failed to run; verification cannot proceed"
+  fi
+  if printf '%s\n' "$tscout" | grep 'dist/runtime' | grep -q 'error TS'; then
+    printf '%s\n' "$tscout" | grep 'dist/runtime' | head -5 >&2
+    die "packed runtime d.ts is not Node-only clean — a DOM-only alias leaked into the hand-written runtime surface"
+  fi
 }
 
 package_python() {
