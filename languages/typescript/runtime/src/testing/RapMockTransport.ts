@@ -59,7 +59,7 @@ export class RapMockTransport {
     }
 
     /** The fetch contract — what the client's `transport` option consumes. */
-    async fetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+    async fetch(input: string | URL | Request, init: RequestInit = {}): Promise<Response> {
         if (init.signal?.aborted) {
             // Real fetch rejects an already-aborted call before any network activity —
             // so the request is neither dispatched nor recorded.

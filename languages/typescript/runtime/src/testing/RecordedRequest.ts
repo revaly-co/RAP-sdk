@@ -11,7 +11,7 @@ export class RecordedRequest {
         readonly bodyText: string | undefined,
     ) {}
 
-    static from(input: RequestInfo | URL, init: RequestInit): RecordedRequest {
+    static from(input: string | URL | Request, init: RequestInit): RecordedRequest {
         const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
         return new RecordedRequest(
             (init.method ?? 'GET').toUpperCase(),
