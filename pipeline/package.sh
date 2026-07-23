@@ -182,10 +182,12 @@ package_dotnet() {
   # The -p:Authors/-p:Copyright/-p:PackageDescription/-p:RepositoryUrl overrides replace
   # the generator's placeholder nuspec metadata (authors "OpenAPI", GIT_USER_ID repo URL,
   # "No Copyright") in the packed artifact only — same staging-copy philosophy as above.
+  # %2C = MSBuild's escaped comma: bare commas in -p: values are pair separators
+  # (MSB1006), so "Revaly, Inc." must ride through escaped.
   dotnet pack "$core_csproj" \
     -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
-    -p:Authors=Revaly -p:Company="Revaly, Inc." \
-    -p:Copyright="Copyright 2026 Revaly, Inc." \
+    -p:Authors=Revaly -p:Company="Revaly%2C Inc." \
+    -p:Copyright="Copyright 2026 Revaly%2C Inc." \
     -p:AssemblyTitle=Revaly.Sdk.Core \
     -p:PackageDescription="Generated API core for the Revaly RAP V2 .NET SDK. Reference the Revaly.Sdk runtime package instead of using this package directly." \
     -p:PackageReleaseNotes="See the GitHub release notes for the version-to-spec traceability table." \
