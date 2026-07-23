@@ -42,6 +42,12 @@ sends `Authorization: ApiKey <key>`, pins `X-Api-Version`, and stamps the SDK
 (plug in your `ILoggerFactory` via `RapClientOptions.LoggerFactory`); no payload values,
 PAN, CVV, or API keys ever appear in logs or exception messages.
 
+> **Logging caution for raw core surfaces:** the values-free guarantee covers the
+> runtime's typed errors and its own logs. Core response objects (`ApiResponse<T>`)
+> expose the raw HTTP body (`RawContent`), and core-level exceptions can carry response
+> content — response bodies can contain PII (names, emails, masked card data). Never log
+> raw core responses or exception payloads; log the correlation id instead.
+
 ## 2. Charge — and handle all three failure classes
 
 A failed `POST /payments` does **not** mean the payment didn't happen. Every failure the
@@ -61,9 +67,12 @@ var request = new PaymentRequest(
     amount: 1999,                                        // minor units
     merchantTransactionId: merchantTransactionId,
     currency: new Option<string?>("USD"),
+    // orderId + email: the sandbox simulator requires both for an approval.
+    orderId: new Option<string?>(merchantTransactionId),
     // paymentMethodType is omitted — inferred from the one populated method object.
     paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
         fullName: new Option<string?>("Ada Lovelace"),    // creditCard requires a cardholder name
+        email: new Option<string?>("ada@example.com"),
         creditCard: new Option<CreditCard?>(new CreditCard(
             "4111111111111111", "12", "2030",             // sandbox test card
             cardVerificationCode: new Option<string?>("123"))))));

@@ -64,6 +64,8 @@ $request = new PaymentRequest();
 $request->setAmount(1999);                     // smallest currency unit (cents)
 $request->setCurrency('USD');
 $request->setMerchantTransactionId('order-1042-attempt-1'); // required — reconcile key
+// orderId + email: the sandbox simulator requires both for an approval.
+$request->setOrderId('order-1042');
 
 $card = new CreditCard();
 $card->setNumber('4111111111111111');          // sandbox test card
@@ -73,6 +75,7 @@ $card->setCardVerificationCode('123');
 
 $method = new PaymentMethod();
 $method->setFullName('Ada Lovelace');          // creditCard requires a cardholder name
+$method->setEmail('ada@example.com');
 $method->setCreditCard($card);
 $request->setPaymentMethod($method);           // paymentMethodType is omitted —
                                                // inferred from the one populated method object
@@ -202,3 +205,10 @@ wrappers merge all response variants (terminal / pending / grouped) into one fla
 class without discrimination — check the discriminating field yourself (`state` is
 present only on pending records), or prefer `$client->reconcile()`, which classifies
 from the raw body.
+
+One logging caution on this surface: raw core operations throw the generator's
+`ApiException`, not the three typed classes — its message can embed a response-body
+summary (via Guzzle) and `getResponseBody()` returns the body raw. Response bodies can
+contain PII (names, emails, masked card data): never log raw core exception messages or
+bodies; log the correlation id and the typed runtime errors (values-free by design)
+instead.

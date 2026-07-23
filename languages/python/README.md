@@ -29,6 +29,7 @@ there is no separate sandbox host. Use the sandbox-scoped key issued by Enableme
 ```bash
 # Download revaly-sdk-python.tar.gz from the release, verify its .sha256, then:
 pip install ./revaly-sdk-python.tar.gz
+# (the release also attaches a wheel — either file installs the same package)
 ```
 
 ```python
@@ -54,9 +55,11 @@ request = PaymentRequest(
     amount=1999,
     currency="USD",
     merchant_transaction_id="order-1042",  # required on every payment — it is your reconcile handle
+    order_id="order-1042",  # orderId + email below: the sandbox simulator requires both for an approval
     # paymentMethodType is omitted — inferred from the one populated method object
     payment_method=PaymentMethod(
         full_name="Ada Lovelace",  # creditCard requires a cardholder name
+        email="ada@example.com",
         credit_card=CreditCard(
             number="4111111111111111",  # sandbox test PAN
             card_verification_code="999",
@@ -197,3 +200,9 @@ transport, headers and classification:
 methods = client.payment_methods.list_payment_methods()
 raw = client.transactions.get_transaction_by_id_without_preload_content("txn-1")
 ```
+
+One logging caution on this surface: raw core operations raise the generator's
+`ApiException`, not the three typed classes — and `str(ApiException)` embeds the full
+HTTP response body. Response bodies can contain PII (names, emails, masked card data):
+never log raw core exceptions or response bodies; log the correlation id and the typed
+runtime errors (values-free by design) instead.

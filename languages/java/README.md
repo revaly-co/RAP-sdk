@@ -62,10 +62,13 @@ public class Quickstart {
                 .merchantTransactionId(merchantTransactionId)
                 .amount(1999L)
                 .currency("USD")
+                // orderId + email: the sandbox simulator requires both for an approval.
+                .orderId(merchantTransactionId)
                 // paymentMethodType is omitted — inferred from the one populated
                 // method object. creditCard requires a cardholder name.
                 .paymentMethod(new PaymentMethod()
                         .fullName("Ada Lovelace")
+                        .email("ada@example.com")
                         .creditCard(new CreditCard()
                                 .number("4111111111111111") // sandbox test card
                                 .expiryMonth("12")
@@ -219,3 +222,10 @@ reconcile re-poll is the only loop the SDK owns.
 The full generated V2 surface is re-exported through the client:
 `client.payments()`, `client.transactions()`, `client.paymentMethods()`,
 `client.notifyApi()` — same transport, same auth, same User-Agent, same version pin.
+
+One logging caution on this surface: raw core operations throw the generator's
+`ApiException`, not the three typed classes — and `ApiException.getMessage()` embeds the
+raw HTTP response body verbatim (`"<operation> call failed with: <status> - <body>"`).
+Response bodies can contain PII (names, emails, masked card data): never log raw core
+exception messages or bodies; log the correlation id and the typed runtime errors
+(values-free by design) instead.
