@@ -23,8 +23,13 @@ name: Pipeline
 # the PR path). Blocking on release tags; the nightly run is advisory.
 # Secrets live in the GitHub environment `staging` (names in
 # docs/pipeline-and-release.md §6). RAP_SMOKE_FAULT_INJECT drives the
-# 503+not_processed row via the platform's staging-only fault injector —
-# remove it at the GA retarget.
+# 503+not_processed row via the platform's staging-only fault injector; it is
+# read from the `staging` environment VARIABLE of the same name, so the GA
+# retarget (ADR-SDK-024 §Decision 4) is a pure provisioning act — delete the
+# variable and repoint the three secrets, no workflow edit. The injector is
+# inert on the production path (docs/prod-sandbox-validation.md, verified
+# 2026-07-25): leaving the variable set after the retarget turns the row into a
+# false failure, and deleting it drops that row to mock-only coverage.
 #
 # Stage 5 — package (ADR-SDK-026): on a per-language release tag only, after
 # every language's smoke is green ("any language red blocks the release for
@@ -573,8 +578,11 @@ jobs:
       RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
       RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
       # Staging-only fault injector (Backbone ADR 014) — drives the
-      # 503+not_processed row. Remove at the GA sandbox retarget.
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
+      # 503+not_processed row. Sourced from the `staging` environment variable:
+      # DELETE that variable at the GA sandbox retarget (no workflow edit). The
+      # injector is inert on the production path, so leaving it set there makes
+      # the row fail; the six suites SKIP the row when it is unset.
+      RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
 
     steps:
       - name: Checkout Repository
@@ -583,8 +591,8 @@ jobs:
       - name: Require Smoke Secrets (fail closed)
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ] || [ -z "$RAP_SMOKE_GATEWAY_ROUTING_ID" ]; then
+            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY / RAP_SMOKE_GATEWAY_ROUTING_ID are not provisioned in the 'staging' environment (ADR-SDK-024). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
             exit 1
           fi
 
@@ -607,7 +615,7 @@ jobs:
       RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
       RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
       RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
+      RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
 
     steps:
       - name: Checkout Repository
@@ -616,8 +624,8 @@ jobs:
       - name: Require Smoke Secrets (fail closed)
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ] || [ -z "$RAP_SMOKE_GATEWAY_ROUTING_ID" ]; then
+            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY / RAP_SMOKE_GATEWAY_ROUTING_ID are not provisioned in the 'staging' environment (ADR-SDK-024). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
             exit 1
           fi
 
@@ -653,7 +661,7 @@ jobs:
       RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
       RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
       RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
+      RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
 
     steps:
       - name: Checkout Repository
@@ -662,8 +670,8 @@ jobs:
       - name: Require Smoke Secrets (fail closed)
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ] || [ -z "$RAP_SMOKE_GATEWAY_ROUTING_ID" ]; then
+            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY / RAP_SMOKE_GATEWAY_ROUTING_ID are not provisioned in the 'staging' environment (ADR-SDK-024). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
             exit 1
           fi
 
@@ -693,7 +701,7 @@ jobs:
       RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
       RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
       RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
+      RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
 
     steps:
       - name: Checkout Repository
@@ -702,8 +710,8 @@ jobs:
       - name: Require Smoke Secrets (fail closed)
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ] || [ -z "$RAP_SMOKE_GATEWAY_ROUTING_ID" ]; then
+            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY / RAP_SMOKE_GATEWAY_ROUTING_ID are not provisioned in the 'staging' environment (ADR-SDK-024). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
             exit 1
           fi
 
@@ -731,7 +739,7 @@ jobs:
       RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
       RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
       RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
+      RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
 
     steps:
       - name: Checkout Repository
@@ -740,8 +748,8 @@ jobs:
       - name: Require Smoke Secrets (fail closed)
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ] || [ -z "$RAP_SMOKE_GATEWAY_ROUTING_ID" ]; then
+            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY / RAP_SMOKE_GATEWAY_ROUTING_ID are not provisioned in the 'staging' environment (ADR-SDK-024). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
             exit 1
           fi
 
@@ -767,7 +775,7 @@ jobs:
       RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
       RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
       RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
+      RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
 
     steps:
       - name: Checkout Repository
@@ -776,8 +784,8 @@ jobs:
       - name: Require Smoke Secrets (fail closed)
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ] || [ -z "$RAP_SMOKE_GATEWAY_ROUTING_ID" ]; then
+            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY / RAP_SMOKE_GATEWAY_ROUTING_ID are not provisioned in the 'staging' environment (ADR-SDK-024). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
             exit 1
           fi
 
