@@ -31,3 +31,7 @@ dist/
 # Stage-5 emitted TypeScript build (tsconfig.build.json) — exists only inside the
 # packaging staging copy in CI; ignored here for local package.sh runs.
 languages/typescript/dist/
+
+# Go build output from running the smoke suite locally (`go build ./smoke`).
+# Committing it once already cost a 10 MB blob — keep it ignored.
+*.exe
