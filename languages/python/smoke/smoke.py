@@ -209,6 +209,12 @@ def main() -> int:
         transaction = client.charge(build_charge(charged_id, TEST_PAN, "2027", routing_id))
         if not transaction.transaction_id:
             raise SmokeFailure("transactionId is empty on the success surface")
+        # Assert the OUTCOME, not just that a transaction bound: a decline arrives
+        # on this same success surface.
+        if transaction.transaction_status != 1:
+            raise SmokeFailure(
+                f"expected transactionStatus=1 (approved), got {transaction.transaction_status}"
+            )
         if not last_correlation[0]:
             raise SmokeFailure("no X-Correlation-ID observed on the success path (DX §c)")
         return f" (txn={transaction.transaction_id} correlation={last_correlation[0]})"
@@ -220,6 +226,13 @@ def main() -> int:
         transaction = client.charge(build_charge(declined_id, TEST_PAN, "2020", routing_id))
         if not transaction.transaction_id:
             raise SmokeFailure("transactionId is empty on the declined-charge surface")
+        # Assert the decline actually happened — a gateway that approves the expired
+        # card would otherwise slip through to reconcile-found-declined.
+        if transaction.transaction_status != 2:
+            raise SmokeFailure(
+                f"expected transactionStatus=2 (declined), got {transaction.transaction_status}"
+                " — the staging gateway must be one where expiry drives the outcome"
+            )
         if not last_correlation[0]:
             raise SmokeFailure("no X-Correlation-ID observed on the declined-charge path (DX §c)")
         return f" (txn={transaction.transaction_id} correlation={last_correlation[0]})"

@@ -21,10 +21,21 @@ name: Pipeline
 # merchant sandbox key-scope at GA). Gated to release tags + the nightly
 # schedule + manual dispatch — NEVER plain PRs (network and secrets stay out of
 # the PR path). Blocking on release tags; the nightly run is advisory.
-# Secrets live in the GitHub environment `staging` (names in
-# docs/pipeline-and-release.md §6). RAP_SMOKE_FAULT_INJECT drives the
-# 503+not_processed row via the platform's staging-only fault injector —
-# remove it at the GA retarget.
+# TWO-TARGET design (ADR-SDK-024 §Decision 4, 2026-07-25). Each language job
+# runs its suite twice, because no single target can prove every §2 row:
+#   Step 1 — prod sandbox key-scope (RAP_SANDBOX_*), the GA target. The fault
+#            injector is inert on the production path
+#            (docs/prod-sandbox-validation.md), so the 503+not_processed row
+#            SKIPs here — RAP_SMOKE_FAULT_INJECT is deliberately not passed.
+#   Step 2 — Backbone staging (RAP_SMOKE_*) with RAP_SMOKE_FAULT_INJECT, the
+#            only place the injector exists, proving the one row step 1 cannot.
+# Together they cover the full taxonomy, so nothing is demoted to mock-only.
+# Both steps run in one job per language, so either failing blocks that
+# language — and any language red blocks the release for all six.
+# All six secrets plus the injector variable live in the GitHub environment
+# `staging` and are fail-closed at job start: an unset injector variable would
+# make step 2 silently SKIP the only row licensing immediate failover, so it is
+# an error, not a skip. Names in docs/pipeline-and-release.md §6.
 #
 # Stage 5 — package (ADR-SDK-026): on a per-language release tag only, after
 # every language's smoke is green ("any language red blocks the release for
@@ -568,23 +579,39 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     environment: staging
     timeout-minutes: 15
-    env:
-      RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
-      RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
-      RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      # Staging-only fault injector (Backbone ADR 014) — drives the
-      # 503+not_processed row. Remove at the GA sandbox retarget.
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Require Smoke Secrets (fail closed)
+        env:
+          RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 1 — prod sandbox key-scope). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
+              exit 1
+            fi
+          done
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
+              exit 1
+            fi
+          done
+          # Fail closed on the injector too. An unset variable would make step 2
+          # SKIP the 503+not_processed row silently, and that row is the only one
+          # licensing immediate failover — silent loss is the failure mode this
+          # two-step design exists to prevent.
+          if [ -z "$FAULT_INJECT" ]; then
+            echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
 
@@ -593,7 +620,21 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
 
-      - name: Run Contract Smoke
+      - name: Step 1 - Contract Smoke (prod sandbox key-scope)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
+          # the production path, so this step SKIPs the 503+not_processed row.
+        run: dotnet run --project languages/dotnet/smoke/Revaly.Sdk.Smoke -c Release
+
+      - name: Step 2 - Fault-Injection Smoke (Backbone staging)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: dotnet run --project languages/dotnet/smoke/Revaly.Sdk.Smoke -c Release
 
   smoke-java:
@@ -603,21 +644,39 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     environment: staging
     timeout-minutes: 15
-    env:
-      RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
-      RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
-      RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Require Smoke Secrets (fail closed)
+        env:
+          RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 1 — prod sandbox key-scope). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
+              exit 1
+            fi
+          done
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
+              exit 1
+            fi
+          done
+          # Fail closed on the injector too. An unset variable would make step 2
+          # SKIP the 503+not_processed row silently, and that row is the only one
+          # licensing immediate failover — silent loss is the failure mode this
+          # two-step design exists to prevent.
+          if [ -z "$FAULT_INJECT" ]; then
+            echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
 
@@ -632,7 +691,13 @@ jobs:
       # every reactor module (core has no mainClass), and -pl smoke alone
       # cannot resolve the SNAPSHOT dependency — so install the reactor first
       # (tests already ran in build-java), then exec only the smoke module.
-      - name: Run Contract Smoke
+      - name: Step 1 - Contract Smoke (prod sandbox key-scope)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
+          # the production path, so this step SKIPs the 503+not_processed row.
         run: |
           set -euo pipefail
           # -Dmaven.javadoc.skip=true: the generated core's maven-javadoc-plugin
@@ -642,6 +707,18 @@ jobs:
           mvn -B -ntp -f languages/java/pom.xml -pl smoke -am -DskipTests -Dmaven.javadoc.skip=true install
           mvn -B -ntp -f languages/java/pom.xml -pl smoke exec:java
 
+      - name: Step 2 - Fault-Injection Smoke (Backbone staging)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+        run: |
+          set -euo pipefail
+          # Step 1 already installed the reactor into this workspace, so this
+          # step only needs the exec.
+          mvn -B -ntp -f languages/java/pom.xml -pl smoke exec:java
+
   smoke-php:
     name: Stage 4 - Contract Smoke (php)
     runs-on: ubuntu-latest
@@ -649,21 +726,39 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     environment: staging
     timeout-minutes: 15
-    env:
-      RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
-      RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
-      RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Require Smoke Secrets (fail closed)
+        env:
+          RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 1 — prod sandbox key-scope). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
+              exit 1
+            fi
+          done
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
+              exit 1
+            fi
+          done
+          # Fail closed on the injector too. An unset variable would make step 2
+          # SKIP the 503+not_processed row silently, and that row is the only one
+          # licensing immediate failover — silent loss is the failure mode this
+          # two-step design exists to prevent.
+          if [ -z "$FAULT_INJECT" ]; then
+            echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
 
@@ -678,8 +773,23 @@ jobs:
         working-directory: languages/php
         run: composer install --no-interaction --no-progress
 
-      - name: Run Contract Smoke
+      - name: Step 1 - Contract Smoke (prod sandbox key-scope)
         working-directory: languages/php
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
+          # the production path, so this step SKIPs the 503+not_processed row.
+        run: php smoke/smoke.php
+
+      - name: Step 2 - Fault-Injection Smoke (Backbone staging)
+        working-directory: languages/php
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: php smoke/smoke.php
 
   smoke-typescript:
@@ -689,21 +799,39 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     environment: staging
     timeout-minutes: 15
-    env:
-      RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
-      RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
-      RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Require Smoke Secrets (fail closed)
+        env:
+          RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 1 — prod sandbox key-scope). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
+              exit 1
+            fi
+          done
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
+              exit 1
+            fi
+          done
+          # Fail closed on the injector too. An unset variable would make step 2
+          # SKIP the 503+not_processed row silently, and that row is the only one
+          # licensing immediate failover — silent loss is the failure mode this
+          # two-step design exists to prevent.
+          if [ -z "$FAULT_INJECT" ]; then
+            echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
 
@@ -717,7 +845,21 @@ jobs:
       - name: Install Runtime Toolchain (lockfile-pinned)
         run: npm ci --prefix languages/typescript --no-audit --no-fund
 
-      - name: Run Contract Smoke
+      - name: Step 1 - Contract Smoke (prod sandbox key-scope)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
+          # the production path, so this step SKIPs the 503+not_processed row.
+        run: npm run smoke --prefix languages/typescript
+
+      - name: Step 2 - Fault-Injection Smoke (Backbone staging)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: npm run smoke --prefix languages/typescript
 
   smoke-python:
@@ -727,21 +869,39 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     environment: staging
     timeout-minutes: 15
-    env:
-      RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
-      RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
-      RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Require Smoke Secrets (fail closed)
+        env:
+          RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 1 — prod sandbox key-scope). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
+              exit 1
+            fi
+          done
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
+              exit 1
+            fi
+          done
+          # Fail closed on the injector too. An unset variable would make step 2
+          # SKIP the 503+not_processed row silently, and that row is the only one
+          # licensing immediate failover — silent loss is the failure mode this
+          # two-step design exists to prevent.
+          if [ -z "$FAULT_INJECT" ]; then
+            echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
 
@@ -753,7 +913,21 @@ jobs:
       - name: Install SDK Package
         run: python -m pip install --quiet ./languages/python
 
-      - name: Run Contract Smoke
+      - name: Step 1 - Contract Smoke (prod sandbox key-scope)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
+          # the production path, so this step SKIPs the 503+not_processed row.
+        run: python languages/python/smoke/smoke.py
+
+      - name: Step 2 - Fault-Injection Smoke (Backbone staging)
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: python languages/python/smoke/smoke.py
 
   smoke-go:
@@ -763,21 +937,39 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     environment: staging
     timeout-minutes: 15
-    env:
-      RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
-      RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
-      RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
-      RAP_SMOKE_FAULT_INJECT: pre-dispatch
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Require Smoke Secrets (fail closed)
+        env:
+          RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
-          if [ -z "$RAP_SMOKE_BASE_URL" ] || [ -z "$RAP_SMOKE_API_KEY" ]; then
-            echo "::error::RAP_SMOKE_BASE_URL / RAP_SMOKE_API_KEY are not provisioned in the 'staging' environment (ADR-SDK-024)."
+          for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 1 — prod sandbox key-scope). The routing id is required, not optional: without it charges route to the declining sink (responseCode 50130) and no approval row can pass (docs/prod-sandbox-validation.md)."
+              exit 1
+            fi
+          done
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
+              exit 1
+            fi
+          done
+          # Fail closed on the injector too. An unset variable would make step 2
+          # SKIP the 503+not_processed row silently, and that row is the only one
+          # licensing immediate failover — silent loss is the failure mode this
+          # two-step design exists to prevent.
+          if [ -z "$FAULT_INJECT" ]; then
+            echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
 
@@ -787,8 +979,23 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: languages/go/go.sum
 
-      - name: Run Contract Smoke
+      - name: Step 1 - Contract Smoke (prod sandbox key-scope)
         working-directory: languages/go
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
+          # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
+          # the production path, so this step SKIPs the 503+not_processed row.
+        run: go run ./smoke
+
+      - name: Step 2 - Fault-Injection Smoke (Backbone staging)
+        working-directory: languages/go
+        env:
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: go run ./smoke
 
   # ---------------------------------------------------------------------------

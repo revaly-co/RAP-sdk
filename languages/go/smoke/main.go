@@ -154,6 +154,11 @@ func main() {
 			if transaction.GetTransactionId() == "" {
 				return "", errors.New("transactionId is empty on the success surface")
 			}
+			// Assert the OUTCOME, not just that a transaction bound: a decline
+			// arrives on this same success surface.
+			if transaction.GetTransactionStatus() != 1 {
+				return "", fmt.Errorf("expected transactionStatus=1 (approved), got %d", transaction.GetTransactionStatus())
+			}
 			if lastTrace.CorrelationID == "" {
 				return "", errors.New("no X-Correlation-ID observed on the success path (DX §c)")
 			}
@@ -171,6 +176,11 @@ func main() {
 			}
 			if transaction.GetTransactionId() == "" {
 				return "", errors.New("transactionId is empty on the declined-charge surface")
+			}
+			// Assert the decline actually happened — a gateway that approves the
+			// expired card would otherwise slip through to reconcile-found-declined.
+			if transaction.GetTransactionStatus() != 2 {
+				return "", fmt.Errorf("expected transactionStatus=2 (declined), got %d — the staging gateway must be one where expiry drives the outcome", transaction.GetTransactionStatus())
 			}
 			if lastTrace.CorrelationID == "" {
 				return "", errors.New("no X-Correlation-ID observed on the declined-charge path (DX §c)")

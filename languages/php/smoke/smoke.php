@@ -208,6 +208,11 @@ $scenarios = [
         if (($transaction->getTransactionId() ?? '') === '') {
             throw new SmokeFailure('transactionId is empty on the success surface');
         }
+        // Assert the OUTCOME, not just that a transaction bound: a decline arrives
+        // on this same success surface.
+        if ($transaction->getTransactionStatus() !== 1) {
+            throw new SmokeFailure(sprintf('expected transactionStatus=1 (approved), got %s', var_export($transaction->getTransactionStatus(), true)));
+        }
         if (($lastCorrelation ?? '') === '') {
             throw new SmokeFailure('no X-Correlation-ID observed on the success path (DX §c)');
         }
@@ -222,6 +227,11 @@ $scenarios = [
         $transaction = $client->charge(buildCharge($declinedId, TEST_PAN, '2020', $routingId));
         if (($transaction->getTransactionId() ?? '') === '') {
             throw new SmokeFailure('transactionId is empty on the declined-charge surface');
+        }
+        // Assert the decline actually happened — a gateway that approves the expired
+        // card would otherwise slip through to reconcile-found-declined.
+        if ($transaction->getTransactionStatus() !== 2) {
+            throw new SmokeFailure(sprintf('expected transactionStatus=2 (declined), got %s — the staging gateway must be one where expiry drives the outcome', var_export($transaction->getTransactionStatus(), true)));
         }
         if (($lastCorrelation ?? '') === '') {
             throw new SmokeFailure('no X-Correlation-ID observed on the declined-charge path (DX §c)');

@@ -102,6 +102,13 @@ internal static class Program
                 {
                     throw new SmokeFailure("transactionId is empty on the success surface");
                 }
+                // Assert the OUTCOME, not just that a transaction bound: a decline
+                // arrives on this same success surface, so without this the scenario
+                // would pass against a gateway that never approves.
+                if (transaction.TransactionStatus != 1)
+                {
+                    throw new SmokeFailure($"expected transactionStatus=1 (approved), got {transaction.TransactionStatus?.ToString() ?? "-"}");
+                }
                 if (string.IsNullOrEmpty(lastTrace?.CorrelationId))
                 {
                     throw new SmokeFailure("no X-Correlation-ID observed on the success path (DX §c)");
@@ -123,6 +130,13 @@ internal static class Program
                 if (string.IsNullOrEmpty(transaction.TransactionId))
                 {
                     throw new SmokeFailure("transactionId is empty on the declined-charge surface");
+                }
+                // Assert the decline actually happened. Without this the scenario
+                // passes against a gateway that approves the expired card, and the
+                // failure only surfaces later in reconcile-found-declined.
+                if (transaction.TransactionStatus != 2)
+                {
+                    throw new SmokeFailure($"expected transactionStatus=2 (declined), got {transaction.TransactionStatus?.ToString() ?? "-"} — the staging gateway must be one where expiry drives the outcome");
                 }
                 if (string.IsNullOrEmpty(lastTrace?.CorrelationId))
                 {
