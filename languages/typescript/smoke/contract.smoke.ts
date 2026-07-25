@@ -184,6 +184,13 @@ test('charge-approved', () =>
         if (!transaction.transactionId) {
             throw new SmokeFailure('transactionId is empty on the success surface');
         }
+        // Assert the OUTCOME, not just that a transaction bound: a decline arrives
+        // on this same success surface.
+        if (transaction.transactionStatus !== 1) {
+            throw new SmokeFailure(
+                `expected transactionStatus=1 (approved), got ${transaction.transactionStatus ?? 'n/a'}`,
+            );
+        }
         if (!lastTrace?.correlationId) {
             throw new SmokeFailure('no X-Correlation-ID observed on the success path (DX §c)');
         }
@@ -197,6 +204,13 @@ test('charge-declined', () =>
         const transaction = await client.charge(buildCharge(declinedId, TEST_PAN, '2020'));
         if (!transaction.transactionId) {
             throw new SmokeFailure('transactionId is empty on the declined-charge surface');
+        }
+        // Assert the decline actually happened — a gateway that approves the expired
+        // card would otherwise slip through to reconcile-found-declined.
+        if (transaction.transactionStatus !== 2) {
+            throw new SmokeFailure(
+                `expected transactionStatus=2 (declined), got ${transaction.transactionStatus ?? 'n/a'} — the staging gateway must be one where expiry drives the outcome`,
+            );
         }
         if (!lastTrace?.correlationId) {
             throw new SmokeFailure('no X-Correlation-ID observed on the declined-charge path (DX §c)');

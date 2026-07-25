@@ -138,6 +138,13 @@ public final class ContractSmoke {
                     if (isBlank(transaction.getTransactionId())) {
                         throw new SmokeFailure("transactionId is empty on the success surface");
                     }
+                    // Assert the OUTCOME, not just that a transaction bound: a
+                    // decline arrives on this same success surface.
+                    if (!Integer.valueOf(1).equals(transaction.getTransactionStatus())) {
+                        throw new SmokeFailure(
+                                "expected transactionStatus=1 (approved), got "
+                                        + transaction.getTransactionStatus());
+                    }
                     if (isBlank(lastCorrelation.get())) {
                         throw new SmokeFailure(
                                 "no X-Correlation-ID observed on the success path (DX §c)");
@@ -160,6 +167,16 @@ public final class ContractSmoke {
                     if (isBlank(transaction.getTransactionId())) {
                         throw new SmokeFailure(
                                 "transactionId is empty on the declined-charge surface");
+                    }
+                    // Assert the decline actually happened — a gateway that approves
+                    // the expired card would otherwise slip through to
+                    // reconcile-found-declined.
+                    if (!Integer.valueOf(2).equals(transaction.getTransactionStatus())) {
+                        throw new SmokeFailure(
+                                "expected transactionStatus=2 (declined), got "
+                                        + transaction.getTransactionStatus()
+                                        + " — the staging gateway must be one where"
+                                        + " expiry drives the outcome");
                     }
                     if (isBlank(lastCorrelation.get())) {
                         throw new SmokeFailure(
