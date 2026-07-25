@@ -27,7 +27,7 @@ name: Pipeline
 #            injector is inert on the production path
 #            (docs/prod-sandbox-validation.md), so the 503+not_processed row
 #            SKIPs here — RAP_SMOKE_FAULT_INJECT is deliberately not passed.
-#   Step 2 — Backbone staging (RAP_STAGING_*) with RAP_SMOKE_FAULT_INJECT, the
+#   Step 2 — Backbone staging (RAP_SMOKE_*) with RAP_SMOKE_FAULT_INJECT, the
 #            only place the injector exists, proving the one row step 1 cannot.
 # Together they cover the full taxonomy, so nothing is demoted to mock-only.
 # Both steps run in one job per language, so either failing blocks that
@@ -588,9 +588,9 @@ jobs:
           RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
           RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
           RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
-          RAP_STAGING_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_STAGING_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_STAGING_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -600,7 +600,7 @@ jobs:
               exit 1
             fi
           done
-          for v in RAP_STAGING_BASE_URL RAP_STAGING_API_KEY RAP_STAGING_GATEWAY_ROUTING_ID; do
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
             if [ -z "${!v}" ]; then
               echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
               exit 1
@@ -631,9 +631,9 @@ jobs:
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
         env:
-          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_SMOKE_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: dotnet run --project languages/dotnet/smoke/Revaly.Sdk.Smoke -c Release
 
@@ -653,9 +653,9 @@ jobs:
           RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
           RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
           RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
-          RAP_STAGING_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_STAGING_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_STAGING_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -665,7 +665,7 @@ jobs:
               exit 1
             fi
           done
-          for v in RAP_STAGING_BASE_URL RAP_STAGING_API_KEY RAP_STAGING_GATEWAY_ROUTING_ID; do
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
             if [ -z "${!v}" ]; then
               echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
               exit 1
@@ -709,9 +709,9 @@ jobs:
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
         env:
-          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_SMOKE_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -735,9 +735,9 @@ jobs:
           RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
           RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
           RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
-          RAP_STAGING_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_STAGING_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_STAGING_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -747,7 +747,7 @@ jobs:
               exit 1
             fi
           done
-          for v in RAP_STAGING_BASE_URL RAP_STAGING_API_KEY RAP_STAGING_GATEWAY_ROUTING_ID; do
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
             if [ -z "${!v}" ]; then
               echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
               exit 1
@@ -786,9 +786,9 @@ jobs:
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
         working-directory: languages/php
         env:
-          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_SMOKE_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: php smoke/smoke.php
 
@@ -808,9 +808,9 @@ jobs:
           RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
           RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
           RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
-          RAP_STAGING_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_STAGING_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_STAGING_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -820,7 +820,7 @@ jobs:
               exit 1
             fi
           done
-          for v in RAP_STAGING_BASE_URL RAP_STAGING_API_KEY RAP_STAGING_GATEWAY_ROUTING_ID; do
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
             if [ -z "${!v}" ]; then
               echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
               exit 1
@@ -856,9 +856,9 @@ jobs:
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
         env:
-          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_SMOKE_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: npm run smoke --prefix languages/typescript
 
@@ -878,9 +878,9 @@ jobs:
           RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
           RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
           RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
-          RAP_STAGING_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_STAGING_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_STAGING_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -890,7 +890,7 @@ jobs:
               exit 1
             fi
           done
-          for v in RAP_STAGING_BASE_URL RAP_STAGING_API_KEY RAP_STAGING_GATEWAY_ROUTING_ID; do
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
             if [ -z "${!v}" ]; then
               echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
               exit 1
@@ -924,9 +924,9 @@ jobs:
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
         env:
-          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_SMOKE_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: python languages/python/smoke/smoke.py
 
@@ -946,9 +946,9 @@ jobs:
           RAP_SANDBOX_BASE_URL: ${{ secrets.RAP_SANDBOX_BASE_URL }}
           RAP_SANDBOX_API_KEY: ${{ secrets.RAP_SANDBOX_API_KEY }}
           RAP_SANDBOX_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
-          RAP_STAGING_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_STAGING_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_STAGING_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: |
           set -euo pipefail
@@ -958,7 +958,7 @@ jobs:
               exit 1
             fi
           done
-          for v in RAP_STAGING_BASE_URL RAP_STAGING_API_KEY RAP_STAGING_GATEWAY_ROUTING_ID; do
+          for v in RAP_SMOKE_BASE_URL RAP_SMOKE_API_KEY RAP_SMOKE_GATEWAY_ROUTING_ID; do
             if [ -z "${!v}" ]; then
               echo "::error::$v is not provisioned in the 'staging' environment (ADR-SDK-024 step 2 — Backbone staging fault seam)."
               exit 1
@@ -992,9 +992,9 @@ jobs:
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
         working-directory: languages/go
         env:
-          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_STAGING_BASE_URL }}
-          RAP_SMOKE_API_KEY: ${{ secrets.RAP_STAGING_API_KEY }}
-          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_STAGING_GATEWAY_ROUTING_ID }}
+          RAP_SMOKE_BASE_URL: ${{ secrets.RAP_SMOKE_BASE_URL }}
+          RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
+          RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
         run: go run ./smoke
 
