@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/revaly-co/RAP-sdk/security/policy
+    about: Report vulnerabilities privately via the security policy — never in a public issue.
+  - name: Account or payment issue (merchants)
+    url: https://revaly.co
+    about: Anything involving your account, live transactions, amounts, or ids goes to your Revaly account/support contact — sensitive context must never land in a public issue.
+  - name: Integration help — start with the quickstarts
+    url: https://github.com/revaly-co/RAP-sdk#readme
+    about: Each language ships a copy-paste quickstart covering charge, all three error classes, and reconcile.

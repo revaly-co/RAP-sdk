@@ -1,0 +1,4 @@
+# Default owners — routes review requests for every PR.
+# Ownership moves to the maintainer team at the public flip (ADR-SDK-012); until that
+# team exists this names the current maintainer directly.
+* @dimon2255

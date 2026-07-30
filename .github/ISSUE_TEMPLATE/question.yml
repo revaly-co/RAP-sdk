@@ -1,0 +1,35 @@
+name: Integration question
+description: A usage question about integrating one of the RAP SDKs
+title: "[question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the per-language quickstart in the README first — it covers charge, all three
+        error classes, and reconcile end to end. **Never include API keys, card numbers, or
+        merchant payload values** in an issue.
+  - type: dropdown
+    id: language
+    attributes:
+      label: SDK language
+      options:
+        - .NET
+        - Java
+        - PHP
+        - TypeScript
+        - Python
+        - Go
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Code (synthetic values only), the behaviour you saw — error class names, HTTP statuses, and your own request's correlation id are safe to include.
