@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose an improvement to an SDK's surface or developer experience
+title: "[feature] "
+labels: ["enhancement", "triage"]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: SDK language
+      options:
+        - All / cross-language
+        - .NET
+        - Java
+        - PHP
+        - TypeScript
+        - Python
+        - Go
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What can't you do today?
+      description: The integration problem or friction, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed shape (optional)
+      description: What the API could look like in your language.
+  - type: markdown
+    attributes:
+      value: |
+        Note: the failure-classification behaviour (which errors mean what, no automatic
+        retries or resubmission, how unknown outcomes are handled) is a designed safety
+        contract shared by all six languages. Proposals that change it are welcome but are
+        decided as architecture changes, not per-language tweaks.

@@ -1,0 +1,62 @@
+name: Bug report
+description: A defect in one of the RAP SDKs — runtime behaviour, classification, packaging, or docs
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Never include real card numbers, CVVs, API keys, or merchant
+        payload values** — SDK logs are values-free by design; please keep issues the same.
+        Error class names, HTTP statuses, and the correlation id from your own failing request
+        are safe to share and speed up triage considerably. Account- or payment-specific
+        problems (live transactions, amounts, account details) go to your Revaly support
+        contact, not a public issue.
+
+        If this is a **security vulnerability**, do not file an issue — use the
+        [security policy](https://github.com/revaly-co/RAP-sdk/security/policy) instead.
+  - type: dropdown
+    id: language
+    attributes:
+      label: SDK language
+      options:
+        - .NET
+        - Java
+        - PHP
+        - TypeScript
+        - Python
+        - Go
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SDK version
+      description: The package version you installed, e.g. `0.4.1`.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      description: Generated-model issues are usually fixed in the API contract and flow into every language on the next regeneration — knowing the surface routes the fix correctly.
+      options:
+        - Hand-written runtime (config, typed errors, reconcile, transport, logging)
+        - Generated core (request/response models, generated client)
+        - Packaging / install
+        - Documentation / quickstart
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what the SDK did instead. Include the error class name, HTTP status, and your request's correlation id where available.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest code snippet that shows the behaviour — synthetic values only.
+      render: text
