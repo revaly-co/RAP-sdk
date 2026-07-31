@@ -3,13 +3,14 @@
 Six server-side SDKs (**.NET, Java, PHP, TypeScript, Python, Go**) for the **RAP V2 API**
 (RAP-core, `api.revaly.co`), per **RFC-046** (Approved 2026-07-10 v10; SC-215, Epic SC-234).
 One monorepo, one deterministic pipeline consuming only gated spec artifacts, one merchant-facing
-failover contract. `docs/` is the complete, self-contained design set (23 ADRs + 8 design docs) —
+failover contract. `docs/` is the complete, self-contained design set (30 ADRs + 10 design docs) —
 **docs are the source of truth; this file is the enforcement summary.**
 
 **Namespace:** the repo lives at **`revaly-co/RAP-sdk`** — the org migration landed 2026-07-17
 (fleet-wide transfer; `FlexPay-io` is parked with redirects alive, per ADR-SDK-022). The
-namespace publish-gate is satisfied; every other publish gate (OQ-3 registry provisioning,
-protected publish environment, ADR-SDK-019 Legal ratification) still stands — **publish remains
+namespace publish-gate is satisfied, the `publish` environment exists (2026-07-29), and names
+are final (ADR-SDK-030); the remaining publish gates (OQ-3 provisioning residuals, publish-day
+OIDC bindings, ADR-SDK-019 **written** Legal ratification) still stand — **publish remains
 embargoed** (rule 3).
 
 **Current phase:** see `docs/README.md` § Status snapshot (dated facts live there, not here).
@@ -43,13 +44,14 @@ build stories.
    (ADR-SDK-019). Pre-1.0 betas count as publishing. Interim distribution = per-language
    **GitHub release artifacts** from this repo (model: the platform's `spec/v*` releases —
    asset + `.sha256` + `provenance.json`).
-4. **Do not decide open items.** OQ-2 (full error-code taxonomy), OQ-3 (registry
-   ownership/namespaces), OQ-11 (AFD/WAF edge behaviour) have owners and gates in
+4. **Do not decide open items.** OQ-2 (full error-code taxonomy) and the OQ-3 provisioning
+   residuals (NuGet prefix, PyPI org, publish-day OIDC/GPG) have owners and gates in
    `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
    OQ. (OQ-1 is decided — ADR-SDK-023; generator changes are ADR revisions, never quiet
    pipeline edits. OQ-6 is decided — ADR-SDK-027: overall-deadline default 75 s ×6,
-   telemetry-ratified; the connect default rides OQ-11 and reconcile-policy defaults ride
-   SC-261 — still do not invent either.)
+   telemetry-ratified. OQ-11 is decided — ADR-SDK-029: connect default 10 s ×6, edge rows
+   ratified. OQ-3 naming is decided — ADR-SDK-030: names final, npm scoped `@revaly/sdk`.
+   Reconcile-policy defaults still ride SC-261 — do not invent them.)
 5. **Safety-contract invariants** (`failover-contract.md` §2/§5; ADR-SDK-002/003/004/007/009):
    classify failures only by the normative algorithm — never from `error` message text, latency,
    or wait heuristics; `ErrorResponse.code` and `transactionType` are **open strings**, never
@@ -94,8 +96,9 @@ Scaffolding rules:
   cannot bypass it (§5, ADR-SDK-005), values-free logging + wire-trace hook (§6), mock transport
   covering every failover-contract §2 row (§8), copy-paste quickstart with all three error
   classes + reconcile (§9, ≤15-minute bar).
-- Registry package names (`runtime-tdd.md` §7) are **[Proposed]** until OQ-3 provisioning — do
-  not hardcode them as final. Go publishes last (highest-permanence module path).
+- Registry package names (`runtime-tdd.md` §7) are **[Decided]** — ADR-SDK-030 (npm is scoped
+  `@revaly/sdk`; the npm metadata rename rides the stage-6 prep). Go publishes last
+  (highest-permanence module path).
 
 ## Pipeline (docs/pipeline-and-release.md)
 

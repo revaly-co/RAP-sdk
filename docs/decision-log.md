@@ -27,6 +27,7 @@ Every finalized decision from **RFC-046 "RAP Integration SDK"** (internal Conflu
 | ID | Decision | Date | Owner | ADR |
 | --- | --- | --- | --- | --- |
 | OQ-1 | Generator: OpenAPI Generator v7.23.0, digest-pinned, all six cores; no Kiota .NET split; upgrades ride PRs with regen-diff review (evidence: `generator-bakeoff.md`) | 2026-07-14 | SC Eng | ADR-SDK-023 |
+| OQ-3 (naming leg) | Final registry names ×6: npm **`@revaly/sdk`** (scoped) · PyPI `revaly-sdk` · NuGet `Revaly.Sdk`+`Revaly.Sdk.Core` · Packagist `revaly/sdk` · Maven `co.revaly:revaly-sdk` · Go path unchanged; provisioning residuals stay open under the OQ | 2026-07-30 | SC squad + Leadership | ADR-SDK-030 |
 | OQ-4 | V1 test keys Enablement-issued; self-serve deferred; environment parity = pre-GA task | 2026-07-10 | Eng + Enablement | ADR-SDK-014 |
 | OQ-5 | GA order .NET → Java → PHP → TypeScript → Python → Go (Charles); supersedes Wave-1 composition + pipeline-data validation | 2026-07-10 | Product + Enablement | ADR-SDK-015 |
 | OQ-6 | Overall-deadline default **75 s** across all six runtimes (production telemetry ×2 sources; owner safety margin above the 30 s floor — clears every observed non-ceiling gateway tail, clips ≲0.007 %; evidence in the internal OQ-6 record on SC-278); connect default deliberately deferred to OQ-11 edge data; reconcile-policy defaults stay explicit pending visibility-lag telemetry (SC-261 follow-up) | 2026-07-20 | SC Eng | ADR-SDK-027 |
@@ -34,12 +35,15 @@ Every finalized decision from **RFC-046 "RAP Integration SDK"** (internal Conflu
 | OQ-8 | RTN SDK (PRD-049) explicitly decoupled; separate pipelines, no reuse commitment (Charles) | 2026-07-10 | SC Eng + RTN squad | ADR-SDK-017 |
 | OQ-9 | DevOps contribution owned collectively by the SC squad (Charles); squad signs §7, walks §10 NFR audit, confirms OQ-15 findings | 2026-07-10 | SC lead | ADR-SDK-018 |
 | OQ-10 | *Promoted to D-8 (GA blocker)* — see D-series | 2026-07-09 | — | ADR-SDK-008 |
+| OQ-11 | AFD/WAF edge behaviour verified against the live production edge: §2 edge rows ratified unchanged; connect-timeout default **10 s** ×6 (TS documentation-level); timeout ordering 75 s < ≈100 s < 120 s + ops guardrail | 2026-07-21 | SC Eng + DevOps | ADR-SDK-029 |
 | OQ-12 | Apache-2.0 (Charles); Legal ratifies before first publish; copyright Revaly | 2026-07-10 | Leadership + Legal | ADR-SDK-019 |
 | OQ-13 | Approval explicitly covers the PCI scope determination + values-free logging obligation (Charles); QSA link = follow-up | 2026-07-10 | Leadership + Compliance | ADR-SDK-020 |
 | OQ-14 | PRD-057 Musts resolved via formal deviation acceptance recorded on the PRD (Charles); approval given ahead as tracked follow-up | 2026-07-10 | Product | ADR-SDK-021 |
 | OQ-15 | Create `rap-sdk` under existing `revaly-co` org (created 2026-06-09, verified); decoupled from org rename; `FlexPay-io` parked permanently | 2026-07-10 | DevOps + Leadership | ADR-SDK-022 |
 
-Still open: **OQ-2, OQ-3, OQ-11** → `open-items.md`.
+Still open: **OQ-2** and the **OQ-3 provisioning residuals** (NuGet `Revaly.*` prefix, PyPI
+org approval, publish-day OIDC/GPG bindings — per-registry table in
+`registry-provisioning.md`) → `open-items.md`.
 
 ## Review-thread provenance
 

@@ -108,20 +108,24 @@ GET-only and side-effect-free — the only loop the runtime owns (ADR-SDK-004).
 runtime, tested against the full payload schema; CI log-capture test asserts no sensitive material
 at default and debug levels (ADR-SDK-020 guidance).
 
-## 7. Package identity **[Proposed — finalize at OQ-3 provisioning]**
+## 7. Package identity **[Decided — ADR-SDK-030]**
 
-Working scheme consistent with the RFC's tokens (`revaly-sdk-*`, group id `co.revaly`):
+Final names (decided 2026-07-29, ratified 2026-07-30; consistent with the RFC's tokens —
+`revaly-sdk-*` UA product token, group id `co.revaly`):
 
-| Registry | Working name |
+| Registry | Package name |
 | --- | --- |
-| npm | `revaly-sdk` (or `@revaly/sdk` if the npm org scope is preferred at provisioning) |
+| npm | **`@revaly/sdk`** (scoped; the `revaly` org owns the scope) |
 | PyPI | `revaly-sdk` |
-| NuGet | `Revaly.Sdk` |
+| NuGet | `Revaly.Sdk` (runtime) + `Revaly.Sdk.Core` (generated core) |
 | Packagist | `revaly/sdk` |
 | Maven Central | `co.revaly:revaly-sdk` |
-| Go | `github.com/revaly-co/rap-sdk/languages/go` (subdir module — confirm at bake-off, ADR-SDK-016) |
+| Go | `github.com/revaly-co/rap-sdk/languages/go` (subdir module; layout per ADR-SDK-028) |
 
 Names do **not** embed the GitHub org (except Go's module path — ADR-SDK-022 governs its timing).
+Committed metadata already carries the final name in five of six languages; the npm rename
+(`languages/typescript/package.json` `revaly-sdk` → `@revaly/sdk`) + quickstart install-line
+sweep ride the stage-6 prep, before the first npm publish (ADR-SDK-030 §Consequences).
 
 ## 8. Mock transport (DX contract §d)
 
