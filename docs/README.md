@@ -48,9 +48,9 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   Go path unchanged — `runtime-tdd.md` §7 is now **[Decided]**, and committed metadata is
   already final everywhere except the npm rename (stage-6 prep). All six namespaces are
   reserved; the exact remaining registry acts (NuGet `Revaly.*` prefix request — **submitted
-  2026-07-31**, awaiting NuGet's days-to-weeks turnaround; PyPI org approval; publish-day
-  OIDC/GPG, embargoed until the ADR-SDK-019 **written** ack) are tabulated per registry in
-  `registry-provisioning.md`. The public-flip
+  2026-07-31**, being resent from the account-registered owner mailbox per NuGet's same-day
+  sender-identity check; PyPI org approval; publish-day OIDC/GPG, embargoed until the
+  ADR-SDK-019 **written** ack) are tabulated per registry in `registry-provisioning.md`. The public-flip
   prep also landed: internal-infrastructure evidence relocated out of the docs at HEAD,
   SECURITY.md + CODEOWNERS + issue/PR templates added, the one open Dependabot alert fixed.
   Still pending before the flip: the git-history sanitize-vs-accept decision (leadership).
