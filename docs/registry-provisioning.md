@@ -1,9 +1,10 @@
 # RAP Integration SDK — Registry Provisioning Runbook
 
 **Status:** OQ-3 **naming closed** (ADR-SDK-030, 2026-07-30); namespaces reserved on all six
-registries; **exactly two provisioning acts outstanding** (NuGet ID-prefix reservation, PyPI
-org approval). Publish still embargoed.
-**Last updated:** 2026-07-30
+registries; **both remaining provisioning acts now sit in external queues** (NuGet `Revaly.*`
+ID-prefix reservation **submitted 2026-07-31**, PyPI org approval pending). Publish still
+embargoed.
+**Last updated:** 2026-07-31
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
 ADR-SDK-019 (license), ADR-SDK-022 (GitHub namespace), ADR-SDK-030 (final names). This runbook
@@ -39,7 +40,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 | --- | --- | --- | --- | --- |
 | npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) | — | OIDC trusted publisher · `package.json` rename to `@revaly/sdk` + quickstart install-line sweep (stage-6 prep, ADR-SDK-030) |
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
-| NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) | **`Revaly.*` ID-prefix reservation** — email request to account@nuget.org (owner display name + prefix); days-to-weeks turnaround — the live long-lead act | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
+| NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) | **`Revaly.*` ID-prefix reservation** — request **submitted 2026-07-31** (email to account@nuget.org, owner group mailbox CC'd); awaiting NuGet's days-to-weeks turnaround — the live long-lead act | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
 | Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) | — | GPG signing keys in Key Vault, fetched inside the environment-scoped job; publisher token |
 | Go (pkg.go.dev) | `github.com/revaly-co/rap-sdk/languages/go` | ✅ n/a — the path binds to the GitHub org (ADR-SDK-022) | — | Repo public + a `languages/go/v*` tag; the tag ruleset currently **blocks** go-module-form tags, and lifting it is the deliberate admin ceremony (ADR-SDK-026). Go publishes **last** |
@@ -123,7 +124,7 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 | Item | Owner | Gate |
 | --- | --- | --- |
 | **PyPI org approval** (application pending in PyPI's queue) | SC squad | Before first PyPI publish |
-| **NuGet ID-prefix (`Revaly.*`) reservation** — email act, days-to-weeks | SC squad | Before first NuGet publish; start immediately |
+| **NuGet ID-prefix (`Revaly.*`) reservation** — **submitted 2026-07-31**, awaiting NuGet response (days-to-weeks) | SC squad | Before first NuGet publish |
 | Apache-2.0 Legal ratification **in writing** (verbal 2026-07-29) | Leadership + Legal | Before first publish (ADR-SDK-019); also gates every OIDC registration |
 | OIDC / GPG / webhook bindings + npm `@revaly/sdk` metadata rename (stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030) |
 | Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |

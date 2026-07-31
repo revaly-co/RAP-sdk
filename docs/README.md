@@ -40,16 +40,17 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
 
-## Status snapshot (2026-07-30)
+## Status snapshot (2026-07-31)
 
 - **Registry names finalized ×6 + repo-public prep merged, 2026-07-30** (ADR-SDK-030; PRs
   #46/#47): npm **`@revaly/sdk`** (scoped) · PyPI `revaly-sdk` · NuGet
   `Revaly.Sdk`+`Revaly.Sdk.Core` · Packagist `revaly/sdk` · Maven `co.revaly:revaly-sdk` ·
   Go path unchanged — `runtime-tdd.md` §7 is now **[Decided]**, and committed metadata is
   already final everywhere except the npm rename (stage-6 prep). All six namespaces are
-  reserved; the exact remaining registry acts (NuGet `Revaly.*` prefix email — the live
-  long-lead item; PyPI org approval; publish-day OIDC/GPG, embargoed until the ADR-SDK-019
-  **written** ack) are tabulated per registry in `registry-provisioning.md`. The public-flip
+  reserved; the exact remaining registry acts (NuGet `Revaly.*` prefix request — **submitted
+  2026-07-31**, awaiting NuGet's days-to-weeks turnaround; PyPI org approval; publish-day
+  OIDC/GPG, embargoed until the ADR-SDK-019 **written** ack) are tabulated per registry in
+  `registry-provisioning.md`. The public-flip
   prep also landed: internal-infrastructure evidence relocated out of the docs at HEAD,
   SECURITY.md + CODEOWNERS + issue/PR templates added, the one open Dependabot alert fixed.
   Still pending before the flip: the git-history sanitize-vs-accept decision (leadership).
