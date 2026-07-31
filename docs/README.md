@@ -19,12 +19,12 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 
 | Document | Purpose |
 | --- | --- |
-| [`adr/`](adr/README.md) | **29 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
+| [`adr/`](adr/README.md) | **30 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
 | [`architecture.md`](architecture.md) | System architecture: components, data flow, trust boundary, repo shape |
 | [`failover-contract.md`](failover-contract.md) | The merchant-facing failover & reconciliation contract, with sequence diagrams — the safety core of the product |
 | [`runtime-tdd.md`](runtime-tdd.md) | Technical design of the hand-written runtime layer (per-language surface) |
 | [`pipeline-and-release.md`](pipeline-and-release.md) | CI/CD pipeline stages, publish mechanics per registry, versioning & release policy |
-| [`registry-provisioning.md`](registry-provisioning.md) | OQ-3 runbook: registry namespace reservation state, ownership/custody, how publishing will work, and the tracked Packagist placeholder deviation |
+| [`registry-provisioning.md`](registry-provisioning.md) | OQ-3 runbook: final names (ADR-SDK-030), the per-registry what-is-left board, ownership/custody, how publishing will work, and the tracked Packagist placeholder deviation |
 | [`dx-contract.md`](dx-contract.md) | Developer Experience contract (RFC §6 a–f) with acceptance criteria |
 | [`open-items.md`](open-items.md) | Open questions (OQ-1/2/3/6/11 from the RFC; post-RFC OQ-16+) and tracked follow-ups — the implementation gates |
 | [`decision-log.md`](decision-log.md) | Traceability: every decision → ADR → RFC anchor → provenance |
@@ -40,8 +40,19 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
 
-## Status snapshot (2026-07-25)
+## Status snapshot (2026-07-30)
 
+- **Registry names finalized ×6 + repo-public prep merged, 2026-07-30** (ADR-SDK-030; PRs
+  #46/#47): npm **`@revaly/sdk`** (scoped) · PyPI `revaly-sdk` · NuGet
+  `Revaly.Sdk`+`Revaly.Sdk.Core` · Packagist `revaly/sdk` · Maven `co.revaly:revaly-sdk` ·
+  Go path unchanged — `runtime-tdd.md` §7 is now **[Decided]**, and committed metadata is
+  already final everywhere except the npm rename (stage-6 prep). All six namespaces are
+  reserved; the exact remaining registry acts (NuGet `Revaly.*` prefix email — the live
+  long-lead item; PyPI org approval; publish-day OIDC/GPG, embargoed until the ADR-SDK-019
+  **written** ack) are tabulated per registry in `registry-provisioning.md`. The public-flip
+  prep also landed: internal-infrastructure evidence relocated out of the docs at HEAD,
+  SECURITY.md + CODEOWNERS + issue/PR templates added, the one open Dependabot alert fixed.
+  Still pending before the flip: the git-history sanitize-vs-accept decision (leadership).
 - **Prod sandbox key-scope validated ×6, 2026-07-25** (`prod-sandbox-validation.md`): the released
   **v0.4.1** artifacts — installed as a merchant installs them, from the GitHub release assets —
   were exercised against the merchant sandbox key-scope on the shared production URL through the
@@ -111,7 +122,10 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   claimed via a temporary placeholder publish (`revaly/rap-sdk` v0.0.1, MIT, standalone
   `rap-sdk-php` repo), which crosses the CLAUDE.md rule-3 embargo and ADR-SDK-019; accepted as a
   temporary hold (Charles, 2026-07-17) to be deleted and republished through the gated pipeline
-  at first real publish. The protected publish environment and OIDC/GPG bindings do not yet exist.
+  at first real publish. The `publish` environment was created 2026-07-29 (per-language
+  tag-pattern policies; `languages/go/v*` excluded until the Go ceremony); OIDC/GPG bindings
+  stay unregistered until the ADR-SDK-019 written ack. Names finalized 2026-07-30 →
+  ADR-SDK-030.
 - **OQ-1 decided 2026-07-14 → ADR-SDK-023**: OpenAPI Generator v7.23.0, digest-pinned, all six
   cores; no Kiota split (toolchain pin: `../pipeline/generator-pin.yaml`). Evidence:
   `generator-bakeoff.md` — all six cores generated hands-on; Stainless exited the market
