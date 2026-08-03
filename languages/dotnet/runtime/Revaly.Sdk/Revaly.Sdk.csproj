@@ -6,9 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Revaly.Sdk</RootNamespace>
     <AssemblyName>Revaly.Sdk</AssemblyName>
-    <!-- Package identity per runtime-tdd.md §7 working scheme — [Proposed] until OQ-3
-         registry provisioning; nothing publishes before then (repo rule 3). Version is a
-         placeholder: stage 5 stamps real versions from per-language release tags. -->
+    <!-- Package identity is FINAL (ADR-SDK-030, runtime-tdd.md §7); publish stays
+         embargoed until the flip runbook executes (repo rule 3, ADR-SDK-031). Version is
+         a placeholder: stage 5 stamps real versions from per-language release tags. -->
     <PackageId>Revaly.Sdk</PackageId>
     <Version>0.0.0-dev</Version>
     <Description>Revaly RAP V2 server-side SDK for .NET — hand-written runtime over the generated core (ADR-SDK-001). Failover-safe typed errors, reconcile helper, values-free logging, mock transport.</Description>
@@ -25,9 +25,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The generated core (ADR-SDK-001: regenerated only, never hand-edited). How the
-         core ships inside the one merchant-facing package (runtime-tdd.md §2) is a
-         stage-5 packaging decision — [Proposed] until OQ-3. -->
+    <!-- The generated core (ADR-SDK-001: regenerated only, never hand-edited). It ships
+         as its own package, Revaly.Sdk.Core, that this runtime package depends on
+         (ADR-SDK-030; stage 5 packs both, stage 6 pushes core first). -->
     <ProjectReference Include="..\..\core\src\Revaly.Sdk.Core\Revaly.Sdk.Core.csproj" />
   </ItemGroup>
 

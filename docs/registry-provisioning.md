@@ -39,7 +39,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 
 | Registry | Final name | Namespace held | Outstanding **now** | Publish-day (embargoed) |
 | --- | --- | --- | --- | --- |
-| npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) | — | OIDC trusted publisher · `package.json` rename to `@revaly/sdk` + quickstart install-line sweep (stage-6 prep, ADR-SDK-030) |
+| npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) · ✅ `package.json` renamed to `@revaly/sdk` 2026-08-03 (stage-6 prep, ADR-SDK-030/031) | — | OIDC trusted publisher · quickstart install lines switch to `npm install @revaly/sdk` at flip |
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
 | NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
@@ -177,5 +177,5 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 | --- | --- | --- |
 | **PyPI org approval** (application pending in PyPI's queue — the last provisioning act in an external queue) | SC squad | Before first PyPI publish |
 | Apache-2.0 Legal ratification **in writing** (verbal 2026-07-29) | Leadership + Legal | Before first publish (ADR-SDK-019); also gates every OIDC registration |
-| OIDC / GPG / webhook bindings + npm `@revaly/sdk` metadata rename (stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030) |
+| OIDC / GPG / webhook bindings (the npm `@revaly/sdk` metadata rename shipped 2026-08-03 with the stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030/031) |
 | Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |

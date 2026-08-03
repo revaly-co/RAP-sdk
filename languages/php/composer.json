@@ -1,6 +1,6 @@
 {
     "name": "revaly/sdk",
-    "description": "Revaly RAP SDK for PHP: hand-written runtime (typed failure classes, reconcile helper, values-free logging, mock transport) over the generated core. Package name follows the runtime-tdd.md §7 working scheme — [Proposed] until OQ-3 registry provisioning; nothing publishes before then.",
+    "description": "Revaly RAP SDK for PHP: hand-written runtime (typed failure classes, reconcile helper, values-free logging, mock transport) over the generated core.",
     "license": "Apache-2.0",
     "keywords": [
         "revaly",

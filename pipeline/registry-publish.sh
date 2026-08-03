@@ -5,17 +5,20 @@
 #   pipeline/registry-publish.sh <language> <version> <dark|live>
 #
 # Consumes the stage-5 output in dist/<language>/ (pipeline/package.sh) and:
-#   * DARK — full rehearsal, no network to any registry: re-verifies checksums,
-#     asserts the ADR-SDK-030 names/versions inside the artifacts, asserts the
-#     rule-3 embargo guards are INTACT, runs the per-registry flip-readiness
-#     lint, and prints what live mode would publish. Readiness misses are
-#     WARNINGS in dark mode (the per-release flip-readiness report) and HARD
-#     FAILURES in live mode. Dark mode exits 0 unless artifact integrity, a
-#     final name, or an embargo guard is wrong.
+#   * DARK — full rehearsal, publishes nothing and writes to no registry:
+#     re-verifies checksums, asserts the ADR-SDK-030 names/versions inside the
+#     artifacts, asserts the rule-3 embargo guards are INTACT, runs the
+#     per-registry flip-readiness lint, and prints what live mode would
+#     publish. Readiness misses are WARNINGS in dark mode (the per-release
+#     flip-readiness report) and HARD FAILURES in live mode. Dark mode exits 0
+#     unless artifact integrity, a final name, or an embargo guard is wrong.
 #   * LIVE — same checks fail-closed, then the real publish. Live requires the
-#     embargo guards to be REMOVED (the flip-day PR), so flipping the CI
-#     variable alone can never publish: the flip is double-keyed
-#     (REGISTRY_PUBLISH_MODE=live AND the guard-removal PR), per ADR-SDK-031.
+#     COMMITTED embargo guards (npm "private": true + the python
+#     Private :: Do Not Upload classifier) to be REMOVED (the flip-day PR) —
+#     asserted globally for EVERY language before any per-registry step, so
+#     flipping the CI variable alone can never publish anything anywhere: the
+#     flip is double-keyed (REGISTRY_PUBLISH_MODE=live AND the guard-removal
+#     PR), per ADR-SDK-031.
 #
 # Per-registry live mechanics (ADR-SDK-013 / ADR-SDK-031):
 #   dotnet     dotnet nuget push ×2 (core first) — NUGET_API_KEY minted by the
@@ -23,10 +26,12 @@
 #   java       GPG-sign the stage-5 bundle (key file at MAVEN_GPG_KEY_FILE,
 #              fetched from Key Vault in the workflow), add md5/sha1, zip the
 #              co/ tree, POST to the Central Portal API (MAVEN_CENTRAL_TOKEN)
-#   php        push `git subtree split --prefix=languages/php` + tag v<version>
-#              to the generated read-only mirror revaly-co/rap-sdk-php
-#              (PACKAGIST_MIRROR_PUSH_TOKEN); the Packagist webhook on the
-#              mirror does the rest
+#   php        push the VERIFIED stage-5 artifact tree (version-stamped, with
+#              LICENSE/NOTICE, composer.json version field removed) as a fresh
+#              commit + tag v<version> to the generated read-only mirror
+#              revaly-co/rap-sdk-php (PACKAGIST_MIRROR_PUSH_TOKEN); the
+#              Packagist webhook on the mirror does the rest — never a raw
+#              subtree split (the committed tree is unstamped and license-less)
 #   typescript npm publish <tgz> --access public --provenance (npm >= 11.5
 #              OIDC trusted publishing; no token)
 #   python     this script only validates and stages dist/python/.pypi-upload/
@@ -89,6 +94,8 @@ fi
 OUT="$REPO_ROOT/dist/$LANG_ID"
 [ -d "$OUT" ] || die "dist/$LANG_ID not found — run pipeline/package.sh $LANG_ID $VERSION first"
 
+SOURCE_COMMIT="$(git rev-parse HEAD)"
+
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -149,6 +156,30 @@ echo "== stage 6 ($MODE): $LANG_ID $VERSION (tag $RELEASE_TAG)"
 )
 echo "   checksums verified for $(ls "$OUT"/*.sha256 | wc -l) asset(s)"
 
+# --- rule-3 double key: committed embargo guards gate EVERY language ----------
+# The guards live in the COMMITTED tree of the tagged commit: npm's
+# "private": true and python's Private :: Do Not Upload classifier. Dark
+# requires BOTH intact; live requires BOTH removed (the flip-day PR). Checked
+# here, unconditionally, for every language — so flipping the CI variable
+# alone can never publish anything anywhere (ADR-SDK-031: the flip is
+# double-keyed, and the key is repo-global, not per-language). The
+# typescript/python artifact checks below re-assert the same state inside the
+# packed artifacts themselves.
+GUARD_NPM="$(git show HEAD:languages/typescript/package.json | jq -r '.private // "absent"')"
+if git show HEAD:languages/python/pyproject.toml | grep -q 'Private :: Do Not Upload'; then
+  GUARD_PY="present"
+else
+  GUARD_PY="absent"
+fi
+if [ "$MODE" = "dark" ]; then
+  { [ "$GUARD_NPM" = "true" ] && [ "$GUARD_PY" = "present" ]; } \
+    || die "embargo guards not intact at the tagged commit (npm private: $GUARD_NPM, python classifier: $GUARD_PY) while publish is embargoed — half-flip? (ADR-SDK-031)"
+else
+  { [ "$GUARD_NPM" = "absent" ] && [ "$GUARD_PY" = "absent" ]; } \
+    || die "committed embargo guards still present (npm private: $GUARD_NPM, python classifier: $GUARD_PY) — merge the flip-day guard-removal PR before going live (double key, ADR-SDK-031)"
+fi
+echo "   rule-3 double key: committed guards $([ "$MODE" = dark ] && echo intact || echo removed) (npm private: $GUARD_NPM, python classifier: $GUARD_PY)"
+
 # --- per-registry checks (both modes) -----------------------------------------
 
 check_dotnet() {
@@ -200,7 +231,7 @@ check_java() {
 }
 
 check_php() {
-  local zip="$OUT/revaly-sdk-php.zip" name version split_sha tree="$WORK/php-split"
+  local zip="$OUT/revaly-sdk-php.zip" name version tree="$WORK/php-mirror"
   [ -f "$zip" ] || die "expected revaly-sdk-php.zip missing from dist/php"
   name="$(unzip_read "$zip" composer.json | jq -r '.name')"
   version="$(unzip_read "$zip" composer.json | jq -r '.version')"
@@ -211,25 +242,28 @@ check_php() {
   # field is injected).
   git show HEAD:languages/php/composer.json | jq -e 'has("version") | not' > /dev/null \
     || die "php: committed languages/php/composer.json carries a version field — Packagist tags must drive versions"
-  # Split rehearsal: packagist.org requires composer.json at the repo root, so
-  # the monorepo publishes via a generated subtree-split mirror (ADR-SDK-031).
-  if git subtree split -q --prefix=languages/php HEAD > "$WORK/split-sha" 2> /dev/null; then
-    split_sha="$(cat "$WORK/split-sha")"
-    mkdir -p "$tree"
-    git archive "$split_sha" | tar -x -C "$tree"
-    [ -f "$tree/composer.json" ] || die "php: subtree split has no composer.json at its root"
-    [ "$(jq -r '.name' "$tree/composer.json")" = "revaly/sdk" ] \
-      || die "php: split composer name != revaly/sdk"
-    if command -v composer > /dev/null; then
-      (cd "$tree" && composer validate --strict --no-check-lock) \
-        || note "php: composer validate --strict failed on the split root — Packagist will reject it"
-    else
-      note "php: composer not available in this run — strict validation of the split not performed"
-    fi
-    echo "   php: subtree split $split_sha rehearsed; composer.json at split root is revaly/sdk"
+  # Mirror-tree rehearsal: construct EXACTLY what live pushes to the mirror —
+  # the VERIFIED stage-5 artifact contents (version-stamped runtime, LICENSE +
+  # NOTICE included) with the injected version field removed again (Packagist
+  # reads versions from the mirror tags). Never a raw subtree split: the
+  # committed tree carries the 0.0.0 SEMVER placeholder and no license files
+  # (ADR-SDK-031).
+  rm -rf "$tree"
+  unzip_all "$zip" "$tree"
+  [ -f "$tree/composer.json" ] || die "php: artifact zip has no composer.json at its root"
+  jq 'del(.version)' "$tree/composer.json" > "$tree/composer.json.tmp"
+  mv "$tree/composer.json.tmp" "$tree/composer.json"
+  [ -f "$tree/LICENSE" ] && [ -f "$tree/NOTICE" ] \
+    || die "php: LICENSE/NOTICE missing from the artifact — the mirror must ship them (Apache-2.0 §4a)"
+  grep -q "public const SEMVER = '$VERSION';" "$tree/runtime/src/Transport/RapUserAgent.php" \
+    || die "php: runtime SEMVER in the artifact is not $VERSION — the mirror would ship a wrong User-Agent (ADR-SDK-005)"
+  if command -v composer > /dev/null; then
+    (cd "$tree" && composer validate --strict --no-check-lock) \
+      || note "php: composer validate --strict failed on the mirror tree — Packagist will reject it"
   else
-    note "php: git subtree split failed (shallow clone?) — mirror push cannot be rehearsed"
+    note "php: composer not available in this run — strict validation of the mirror tree not performed"
   fi
+  echo "   php: mirror tree rehearsed from the verified artifact (revaly/sdk, SEMVER $VERSION, LICENSE+NOTICE present)"
 }
 
 check_typescript() {
@@ -363,14 +397,18 @@ publish_java() {
   gpg --batch --import "$MAVEN_GPG_KEY_FILE"
   local root="$WORK/java" bundle="$WORK/central-bundle.zip" f
   # check_java already extracted the stage-5 bundle to $root; sign + checksum
-  # exactly those bytes — the registry publish never rebuilds.
-  find "$root/co" -type f | while read -r f; do
+  # exactly those bytes — the registry publish never rebuilds. Materialize the
+  # file list BEFORE signing: the loop writes .asc/.md5/.sha1 next to each
+  # file, and a live find walking the same tree could re-enumerate its own
+  # output (signatures-of-signatures).
+  find "$root/co" -type f ! -name '*.asc' ! -name '*.md5' ! -name '*.sha1' > "$WORK/sign-list"
+  while IFS= read -r f; do
     gpg --batch --yes --pinentry-mode loopback \
       ${MAVEN_GPG_PASSPHRASE:+--passphrase "$MAVEN_GPG_PASSPHRASE"} \
       --armor --detach-sign "$f"
     md5sum "$f" | awk '{print $1}' > "$f.md5"
     sha1sum "$f" | awk '{print $1}' > "$f.sha1"
-  done
+  done < "$WORK/sign-list"
   (cd "$root" && if command -v zip > /dev/null; then zip -qr "$bundle" co; else
     "$(resolve_python)" -c "import shutil,sys; shutil.make_archive(sys.argv[1][:-4],'zip',root_dir='.',base_dir='co')" "$bundle"; fi)
   curl --fail-with-body -sS -X POST \
@@ -383,14 +421,22 @@ publish_java() {
 
 publish_php() {
   [ -n "${PACKAGIST_MIRROR_PUSH_TOKEN:-}" ] || die "PACKAGIST_MIRROR_PUSH_TOKEN not set"
-  local split_sha mirror="https://x-access-token:${PACKAGIST_MIRROR_PUSH_TOKEN}@github.com/revaly-co/rap-sdk-php.git"
-  split_sha="$(git subtree split -q --prefix=languages/php HEAD)"
-  # The mirror is GENERATED, read-only output of this job (ADR-SDK-031): its
-  # main branch is forcibly aligned to the split of the tagged monorepo commit.
-  # Tags are never forced — a duplicate v-tag fails loudly (new tag to resume).
-  git push --force "$mirror" "$split_sha:refs/heads/main"
-  git push "$mirror" "$split_sha:refs/tags/v$VERSION"
-  echo "   php: mirror revaly-co/rap-sdk-php updated to split $split_sha, tag v$VERSION — Packagist webhook takes it from here"
+  local tree="$WORK/php-mirror" mirror="https://x-access-token:${PACKAGIST_MIRROR_PUSH_TOKEN}@github.com/revaly-co/rap-sdk-php.git"
+  [ -d "$tree" ] || die "php: mirror tree missing — check_php did not run"
+  # Publish the tree check_php just verified — the stage-5 artifact contents,
+  # as a fresh commit in a fresh repo (the mirror has no meaningful history of
+  # its own; it is job output).
+  git -C "$tree" init -q -b main
+  git -C "$tree" -c user.name="revaly-sdk pipeline" -c user.email="sdk@revaly.co" add -A
+  git -C "$tree" -c user.name="revaly-sdk pipeline" -c user.email="sdk@revaly.co" \
+    commit -q -m "revaly/sdk $VERSION — generated mirror of rap-sdk $RELEASE_TAG @ ${SOURCE_COMMIT:0:12}"
+  # The mirror is GENERATED, read-only output of this job (ADR-SDK-031): main
+  # is forcibly aligned to each release's verified artifact tree. Tags are
+  # never forced — a duplicate v-tag fails loudly (fix, then cut a new
+  # monorepo tag); prior release tags keep their commits reachable.
+  git -C "$tree" push -q --force "$mirror" main:refs/heads/main
+  git -C "$tree" push -q "$mirror" "HEAD:refs/tags/v$VERSION"
+  echo "   php: mirror revaly-co/rap-sdk-php aligned to the $VERSION artifact tree, tag v$VERSION — Packagist webhook takes it from here"
 }
 
 publish_typescript() {

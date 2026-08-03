@@ -26,7 +26,8 @@ alternative is building it now and proving it inert.
    release), downloads the stage-5 artifact set, re-verifies checksums, asserts the ADR-SDK-030
    names/versions inside the artifacts, and runs a per-registry **flip-readiness lint**. In
    dark mode, readiness findings are warnings (a per-release readiness report in the job
-   summary); it contacts **no registry**. `pipeline/registry-publish.sh` is the only entry
+   summary); it **publishes nothing and writes to no registry** (the only registry contact
+   in dark mode is read-only tooling install — twine from PyPI, composer via setup-php). `pipeline/registry-publish.sh` is the only entry
    point, local and CI alike.
 
 2. **The flip is double-keyed.** Going live requires BOTH:
@@ -51,11 +52,16 @@ alternative is building it now and proving it inert.
      The registry publish **never rebuilds** — it signs exactly what stage 5 shipped.
    - **Packagist** — **amends ADR-SDK-013's "webhook from the public repo"**: packagist.org
      requires `composer.json` at the repository root, so the monorepo cannot be tracked
-     directly. The job pushes `git subtree split --prefix=languages/php` of the tagged
-     commit to the existing repo **`revaly-co/rap-sdk-php`**, repurposed as a **generated,
-     read-only mirror** (its placeholder history is force-replaced — it is job output, never
-     hand-edited; tags are never forced), and tags it `v<version>`; the Packagist webhook on
-     the mirror does the rest. Packagist package `revaly/sdk` tracks the mirror.
+     directly. The job pushes the **verified stage-5 artifact tree** (version-stamped
+     runtime, LICENSE + NOTICE included, the injected `version` field removed again —
+     Packagist reads versions from tags) as a fresh commit to the existing repo
+     **`revaly-co/rap-sdk-php`**, repurposed as a **generated, read-only mirror** (its
+     placeholder history is force-replaced — it is job output, never hand-edited; tags are
+     never forced, and prior release tags keep their commits reachable), and tags it
+     `v<version>`; the Packagist webhook on the mirror does the rest. Packagist package
+     `revaly/sdk` tracks the mirror. Deliberately **not** a raw subtree split: the
+     committed tree carries the `0.0.0` SEMVER placeholder and no license files — the
+     mirror must ship exactly what the readiness lint verified.
    - **pkg.go.dev** — nothing to push (pull-based). The Go publish remains the deliberate
      `languages/go/v*` tag ceremony, last (ADR-SDK-026); the registry job is informational
      for `go/v*` tags.

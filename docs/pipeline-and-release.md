@@ -50,9 +50,11 @@ only from a release tag on `main` (machine gates below).
   hard-fails. `pipeline/registry-publish.sh` is the single entry point; the flip runbook is
   in `registry-provisioning.md`.
 - **Packagist mechanics:** packagist.org needs `composer.json` at the repo root, so
-  `revaly/sdk` publishes from a generated read-only subtree-split mirror
-  (`revaly-co/rap-sdk-php`) pushed by the registry job; the webhook lives on the mirror
-  (ADR-SDK-031, amending the earlier "webhook from the monorepo" wording).
+  `revaly/sdk` publishes from a generated read-only mirror (`revaly-co/rap-sdk-php`) that
+  the registry job builds **from the verified stage-5 artifact tree** (version-stamped,
+  LICENSE/NOTICE included — never a raw subtree split of the unstamped committed tree);
+  the webhook lives on the mirror (ADR-SDK-031, amending the earlier "webhook from the
+  monorepo" wording).
 - **GitHub releases stay after registry GA** as the provenance anchor and
   registry-outage/air-gap fallback; registries are the primary install path from flip
   (ADR-SDK-031).

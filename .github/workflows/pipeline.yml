@@ -1213,10 +1213,11 @@ jobs:
       REGISTRY_PUBLISH_MODE: ${{ vars.REGISTRY_PUBLISH_MODE || 'dark' }}
 
     steps:
-      - name: Checkout Repository (full history — subtree split + ancestry)
+      # Default-depth checkout: the double-key guard reads the tagged commit
+      # (git show HEAD:...) and the php mirror tree is built from the stage-5
+      # artifact, not from git history.
+      - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          fetch-depth: 0
 
       - name: Parse Release Tag + Resolve Mode (fail closed)
         id: tag
@@ -1249,7 +1250,7 @@ jobs:
           path: dist/${{ steps.tag.outputs.lang }}
           merge-multiple: true
 
-      - name: Setup PHP + Composer (php — split validation runs in both modes)
+      - name: Setup PHP + Composer (php — mirror-tree validation runs in both modes)
         if: steps.tag.outputs.lang == 'php'
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with:
@@ -1257,7 +1258,15 @@ jobs:
           tools: composer
           coverage: none
 
-      - name: Install Twine (python — metadata check runs in both modes)
+      # setup-python first (same as stage 5): the runner's system python is
+      # PEP-668 externally-managed and refuses bare pip installs.
+      - name: Setup Python (python — metadata check runs in both modes)
+        if: steps.tag.outputs.lang == 'python'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Twine (python)
         if: steps.tag.outputs.lang == 'python'
         run: python3 -m pip install --quiet twine
 

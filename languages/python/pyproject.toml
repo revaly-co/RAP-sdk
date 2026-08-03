@@ -1,6 +1,5 @@
 # revaly-sdk — Python runtime package (RFC-046; runtime-tdd.md §2 one-package surface).
-# Distribution name "revaly-sdk" is [Proposed] until OQ-3 registry provisioning
-# (runtime-tdd.md §7) — do not treat as final.
+# Distribution name "revaly-sdk" is FINAL (ADR-SDK-030, runtime-tdd.md §7).
 # PUBLISH IS EMBARGOED (repo rule 3): the "Private :: Do Not Upload" classifier makes
 # PyPI reject any upload of this package until the embargo gates close.
 # The generated core (core/revaly_sdk_core) ships INSIDE this one distribution —
