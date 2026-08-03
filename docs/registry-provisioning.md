@@ -1,10 +1,10 @@
 # RAP Integration SDK — Registry Provisioning Runbook
 
 **Status:** OQ-3 **naming closed** (ADR-SDK-030, 2026-07-30); namespaces reserved on all six
-registries; **both remaining provisioning acts now sit in external queues** (NuGet `Revaly.*`
-ID-prefix reservation **in NuGet's review queue** — submitted and resubmitted from the owner
-mailbox 2026-07-31; PyPI org approval pending). Publish still embargoed.
-**Last updated:** 2026-07-31
+registries; **NuGet `Revaly.*` ID-prefix RESERVED 2026-08-03** (NuGet.org admin confirmation to
+the owner mailbox — one business day after the 2026-07-31 resubmission). **One provisioning act
+still sits in an external queue** (PyPI org approval). Publish still embargoed.
+**Last updated:** 2026-08-03
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
 ADR-SDK-019 (license), ADR-SDK-022 (GitHub namespace), ADR-SDK-030 (final names). This runbook
@@ -24,7 +24,8 @@ trusted-publisher registration, and no registry tokens until all three gates clo
 2. Registry accounts + the protected publish environment exist (OQ-3, ADR-SDK-011/013) —
    **nearly satisfied**: namespaces reserved ×6, the `publish` GitHub environment created
    2026-07-29 (per-language tag-pattern deployment policies; `languages/go/v*` deliberately
-   excluded until the Go publish ceremony). Two acts remain — see the table below.
+   excluded until the Go publish ceremony), NuGet `Revaly.*` ID-prefix reserved 2026-08-03.
+   One act remains — PyPI org approval (see the table below).
 3. Apache-2.0 is Legal-ratified (ADR-SDK-019) — **pending in writing** (approval exists
    verbally as of 2026-07-29; the embargo holds until the written record lands).
 
@@ -40,7 +41,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 | --- | --- | --- | --- | --- |
 | npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) | — | OIDC trusted publisher · `package.json` rename to `@revaly/sdk` + quickstart install-line sweep (stage-6 prep, ADR-SDK-030) |
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
-| NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) | **`Revaly.*` ID-prefix reservation** — **in NuGet's review queue** since 2026-07-31: first send bounced NuGet's sender-identity check the same day (the request must originate **from the email registered to the NuGet.org account**, not an individual mailbox), and was **resubmitted from the account-registered owner mailbox** hours later; days-to-weeks review — the live long-lead act | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
+| NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
 | Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) | — | GPG signing keys in Key Vault, fetched inside the environment-scoped job; publisher token |
 | Go (pkg.go.dev) | `github.com/revaly-co/rap-sdk/languages/go` | ✅ n/a — the path binds to the GitHub org (ADR-SDK-022) | — | Repo public + a `languages/go/v*` tag; the tag ruleset currently **blocks** go-module-form tags, and lifting it is the deliberate admin ceremony (ADR-SDK-026). Go publishes **last** |
@@ -119,12 +120,12 @@ publishing an actual package**. To hold `revaly/` during Week 1, a placeholder w
 
 Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mailbox live +
 `SECURITY.md` merged (2026-07-29/30) · ✅ `publish` environment with tag-pattern policies
-(2026-07-29) · ✅ npm / NuGet / Maven / Packagist namespaces held (2026-07-17).
+(2026-07-29) · ✅ npm / NuGet / Maven / Packagist namespaces held (2026-07-17) · ✅ NuGet
+`Revaly.*` ID-prefix reserved (2026-08-03).
 
 | Item | Owner | Gate |
 | --- | --- | --- |
-| **PyPI org approval** (application pending in PyPI's queue) | SC squad | Before first PyPI publish |
-| **NuGet ID-prefix (`Revaly.*`) reservation** — **in NuGet's review queue** (submitted + resubmitted from the account-registered owner mailbox 2026-07-31); days-to-weeks | SC squad | Before first NuGet publish |
+| **PyPI org approval** (application pending in PyPI's queue — the last provisioning act in an external queue) | SC squad | Before first PyPI publish |
 | Apache-2.0 Legal ratification **in writing** (verbal 2026-07-29) | Leadership + Legal | Before first publish (ADR-SDK-019); also gates every OIDC registration |
 | OIDC / GPG / webhook bindings + npm `@revaly/sdk` metadata rename (stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030) |
 | Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |
