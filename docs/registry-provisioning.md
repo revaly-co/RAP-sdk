@@ -122,7 +122,9 @@ The stage-6 registry job ships **dark** on every release tag: full rehearsal in 
 `publish` environment, a per-release flip-readiness report, **no registry contact**. The flip
 is **double-keyed** — the `REGISTRY_PUBLISH_MODE=live` repo variable **and** the guard-removal
 PR (steps 4/8 below); either alone hard-fails rather than publishes. Going live is this
-runbook, not a build.
+runbook, not a build. Per-registry push mechanics (which push lives in the workflow vs in
+`pipeline/registry-publish.sh`, and why npm and Go have no visible workflow steps):
+`pipeline-and-release.md` §3.1.
 
 **Gates first (nothing below runs until all three close):**
 

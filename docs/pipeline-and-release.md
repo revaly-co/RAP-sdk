@@ -61,6 +61,32 @@ only from a release tag on `main` (machine gates below).
 - A scheduled drift check asserts the gates themselves (environment policy, tag protection,
   trusted-publisher bindings) still match ADR-SDK-013.
 
+### 3.1 Per-registry push mechanics — what lives in the workflow vs `registry-publish.sh`
+
+One design rule decides where every step lives: **`pipeline/registry-publish.sh` owns
+everything that runs identically on a laptop and in CI** (all checks, all CLI-based
+pushes); **the workflow owns only what requires GitHub Actions machinery** (OIDC token
+exchanges, action-based uploads). That is why some languages have visible per-language
+workflow steps and others none — npm's push lives *inside the script*, and Go has *no push
+anywhere, by design*.
+
+| Language | Dark rehearsal (script, every tag) | Live push — where + command | Credential (provisioned at flip) |
+| --- | --- | --- | --- |
+| dotnet | nuspec ids/versions vs ADR-SDK-030 | **script**: `dotnet nuget push`, `Revaly.Sdk.Core` before `Revaly.Sdk` (consumers must never resolve the runtime before its core exists) | workflow `NuGet/login` exchanges OIDC for a temp key → script env `NUGET_API_KEY` |
+| java | bundle layout, POM completeness (name/description/url/licenses/scm/developers), sources + javadoc jars | **script**: GPG-sign every bundle file + md5/sha1 → zip the `co/` tree → `curl POST` to the Central Portal API. Never rebuilds — signs exactly the stage-5 bytes | workflow `azure/login` + Key Vault fetch → script env `MAVEN_GPG_KEY_FILE`, `MAVEN_CENTRAL_TOKEN` |
+| php | builds the mirror tree **from the stage-5 zip** (stamped SEMVER, LICENSE/NOTICE present, injected `version` field removed) and validates it | **script**: `git push` the tree as a fresh commit + `v<version>` tag to the `rap-sdk-php` mirror. Packagist's API is never called — its webhook on the mirror ingests the release | `PACKAGIST_MIRROR_PUSH_TOKEN` environment secret |
+| typescript | packed name `@revaly/sdk`, version, `"private"` guard state | **script**: `npm publish <tgz> --access public --provenance`. No workflow push step exists: npm ≥ 11.5 performs the OIDC exchange itself (job `id-token: write` + the trusted publisher registered at flip); the only workflow step is live-only `setup-node` | none (OIDC via npm CLI) |
+| python | wheel METADATA, classifier guard, stages `dist/python/.pypi-upload/` with **PyPI-canonical filenames** (the GitHub asset name is not a valid sdist name), `twine check` | **workflow**: `pypa/gh-action-pypi-publish` uploads the staged dir — the one push outside the script, because that action *is* PyPI's official OIDC implementation (token mint + upload); `publish_python` in the script is just a pointer to it | none (OIDC via the pypa action) |
+| go | asserts the module path inside the zip | **nowhere — no push operation exists.** pkg.go.dev is pull-based: publishing = public repo + a `languages/go/v*` tag; proxy.golang.org fetches from GitHub on first request. The interim `go/v*` tags are inert to Go tooling; the real release is the ADR-SDK-026 ceremony (lift the tag ruleset, tag, verify), deliberately **last** — module proxies cache every version forever | none |
+
+**What is and is not tested before flip:** dark mode proves everything *up to* the push —
+artifact integrity, names, filenames, guards, credential plumbing, refusal paths (the live
+negative tests). The pushes themselves cannot run without contacting a registry, which is
+exactly what rule 3 embargoes, so they execute for the first time on flip day. That
+residual is accepted in ADR-SDK-031 and deliberately minimized: every live path is one
+well-known command (`dotnet nuget push` / `npm publish` / `git push` / one `curl`), with
+all inputs pre-proven by the readiness lint.
+
 ## 4. Versioning (RFC §5.7)
 
 - **Semver per package; the SDK major tracks the RAP V2 API major.** Minor/patch follow API
