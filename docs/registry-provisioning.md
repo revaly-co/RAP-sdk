@@ -39,7 +39,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 
 | Registry | Final name | Namespace held | Outstanding **now** | Publish-day (embargoed) |
 | --- | --- | --- | --- | --- |
-| npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) | — | OIDC trusted publisher · `package.json` rename to `@revaly/sdk` + quickstart install-line sweep (stage-6 prep, ADR-SDK-030) |
+| npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) · ✅ `package.json` renamed to `@revaly/sdk` 2026-08-03 (stage-6 prep, ADR-SDK-030/031) | — | OIDC trusted publisher · quickstart install lines switch to `npm install @revaly/sdk` at flip |
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
 | NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
@@ -116,6 +116,58 @@ publishing an actual package**. To hold `revaly/` during Week 1, a placeholder w
 - **Owner:** SC squad (execution) — remove the placeholder as part of the first real
   Packagist publish.
 
+## Flip to LIVE — runbook (ADR-SDK-031)
+
+The stage-6 registry job ships **dark** on every release tag: full rehearsal in the protected
+`publish` environment, a per-release flip-readiness report, **no registry contact**. The flip
+is **double-keyed** — the `REGISTRY_PUBLISH_MODE=live` repo variable **and** the guard-removal
+PR (steps 4/8 below); either alone hard-fails rather than publishes. Going live is this
+runbook, not a build. Per-registry push mechanics (which push lives in the workflow vs in
+`pipeline/registry-publish.sh`, and why npm and Go have no visible workflow steps):
+`pipeline-and-release.md` §3.1.
+
+**Gates first (nothing below runs until all three close):**
+
+1. **ADR-SDK-019 written ratification recorded.** The fill-and-sign PDF is the artifact;
+   the 2026-07-29 verbal approval and Charles's 2026-07-31 Teams confirmation do not close
+   the gate.
+2. **PyPI org approved** (or the recorded pending-publisher deviation accepted for launch).
+3. **Git-history decision executed and repo → public** (leadership; ADR-SDK-012). Public is
+   required for npm `--provenance`, the Packagist webhook, and pkg.go.dev.
+
+**Flip acts (one sitting — cut no release tags while between steps 4 and 8):**
+
+4. **Guard-removal PR:** delete `"private": true` from `languages/typescript/package.json`
+   and the `Private :: Do Not Upload` classifier from `languages/python/pyproject.toml`.
+   (Between this merge and step 8, a release tag would hard-fail the registry job's
+   half-flip check — by design. Do 4→8 in one sitting.)
+5. **OIDC trusted publishers:** npm (`@revaly/sdk` → this repo + `pipeline.yml` +
+   environment `publish`), PyPI (`revaly-sdk`), NuGet trusted-publishing policy (by a
+   leadership org-member account; policies expire after 7 unused days — create last) + set
+   the `NUGET_TRUSTED_PUBLISHING_USER` variable.
+6. **Maven Central:** GPG keypair → Key Vault (`maven-gpg-private-key`,
+   `maven-gpg-passphrase`), public key → keyservers, Central Portal token →
+   `maven-central-token`; federated credential for the `publish` environment +
+   `PUBLISH_AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID` + `PUBLISH_KEYVAULT_NAME` variables.
+   **Fix the javadoc-jar gap first** (standing flip-readiness finding: stage 5 skips
+   javadoc; Central rejects bundles without it).
+7. **Packagist:** provision `PACKAGIST_MIRROR_PUSH_TOKEN` (environment secret; prefer an
+   org GitHub App scoped to `revaly-co/rap-sdk-php` — same credential family as OQ-17);
+   register the Packagist webhook on the mirror; **delete the placeholder `revaly/rap-sdk`**
+   immediately before the first real publish (the recorded deviation closes then).
+8. **Set `REGISTRY_PUBLISH_MODE=live`** (repository variable).
+9. **Cut release tags in GA order** (ADR-SDK-015): dotnet → java → php → typescript →
+   python — **one tag per push** (a multi-tag push silently starts zero runs). Each tag:
+   GitHub release first (unchanged, stays the provenance anchor per ADR-SDK-031), then the
+   registry publish; verify on the registry before the next tag. Go remains the separate,
+   last `languages/go/v*` ceremony (ADR-SDK-026: lift the tag ruleset, tag, verify
+   pkg.go.dev).
+10. **Post-flip sweep:** quickstart install lines ×6 switch to registry installs;
+    `revaly-co/RAP-sdk-integration-tests` updates its TypeScript import to `@revaly/sdk`
+    (single known external consumer of the old specifier) and gains a registry-install
+    variant; arm the ADR-SDK-013 drift check for the new bindings; announce per DX
+    contract §e.
+
 ## Open items
 
 Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mailbox live +
@@ -127,5 +179,5 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 | --- | --- | --- |
 | **PyPI org approval** (application pending in PyPI's queue — the last provisioning act in an external queue) | SC squad | Before first PyPI publish |
 | Apache-2.0 Legal ratification **in writing** (verbal 2026-07-29) | Leadership + Legal | Before first publish (ADR-SDK-019); also gates every OIDC registration |
-| OIDC / GPG / webhook bindings + npm `@revaly/sdk` metadata rename (stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030) |
+| OIDC / GPG / webhook bindings (the npm `@revaly/sdk` metadata rename shipped 2026-08-03 with the stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030/031) |
 | Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |

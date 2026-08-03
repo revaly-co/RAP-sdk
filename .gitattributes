@@ -18,3 +18,4 @@ pipeline/*/.openapi-generator-ignore text eol=lf
 pipeline/*/config.yaml text eol=lf
 pipeline/generate.sh text eol=lf
 pipeline/package.sh text eol=lf
+pipeline/registry-publish.sh text eol=lf

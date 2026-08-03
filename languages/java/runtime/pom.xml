@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Hand-written runtime module (runtime-tdd.md §§1-9) — the merchant-facing product layer
-  wrapping the generated core. Registry identity co.revaly:revaly-sdk is the runtime-tdd §7
-  working scheme, [Proposed] until OQ-3 registry provisioning; the version is a placeholder
-  (stage 5 stamps releases). Publish is embargoed (repo rule 3).
+  wrapping the generated core. Registry identity co.revaly:revaly-sdk is FINAL (ADR-SDK-030,
+  runtime-tdd §7); the version is a placeholder (stage 5 stamps releases). Publish is
+  embargoed (repo rule 3) until the flip runbook executes (ADR-SDK-031).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -29,6 +29,17 @@
         <developerConnection>scm:git:ssh://github.com:revaly-co/rap-sdk.git</developerConnection>
         <url>https://github.com/revaly-co/rap-sdk</url>
     </scm>
+
+    <!-- Maven Central rejects poms without a developers block (stage-6
+         flip-readiness; the generated core pom already carries one). -->
+    <developers>
+        <developer>
+            <name>Revaly SC Eng</name>
+            <email>sdk@revaly.co</email>
+            <organization>Revaly</organization>
+            <organizationUrl>https://revaly.co</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

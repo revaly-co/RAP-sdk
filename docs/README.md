@@ -45,9 +45,17 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 - **NuGet `Revaly.*` ID-prefix RESERVED, 2026-08-03** — NuGet.org admin confirmed "reserved
   the prefix 'Revaly' for account 'revaly'" to the owner mailbox, one business day after the
   2026-07-31 owner-mailbox resubmission. **PyPI org approval is now the only provisioning act
-  still in an external queue**; everything else outstanding is publish-day (OIDC/GPG/webhook +
-  npm rename), embargoed until the ADR-SDK-019 **written** ack — per-registry board in
+  still in an external queue**; everything else outstanding is publish-day (OIDC/GPG/webhook),
+  embargoed until the ADR-SDK-019 **written** ack — per-registry board in
   `registry-provisioning.md`.
+- **Stage-6 registry publish built, ships DARK — 2026-08-03** (ADR-SDK-031 Proposed): the
+  registry job now runs on every release tag in the protected `publish` environment —
+  checksum re-verify, ADR-SDK-030 name assertions, embargo-guard integrity, per-registry
+  flip-readiness report — and contacts **no registry** until the double-keyed flip
+  (`REGISTRY_PUBLISH_MODE=live` + the guard-removal PR). The npm rename to **`@revaly/sdk`**
+  shipped with it (committed metadata now final ×6). Flip day is a runbook
+  (`registry-provisioning.md` § Flip to LIVE), not a build: written ADR-SDK-019 ack → PyPI
+  org → history decision + repo public → bindings → flip → tags in GA order.
 - **Registry names finalized ×6 + repo-public prep merged, 2026-07-30** (ADR-SDK-030; PRs
   #46/#47): npm **`@revaly/sdk`** (scoped) · PyPI `revaly-sdk` · NuGet
   `Revaly.Sdk`+`Revaly.Sdk.Core` · Packagist `revaly/sdk` · Maven `co.revaly:revaly-sdk` ·
