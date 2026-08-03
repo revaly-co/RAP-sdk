@@ -48,6 +48,15 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   still in an external queue**; everything else outstanding is publish-day (OIDC/GPG/webhook),
   embargoed until the ADR-SDK-019 **written** ack — per-registry board in
   `registry-provisioning.md`.
+- **History decision DECIDED: fresh-repo cutover, 2026-08-03** (ADR-SDK-032 Accepted —
+  Dimitri): the public repo will be a **new** `revaly-co/RAP-sdk` carrying a
+  `git filter-repo`-sanitized transplant of the full history (smoke.exe blob, pre-redaction
+  doc versions, the `c584d69` message, and `@flexpay.io` author emails rewritten); the
+  current repo becomes the private **`RAP-sdk-archive`** (true history, all PR threads,
+  pre-cutover releases + provenance). No GitHub Support ticket, no `refs/pull/*` residue,
+  PR conversations never go public. Execution rides flip-runbook gate 3: rename → transplant
+  → recreate plumbing (envs, ruleset, re-issued `SPEC_ARTIFACT_READ_TOKEN`) → green
+  dispatch run → cutover release ×6 → public.
 - **Stage-6 registry publish built, ships DARK — 2026-08-03** (ADR-SDK-031 Proposed): the
   registry job now runs on every release tag in the protected `publish` environment —
   checksum re-verify, ADR-SDK-030 name assertions, embargo-guard integrity, per-registry
@@ -67,7 +76,7 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   `registry-provisioning.md`. The public-flip
   prep also landed: internal-infrastructure evidence relocated out of the docs at HEAD,
   SECURITY.md + CODEOWNERS + issue/PR templates added, the one open Dependabot alert fixed.
-  Still pending before the flip: the git-history sanitize-vs-accept decision (leadership).
+  The git-history question is now **decided → ADR-SDK-032** (2026-08-03, next bullet).
 - **Prod sandbox key-scope validated ×6, 2026-07-25** (`prod-sandbox-validation.md`): the released
   **v0.4.1** artifacts — installed as a merchant installs them, from the GitHub release assets —
   were exercised against the merchant sandbox key-scope on the shared production URL through the

@@ -120,6 +120,8 @@ via manual re-run — fix, then cut a new tag.
 - New decisions become numbered ADRs in `docs/adr/` (Title / Status / Context / Decision /
   Consequences); status changes are dated edits to `docs/README.md` § Status snapshot and
   `docs/open-items.md` — keep both current when platform facts change.
-- Before the repo goes public (ADR-SDK-012): scrub the internal-provenance appendix in
-  `docs/decision-log.md`; add `SECURITY.md` + `security@` disclosure intake.
+- Going public (ADR-SDK-012) happens via the **ADR-SDK-032 fresh-repo cutover** (decided
+  2026-08-03): the public repo is a NEW `revaly-co/RAP-sdk` carrying a sanitized history
+  transplant; THIS repo becomes the private `RAP-sdk-archive`. Never flip this repo's
+  visibility directly. (The HEAD scrub + `SECURITY.md`/`security@` intake landed 2026-07-30.)
 - .NET code style: no `#region` / `#endregion` directives.
