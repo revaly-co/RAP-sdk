@@ -132,8 +132,13 @@ runbook, not a build. Per-registry push mechanics (which push lives in the workf
    the 2026-07-29 verbal approval and Charles's 2026-07-31 Teams confirmation do not close
    the gate.
 2. **PyPI org approved** (or the recorded pending-publisher deviation accepted for launch).
-3. **Git-history decision executed and repo → public** (leadership; ADR-SDK-012). Public is
-   required for npm `--provenance`, the Packagist webhook, and pkg.go.dev.
+3. **Execute the ADR-SDK-032 fresh-repo cutover, ending public** (decided 2026-08-03:
+   Variant B sanitized-history transplant — rename the current repo to the private
+   `RAP-sdk-archive`, push the `filter-repo`-transplanted history to a new
+   `revaly-co/RAP-sdk`, recreate plumbing/secrets, prove the pipeline green + a cutover
+   release ×6, then flip it public; full sequence in the ADR). Public is required for npm
+   `--provenance`, the Packagist webhook, and pkg.go.dev. Steps 4–10 below then run **on
+   the new repo**.
 
 **Flip acts (one sitting — cut no release tags while between steps 4 and 8):**
 
