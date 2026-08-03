@@ -40,17 +40,22 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
 
-## Status snapshot (2026-07-31)
+## Status snapshot (2026-08-03)
 
+- **NuGet `Revaly.*` ID-prefix RESERVED, 2026-08-03** — NuGet.org admin confirmed "reserved
+  the prefix 'Revaly' for account 'revaly'" to the owner mailbox, one business day after the
+  2026-07-31 owner-mailbox resubmission. **PyPI org approval is now the only provisioning act
+  still in an external queue**; everything else outstanding is publish-day (OIDC/GPG/webhook +
+  npm rename), embargoed until the ADR-SDK-019 **written** ack — per-registry board in
+  `registry-provisioning.md`.
 - **Registry names finalized ×6 + repo-public prep merged, 2026-07-30** (ADR-SDK-030; PRs
   #46/#47): npm **`@revaly/sdk`** (scoped) · PyPI `revaly-sdk` · NuGet
   `Revaly.Sdk`+`Revaly.Sdk.Core` · Packagist `revaly/sdk` · Maven `co.revaly:revaly-sdk` ·
   Go path unchanged — `runtime-tdd.md` §7 is now **[Decided]**, and committed metadata is
   already final everywhere except the npm rename (stage-6 prep). All six namespaces are
-  reserved; the exact remaining registry acts (NuGet `Revaly.*` prefix request — **in NuGet's
-  review queue since 2026-07-31**, resubmitted from the account-registered owner mailbox after
-  their same-day sender-identity check; PyPI org approval; publish-day OIDC/GPG, embargoed
-  until the ADR-SDK-019 **written** ack) are tabulated per registry in
+  reserved; the exact remaining registry acts (PyPI org approval; publish-day OIDC/GPG,
+  embargoed until the ADR-SDK-019 **written** ack — NuGet `Revaly.*` prefix **reserved
+  2026-08-03**) are tabulated per registry in
   `registry-provisioning.md`. The public-flip
   prep also landed: internal-infrastructure evidence relocated out of the docs at HEAD,
   SECURITY.md + CODEOWNERS + issue/PR templates added, the one open Dependabot alert fixed.
