@@ -1,5 +1,5 @@
 /**
- * revaly-sdk — the RAP TypeScript SDK (runtime-tdd §2: one package to import).
+ * @revaly/sdk — the RAP TypeScript SDK (runtime-tdd §2: one package to import).
  *
  * The hand-written runtime surface (client, typed failure classes, reconcile helper,
  * scrubbed logging, mock transport) plus the full generated V2 core, re-exported so

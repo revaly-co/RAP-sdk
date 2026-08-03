@@ -123,9 +123,10 @@ Final names (decided 2026-07-29, ratified 2026-07-30; consistent with the RFC's 
 | Go | `github.com/revaly-co/rap-sdk/languages/go` (subdir module; layout per ADR-SDK-028) |
 
 Names do **not** embed the GitHub org (except Go's module path — ADR-SDK-022 governs its timing).
-Committed metadata already carries the final name in five of six languages; the npm rename
-(`languages/typescript/package.json` `revaly-sdk` → `@revaly/sdk`) + quickstart install-line
-sweep ride the stage-6 prep, before the first npm publish (ADR-SDK-030 §Consequences).
+Committed metadata now carries the final name in **all six** languages — the npm rename to
+`@revaly/sdk` shipped with the stage-6 prep on 2026-08-03 (ADR-SDK-030 §Consequences,
+ADR-SDK-031). Quickstart install lines switch from the interim GitHub-release artifact to
+registry installs at the flip (runbook in `registry-provisioning.md`).
 
 ## 8. Mock transport (DX contract §d)
 

@@ -5,10 +5,10 @@ transactions and notify — with a **merchant-facing failover contract** built i
 failed payment call rejects with exactly one of three typed classes that tell you what
 you may safely do next.
 
-> **Package status:** the npm name `revaly-sdk` is **[Proposed]** until registry
-> provisioning (OQ-3), and registry publish is embargoed — install from the per-language
-> GitHub release artifact until then. Requires Node.js ≥ 20.3 (or any runtime with
-> WHATWG `fetch` and `AbortSignal.any`).
+> **Package status:** the npm name is **`@revaly/sdk`** (final, ADR-SDK-030). Registry
+> publish is still embargoed — install from the per-language GitHub release artifact
+> until it opens (`npm install @revaly/sdk` becomes the install line then). Requires
+> Node.js ≥ 20.3 (or any runtime with WHATWG `fetch` and `AbortSignal.any`).
 
 ## Why the error classes matter (read this first)
 
@@ -46,7 +46,7 @@ import {
     RapOutcomeUnknown,
     RapPermanentRejection,
     RapTransientFailure,
-} from 'revaly-sdk';
+} from '@revaly/sdk';
 
 const client = new RapClient({ apiKey: process.env.RAP_API_KEY! });
 
@@ -110,7 +110,7 @@ Prefer results over exceptions? The same taxonomy is available as a discriminate
 union:
 
 ```ts
-import { toRapResult } from 'revaly-sdk';
+import { toRapResult } from '@revaly/sdk';
 
 const result = await toRapResult(() => client.charge(request));
 if (!result.ok) {
@@ -164,7 +164,7 @@ The mock transport scripts every row of the failure taxonomy and both reconcile
 verdicts, and asserts your requests carry the SDK User-Agent:
 
 ```ts
-import { RapClient, RapMockTransport } from 'revaly-sdk';
+import { RapClient, RapMockTransport } from '@revaly/sdk';
 
 const mock = new RapMockTransport();
 mock.charge().returnsNotProcessed503(); // → RapTransientFailure

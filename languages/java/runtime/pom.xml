@@ -30,6 +30,17 @@
         <url>https://github.com/revaly-co/rap-sdk</url>
     </scm>
 
+    <!-- Maven Central rejects poms without a developers block (stage-6
+         flip-readiness; the generated core pom already carries one). -->
+    <developers>
+        <developer>
+            <name>Revaly SC Eng</name>
+            <email>sdk@revaly.co</email>
+            <organization>Revaly</organization>
+            <organizationUrl>https://revaly.co</organizationUrl>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- release (not source/target) so JDK-21 CI builds cannot leak post-11 APIs. -->

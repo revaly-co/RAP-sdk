@@ -25,7 +25,7 @@
 | 3 | **build + test** | Compile all six; unit tests (runtime + core); ecosystem linters (DX contract §a); log-capture scrub tests (ADR-SDK-020) | Any language red blocks the release for all |
 | 4 | **contract smoke** | Live smoke of all six SDKs against the stage-4 environment (ADR-SDK-024: Backbone staging via the environment-scoped `staging` secrets interim; merchant sandbox key-scope with the Enablement-issued Key Vault key at GA, ADR-SDK-014): charge approved + declined, validation/auth rejections, the injected `503+not_processed` fast-failover row, reconcile both verdicts | Release blocked — the taxonomy is unproven against reality |
 | 5 | **package** | Version stamp (semver, §4), license + SCM metadata (Apache-2.0, ADR-SDK-019), SBOM per package, release notes with spec SHA | Metadata incomplete (Maven hard-fails without license/SCM) |
-| 6 | **publish** | Signed publish to npm · PyPI · NuGet · Packagist · Maven Central · pkg.go.dev, from the protected environment only (ADR-SDK-013) | — |
+| 6 | **publish** | GitHub release (interim channel + permanent provenance anchor, ADR-SDK-026/031), then the registry job: npm · PyPI · NuGet · Packagist · Maven Central · pkg.go.dev from the protected environment only (ADR-SDK-013). **Dark until the rule-3 gates close** (ADR-SDK-031): rehearsal + flip-readiness report on every tag, no registry contact | — |
 
 Stages 1–3 run on every PR. Stage 4 runs on release tags (**blocking**: any language red
 blocks the release for all six), on the nightly schedule (advisory), and on manual dispatch —
@@ -43,6 +43,19 @@ only from a release tag on `main` (machine gates below).
   pkg.go.dev — pull-based, the tag *is* the release.
 - Monorepo tag scheme (ADR-SDK-016): per-language release tags (e.g. `dotnet/v1.0.0`) drive the
   publish matrix; the environment tag policy covers the whole pattern set.
+- **Dark until flip (ADR-SDK-031):** the registry job runs on every release tag in the
+  `publish` environment but contacts no registry until the **double-keyed** flip —
+  `REGISTRY_PUBLISH_MODE=live` (repo variable, fail-closed) **and** the flip-day
+  guard-removal PR (npm `"private"`, python `Private :: Do Not Upload`); a half-flip
+  hard-fails. `pipeline/registry-publish.sh` is the single entry point; the flip runbook is
+  in `registry-provisioning.md`.
+- **Packagist mechanics:** packagist.org needs `composer.json` at the repo root, so
+  `revaly/sdk` publishes from a generated read-only subtree-split mirror
+  (`revaly-co/rap-sdk-php`) pushed by the registry job; the webhook lives on the mirror
+  (ADR-SDK-031, amending the earlier "webhook from the monorepo" wording).
+- **GitHub releases stay after registry GA** as the provenance anchor and
+  registry-outage/air-gap fallback; registries are the primary install path from flip
+  (ADR-SDK-031).
 - A scheduled drift check asserts the gates themselves (environment policy, tag protection,
   trusted-publisher bindings) still match ADR-SDK-013.
 

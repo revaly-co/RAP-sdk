@@ -510,8 +510,10 @@ fi
 
 cat > "$OUT/RELEASE_NOTES.md" <<EOF
 Interim distribution artifact (ADR-SDK-026): registry publish remains embargoed
-(repo rule 3) and package names are **[Proposed]** until OQ-3 registry
-provisioning — this GitHub release is the supported install channel.
+(repo rule 3) — this GitHub release is the supported install channel. Registry
+names are **final** (ADR-SDK-030) and registry publish goes live when the
+rule-3 gates close (the stage-6 registry job runs dark until then,
+ADR-SDK-031); GitHub releases continue as the provenance anchor afterwards.
 
 ## Traceability (version → spec)
 

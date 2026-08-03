@@ -37,13 +37,17 @@ build stories.
 2. **Spec input = pinned gated artifact only** (ADR-SDK-006): a `spec/v*` release tag from the
    platform repo, verified against its `.sha256` and `provenance.json` (pin lives in `spec/`).
    Never generate from a branch checkout, a URL, or a locally edited spec.
-3. **Publish is embargoed.** No registry publish surface (npm / PyPI / NuGet / Packagist /
+3. **Publish is embargoed.** No registry publish (npm / PyPI / NuGet / Packagist /
    Maven Central / pkg.go.dev), no OIDC trusted-publisher registration, no registry tokens —
    until the `revaly-co` namespace is final (ADR-SDK-022), registry accounts + the protected
    publish environment exist (OQ-3, ADR-SDK-011/013), and Apache-2.0 is Legal-ratified
    (ADR-SDK-019). Pre-1.0 betas count as publishing. Interim distribution = per-language
    **GitHub release artifacts** from this repo (model: the platform's `spec/v*` releases —
-   asset + `.sha256` + `provenance.json`).
+   asset + `.sha256` + `provenance.json`). The stage-6 registry job exists but runs **DARK**
+   (ADR-SDK-031): rehearsal only, double-keyed flip — editing it is fine; setting
+   `REGISTRY_PUBLISH_MODE=live`, provisioning any registry binding/secret, or removing the
+   embargo guards (npm `"private"`, python `Private :: Do Not Upload`) IS the embargoed act
+   and happens only via the flip runbook in `docs/registry-provisioning.md`.
 4. **Do not decide open items.** OQ-2 (full error-code taxonomy) and the OQ-3 provisioning
    residuals (NuGet prefix, PyPI org, publish-day OIDC/GPG) have owners and gates in
    `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
