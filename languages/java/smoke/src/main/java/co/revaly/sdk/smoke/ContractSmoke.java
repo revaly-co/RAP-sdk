@@ -299,11 +299,7 @@ public final class ContractSmoke {
                     // Found(APPROVED) through the runtime's own outcome
                     // mapping is the approval proof for the first charge;
                     // visibility is asynchronous, hence the budget.
-                    RapReconcileVerdict verdict =
-                            client.reconcile(
-                                    chargedId,
-                                    new ReconcilePolicy(
-                                            5, Duration.ofSeconds(30), Duration.ofSeconds(1)));
+                    RapReconcileVerdict verdict = reconcileSettled(client, chargedId);
                     return expectFound(verdict, RapTransactionOutcome.APPROVED);
                 });
 
@@ -313,11 +309,7 @@ public final class ContractSmoke {
                     // The declined charge must reconcile as Found(DECLINED) —
                     // the outcome branch that tells a merchant their own
                     // gateway is safe.
-                    RapReconcileVerdict verdict =
-                            client.reconcile(
-                                    declinedId,
-                                    new ReconcilePolicy(
-                                            5, Duration.ofSeconds(30), Duration.ofSeconds(1)));
+                    RapReconcileVerdict verdict = reconcileSettled(client, declinedId);
                     return expectFound(verdict, RapTransactionOutcome.DECLINED);
                 });
 
@@ -430,6 +422,33 @@ public final class ContractSmoke {
         }
         return request;
     }
+
+    /**
+     * Reconciles until the outcome settles. Under load a charge can be visible (Found) while its
+     * outcome is still PENDING — a transient truth, not a verdict miss — so Found(PENDING) gets a
+     * bounded re-poll instead of an instant assert. The loop lives in the harness because the
+     * caller owns the re-poll budget (ADR-SDK-009); NotFoundYet and settled outcomes return
+     * immediately.
+     */
+    private static RapReconcileVerdict reconcileSettled(
+            RapClient client, String merchantTransactionId) throws Exception {
+        ReconcilePolicy policy =
+                new ReconcilePolicy(5, Duration.ofSeconds(30), Duration.ofSeconds(1));
+        RapReconcileVerdict verdict = client.reconcile(merchantTransactionId, policy);
+        for (int settle = 0; settle < SETTLE_ATTEMPTS; settle++) {
+            if (!(verdict instanceof RapReconcileVerdict.Found)
+                    || ((RapReconcileVerdict.Found) verdict).getOutcome()
+                            != RapTransactionOutcome.PENDING) {
+                break;
+            }
+            Thread.sleep(SETTLE_DELAY_MS);
+            verdict = client.reconcile(merchantTransactionId, policy);
+        }
+        return verdict;
+    }
+
+    private static final int SETTLE_ATTEMPTS = 6;
+    private static final long SETTLE_DELAY_MS = 2_000L;
 
     /**
      * Asserts a Found verdict carrying the wanted outcome and a correlation id. The verdict set is

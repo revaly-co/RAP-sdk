@@ -175,6 +175,28 @@ function expectFound(verdict: RapReconcileVerdict, want: RapTransactionOutcome):
     throw new SmokeFailure(`unrecognized verdict ${(verdict as { kind: string }).kind}`);
 }
 
+const SETTLE_ATTEMPTS = 6;
+const SETTLE_DELAY_MS = 2_000;
+
+// Reconciles until the outcome settles. Under load a charge can be visible
+// (Found) while its outcome is still Pending — a transient truth, not a
+// verdict miss — so Found(Pending) gets a bounded re-poll instead of an
+// instant assert. The loop lives in the harness because the caller owns the
+// re-poll budget (ADR-SDK-009); NotFoundYet and settled outcomes return
+// immediately.
+async function reconcileSettled(merchantTransactionId: string): Promise<RapReconcileVerdict> {
+    const policy = { maxAttempts: 5, overallBudgetMs: 30_000, initialDelayMs: 1_000 };
+    let verdict = await client.reconcile(merchantTransactionId, policy);
+    for (let settle = 0; settle < SETTLE_ATTEMPTS; settle++) {
+        if (verdict.kind !== 'Found' || verdict.outcome !== 'Pending') {
+            break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, SETTLE_DELAY_MS));
+        verdict = await client.reconcile(merchantTransactionId, policy);
+    }
+    return verdict;
+}
+
 // Charged ids feed the reconcile scenarios: the verdicts — through the
 // runtime's own outcome mapping — are the proof the charge outcomes were what
 // the smoke claims.
@@ -300,11 +322,7 @@ test('reconcile-found-approved', () =>
         // Found(Approved) through the runtime's own outcome mapping is the
         // approval proof for the first charge; visibility is asynchronous,
         // hence the budget.
-        const verdict = await client.reconcile(chargedId, {
-            maxAttempts: 5,
-            overallBudgetMs: 30_000,
-            initialDelayMs: 1_000,
-        });
+        const verdict = await reconcileSettled(chargedId);
         expectFound(verdict, 'Approved');
     }));
 
@@ -312,11 +330,7 @@ test('reconcile-found-declined', () =>
     guard(async () => {
         // The declined charge must reconcile as Found(Declined) — the outcome
         // branch that tells a merchant their own gateway is safe.
-        const verdict = await client.reconcile(declinedId, {
-            maxAttempts: 5,
-            overallBudgetMs: 30_000,
-            initialDelayMs: 1_000,
-        });
+        const verdict = await reconcileSettled(declinedId);
         expectFound(verdict, 'Declined');
     }));
 

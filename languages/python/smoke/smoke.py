@@ -137,6 +137,10 @@ def classified(context: str, err: Exception) -> SmokeFailure:
     return SmokeFailure(f"{context}, got {type(err).__name__}")
 
 
+SETTLE_ATTEMPTS = 6
+SETTLE_DELAY_SECONDS = 2.0
+
+
 def expect_found(verdict, want: RapTransactionOutcome) -> str:
     """Asserts Found(want) with a correlation id. The verdict set is open — an
     unrecognized verdict is a real finding here, not a pass."""
@@ -309,23 +313,35 @@ def main() -> int:
             raise classified("expected RapTransientFailure", err) from None
         raise SmokeFailure("fault-injected charge succeeded — expected RapTransientFailure")
 
+    def reconcile_settled(merchant_transaction_id: str):
+        # Reconciles until the outcome settles. Under load a charge can be
+        # visible (Found) while its outcome is still PENDING — a transient
+        # truth, not a verdict miss — so Found(PENDING) gets a bounded re-poll
+        # instead of an instant assert. The loop lives in the harness because
+        # the caller owns the re-poll budget (ADR-SDK-009); NotFoundYet and
+        # settled outcomes return immediately.
+        policy = ReconcilePolicy(max_attempts=5, overall_budget=30.0, initial_delay=1.0)
+        verdict = client.reconcile(merchant_transaction_id, policy)
+        for _ in range(SETTLE_ATTEMPTS):
+            if not isinstance(verdict, Found):
+                break
+            if verdict.outcome is not RapTransactionOutcome.PENDING:
+                break
+            time.sleep(SETTLE_DELAY_SECONDS)
+            verdict = client.reconcile(merchant_transaction_id, policy)
+        return verdict
+
     def reconcile_found_approved() -> str:
         # Found(APPROVED) through the runtime's own outcome mapping is the
         # approval proof for the first charge; visibility is asynchronous,
         # hence the budget.
-        verdict = client.reconcile(
-            charged_id,
-            ReconcilePolicy(max_attempts=5, overall_budget=30.0, initial_delay=1.0),
-        )
+        verdict = reconcile_settled(charged_id)
         return expect_found(verdict, RapTransactionOutcome.APPROVED)
 
     def reconcile_found_declined() -> str:
         # The declined charge must reconcile as Found(DECLINED) — the outcome
         # branch that tells a merchant their own gateway is safe.
-        verdict = client.reconcile(
-            declined_id,
-            ReconcilePolicy(max_attempts=5, overall_budget=30.0, initial_delay=1.0),
-        )
+        verdict = reconcile_settled(declined_id)
         return expect_found(verdict, RapTransactionOutcome.DECLINED)
 
     def reconcile_not_found_yet() -> str:

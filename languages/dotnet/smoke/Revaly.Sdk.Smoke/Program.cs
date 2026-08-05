@@ -249,10 +249,7 @@ internal static class Program
                 // Found(Approved) through the runtime's own outcome mapping is
                 // the approval proof for the first charge; visibility is
                 // asynchronous, hence the budget.
-                var verdict = await client.ReconcileAsync(chargedId, new ReconcilePolicy(
-                    maxAttempts: 5,
-                    overallBudget: TimeSpan.FromSeconds(30),
-                    initialDelay: TimeSpan.FromSeconds(1)));
+                var verdict = await ReconcileSettledAsync(client, chargedId);
                 return ExpectFound(verdict, RapTransactionOutcome.Approved);
             }
             ),
@@ -262,10 +259,7 @@ internal static class Program
                 // The declined charge must reconcile as Found(Declined) — the
                 // outcome branch that tells a merchant their own gateway is
                 // safe.
-                var verdict = await client.ReconcileAsync(declinedId, new ReconcilePolicy(
-                    maxAttempts: 5,
-                    overallBudget: TimeSpan.FromSeconds(30),
-                    initialDelay: TimeSpan.FromSeconds(1)));
+                var verdict = await ReconcileSettledAsync(client, declinedId);
                 return ExpectFound(verdict, RapTransactionOutcome.Declined);
             }
             ),
@@ -393,6 +387,36 @@ internal static class Program
                 throw new SmokeFailure($"unrecognized verdict {verdict.GetType().Name}");
         }
     }
+
+    /// <summary>
+    /// Reconciles until the outcome settles. Under load a charge can be visible
+    /// (Found) while its outcome is still Pending — a transient truth, not a
+    /// verdict miss — so Found(Pending) gets a bounded re-poll instead of an
+    /// instant assert. The loop lives in the harness because the caller owns
+    /// the re-poll budget (ADR-SDK-009); NotFoundYet and settled outcomes
+    /// return immediately.
+    /// </summary>
+    private static async Task<RapReconcileVerdict> ReconcileSettledAsync(RapClient client, string merchantTransactionId)
+    {
+        var policy = new ReconcilePolicy(
+            maxAttempts: 5,
+            overallBudget: TimeSpan.FromSeconds(30),
+            initialDelay: TimeSpan.FromSeconds(1));
+        var verdict = await client.ReconcileAsync(merchantTransactionId, policy);
+        for (var settle = 0; settle < SettleAttempts; settle++)
+        {
+            if (verdict is not FoundVerdict found || found.Outcome != RapTransactionOutcome.Pending)
+            {
+                break;
+            }
+            await Task.Delay(SettleDelay);
+            verdict = await client.ReconcileAsync(merchantTransactionId, policy);
+        }
+        return verdict;
+    }
+
+    private const int SettleAttempts = 6;
+    private static readonly TimeSpan SettleDelay = TimeSpan.FromSeconds(2);
 
     /// <summary>
     /// Unique merchantTransactionId — every reconcile scenario uses a fresh one

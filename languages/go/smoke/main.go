@@ -283,11 +283,7 @@ func main() {
 			// Found(Approved) through the runtime's own outcome mapping is the
 			// approval proof for scenario 1; visibility is asynchronous, hence
 			// the budget.
-			verdict, err := client.Reconcile(ctx, chargedID, revaly.ReconcilePolicy{
-				MaxAttempts:   5,
-				OverallBudget: 30 * time.Second,
-				InitialDelay:  1 * time.Second,
-			})
+			verdict, err := reconcileSettled(ctx, client, chargedID)
 			if err != nil {
 				return "", classified("reconcile errored", err)
 			}
@@ -297,11 +293,7 @@ func main() {
 		{"reconcile-found-declined", func(ctx context.Context) (string, error) {
 			// The declined charge must reconcile as Found(Declined) — the
 			// outcome branch that tells a merchant their own gateway is safe.
-			verdict, err := client.Reconcile(ctx, declinedID, revaly.ReconcilePolicy{
-				MaxAttempts:   5,
-				OverallBudget: 30 * time.Second,
-				InitialDelay:  1 * time.Second,
-			})
+			verdict, err := reconcileSettled(ctx, client, declinedID)
 			if err != nil {
 				return "", classified("reconcile errored", err)
 			}
@@ -359,6 +351,38 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("RESULT: PASS (%d/%d passed, %d skipped)\n", passed, len(scenarios), skips)
+}
+
+const (
+	settleAttempts = 6
+	settleDelay    = 2 * time.Second
+)
+
+// reconcileSettled re-polls while the charge is visible but not yet settled:
+// under load Found(Pending) is a transient truth, not a verdict miss, so it
+// gets a bounded re-poll instead of an instant assert. The loop lives in the
+// harness because the caller owns the re-poll budget (ADR-SDK-009);
+// NotFoundYet and settled outcomes return immediately.
+func reconcileSettled(ctx context.Context, client *revaly.Client, merchantTransactionID string) (revaly.ReconcileVerdict, error) {
+	policy := revaly.ReconcilePolicy{
+		MaxAttempts:   5,
+		OverallBudget: 30 * time.Second,
+		InitialDelay:  1 * time.Second,
+	}
+	verdict, err := client.Reconcile(ctx, merchantTransactionID, policy)
+	for settle := 0; err == nil && settle < settleAttempts; settle++ {
+		found, ok := verdict.(*revaly.Found)
+		if !ok || found.Outcome != revaly.TransactionOutcomePending {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return verdict, ctx.Err()
+		case <-time.After(settleDelay):
+		}
+		verdict, err = client.Reconcile(ctx, merchantTransactionID, policy)
+	}
+	return verdict, err
 }
 
 // expectFound asserts a Found verdict carrying the wanted outcome and a
