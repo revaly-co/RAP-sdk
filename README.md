@@ -5,10 +5,12 @@ API** (RAP-core), built per **RFC-046** (Approved 2026-07-10, v10): one monorepo
 deterministic generation + release pipeline consuming only gated spec artifacts, and one
 merchant-facing failover & reconciliation contract.
 
-**Status: build phase (Epic SC-234).** The design documentation set is complete (23 ADRs +
-8 design docs); the spec input is pinned (`spec/`, ADR-SDK-006) and the generator is decided
-(ADR-SDK-023: OpenAPI Generator v7.23.0, digest-pinned). Language cores and runtimes are not
-yet scaffolded.
+**Status: cutover phase (Epic SC-234).** All six SDKs are built, contract-tested, and
+released as per-language GitHub release artifacts (v0.5.0 — the sanctioned interim
+distribution, ADR-SDK-026); the design documentation set is complete (`docs/README.md`);
+the spec input is pinned (`spec/`, ADR-SDK-006) and the generator is digest-pinned
+(ADR-SDK-023). Registry publish remains embargoed until the publish gates close
+(ADR-SDK-019/022/031).
 
 ## Start here
 
