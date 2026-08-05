@@ -122,11 +122,6 @@ function classified(string $context, \Throwable $err): SmokeFailure
     return new SmokeFailure(sprintf('%s, got %s', $context, $err::class));
 }
 
-/**
- * Asserts a Found verdict carrying the wanted outcome and a correlation id.
- * The verdict set is open — an unrecognized verdict is a real finding here,
- * not a pass.
- */
 const SETTLE_ATTEMPTS = 6;
 const SETTLE_DELAY_MICROSECONDS = 2_000_000;
 
@@ -153,6 +148,11 @@ function reconcileSettled(RapClient $client, string $merchantTransactionId): Rap
     return $verdict;
 }
 
+/**
+ * Asserts a Found verdict carrying the wanted outcome and a correlation id.
+ * The verdict set is open — an unrecognized verdict is a real finding here,
+ * not a pass.
+ */
 function expectFound(RapReconcileVerdict $verdict, RapTransactionOutcome $want): string
 {
     if ($verdict instanceof Found) {

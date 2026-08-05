@@ -353,9 +353,6 @@ func main() {
 	fmt.Printf("RESULT: PASS (%d/%d passed, %d skipped)\n", passed, len(scenarios), skips)
 }
 
-// expectFound asserts a Found verdict carrying the wanted outcome and a
-// correlation id. The verdict set is open — an unrecognized verdict is a real
-// finding here, not a pass.
 const (
 	settleAttempts = 6
 	settleDelay    = 2 * time.Second
@@ -388,6 +385,9 @@ func reconcileSettled(ctx context.Context, client *revaly.Client, merchantTransa
 	return verdict, err
 }
 
+// expectFound asserts a Found verdict carrying the wanted outcome and a
+// correlation id. The verdict set is open — an unrecognized verdict is a real
+// finding here, not a pass.
 func expectFound(verdict revaly.ReconcileVerdict, want revaly.TransactionOutcome) (string, error) {
 	switch v := verdict.(type) {
 	case *revaly.Found:

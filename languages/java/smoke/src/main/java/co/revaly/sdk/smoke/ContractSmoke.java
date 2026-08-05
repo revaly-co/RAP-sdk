@@ -430,9 +430,10 @@ public final class ContractSmoke {
      * caller owns the re-poll budget (ADR-SDK-009); NotFoundYet and settled outcomes return
      * immediately.
      */
-    private static RapReconcileVerdict reconcileSettled(RapClient client, String merchantTransactionId)
-            throws Exception {
-        ReconcilePolicy policy = new ReconcilePolicy(5, Duration.ofSeconds(30), Duration.ofSeconds(1));
+    private static RapReconcileVerdict reconcileSettled(
+            RapClient client, String merchantTransactionId) throws Exception {
+        ReconcilePolicy policy =
+                new ReconcilePolicy(5, Duration.ofSeconds(30), Duration.ofSeconds(1));
         RapReconcileVerdict verdict = client.reconcile(merchantTransactionId, policy);
         for (int settle = 0; settle < SETTLE_ATTEMPTS; settle++) {
             if (!(verdict instanceof RapReconcileVerdict.Found)
