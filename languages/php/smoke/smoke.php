@@ -29,6 +29,7 @@ use Psr\Http\Message\RequestInterface;
 use Revaly\Sdk\Core\Model\CreditCard;
 use Revaly\Sdk\Core\Model\PaymentMethod;
 use Revaly\Sdk\Core\Model\PaymentRequest;
+use Revaly\Sdk\Core\Model\Recovery;
 use Revaly\Sdk\Errors\PermanentRejectionException;
 use Revaly\Sdk\Errors\RapCoreException;
 use Revaly\Sdk\Errors\TransientFailureException;
@@ -46,6 +47,9 @@ require __DIR__ . '/../vendor/autoload.php';
 // gateway dispatch — the only deterministic live trigger for the
 // 503 + code=not_processed fast-failover row.
 const FAULT_INJECT_HEADER = 'X-Backbone-Fault-Inject';
+// The fault-injected charge must not present as a first attempt — the route it
+// takes depends on it. See charge-not-processed-503.
+const FAULT_RETRY_COUNT = 1;
 // One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
 // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
 const TEST_PAN = '4111111111111111';
@@ -296,8 +300,17 @@ $scenarios = [
         if ($faultClient === null) {
             throw new SmokeSkip('RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)');
         }
+        // retryCount > 0 keeps this charge on the route that carries the seam.
+        // Backbone admits only FIRST attempts to the direct path
+        // (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is
+        // not > 0"), and the pre-dispatch injector exists only on the
+        // TransactionApi dispatch path — so on a direct-path-enrolled account a
+        // first-attempt charge takes the direct-send fork, never reaches the
+        // injector, and approves (nightly 30983100997: red 6/6, 2026-08-05).
+        $faultCharge = buildCharge(freshId('fault'), TEST_PAN, '2027', $routingId);
+        $faultCharge->setRecovery((new Recovery())->setRetryCount(FAULT_RETRY_COUNT));
         try {
-            $faultClient->charge(buildCharge(freshId('fault'), TEST_PAN, '2027', $routingId));
+            $faultClient->charge($faultCharge);
         } catch (TransientFailureException $transient) {
             if ($transient->getStatusCode() !== 503) {
                 throw new SmokeFailure(sprintf('expected HTTP 503, got %d', $transient->getStatusCode() ?? 0));

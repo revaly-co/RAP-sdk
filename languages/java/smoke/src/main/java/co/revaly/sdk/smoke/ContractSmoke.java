@@ -4,6 +4,7 @@ import co.revaly.sdk.RapClient;
 import co.revaly.sdk.core.model.CreditCard;
 import co.revaly.sdk.core.model.PaymentMethod;
 import co.revaly.sdk.core.model.PaymentRequest;
+import co.revaly.sdk.core.model.Recovery;
 import co.revaly.sdk.core.model.TransactionResponse;
 import co.revaly.sdk.errors.PermanentRejectionException;
 import co.revaly.sdk.errors.RapCoreException;
@@ -43,6 +44,10 @@ public final class ContractSmoke {
      * deterministic live trigger for the 503 + code=not_processed fast-failover row.
      */
     private static final String FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject";
+
+    // The fault-injected charge must not present as a first attempt — the route it takes
+    // depends on it. See charge-not-processed-503.
+    private static final int FAULT_RETRY_COUNT = 1;
 
     // One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
     // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
@@ -252,9 +257,18 @@ public final class ContractSmoke {
                         throw new SmokeSkip(
                                 "RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)");
                     }
+                    // retryCount > 0 keeps this charge on the route that carries the seam.
+                    // Backbone admits only FIRST attempts to the direct path
+                    // (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is
+                    // not > 0"), and the pre-dispatch injector exists only on the TransactionApi
+                    // dispatch path — so on a direct-path-enrolled account a first-attempt charge
+                    // takes the direct-send fork, never reaches the injector, and approves
+                    // (nightly 30983100997: red 6/6, 2026-08-05).
+                    PaymentRequest faultCharge =
+                            buildCharge(freshId("fault"), TEST_PAN, "2027", routingId, true);
+                    faultCharge.recovery(new Recovery().retryCount(FAULT_RETRY_COUNT));
                     try {
-                        faultClient.charge(
-                                buildCharge(freshId("fault"), TEST_PAN, "2027", routingId, true));
+                        faultClient.charge(faultCharge);
                     } catch (TransientFailureException transientFailure) {
                         Integer status = transientFailure.getStatusCode();
                         if (status == null || status != 503) {

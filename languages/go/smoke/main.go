@@ -36,6 +36,11 @@ import (
 	"time"
 
 	revaly "github.com/revaly-co/rap-sdk/languages/go"
+	// Recovery is deliberate long tail rather than a root re-export (revaly.go:
+	// "the long tail of models is available under the core package this
+	// aliases"), so the one model this smoke needs beyond the payment path
+	// comes from there.
+	core "github.com/revaly-co/rap-sdk/languages/go/core"
 )
 
 // faultInjectHeader is the platform's executor fault seam (Backbone ADR 014
@@ -43,6 +48,10 @@ import (
 // reservation and gateway dispatch — the only deterministic live trigger for
 // the 503 + code=not_processed fast-failover row.
 const faultInjectHeader = "X-Backbone-Fault-Inject"
+
+// faultRetryCount keeps the fault-injected charge from presenting as a first
+// attempt — the route it takes depends on it. See charge-not-processed-503.
+const faultRetryCount = 1
 
 // errSkip marks a scenario that cannot run in this environment (reported as
 // SKIP, never silently dropped, never a failure).
@@ -238,7 +247,19 @@ func main() {
 			if faultClient == nil {
 				return "", errSkip{"RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)"}
 			}
-			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "2027", true))
+			// retryCount > 0 keeps this charge on the route that carries the
+			// seam. Backbone admits only FIRST attempts to the direct path
+			// (DirectPathAttemptEligibility.IsFirstAttempt ==
+			// "recovery.retryCount is not > 0"), and the pre-dispatch injector
+			// exists only on the TransactionApi dispatch path — so on a
+			// direct-path-enrolled account a first-attempt charge takes the
+			// direct-send fork, never reaches the injector, and approves
+			// (nightly 30983100997: red 6/6, 2026-08-05).
+			faultCharge := buildCharge(freshID("fault"), "4111111111111111", "2027", true)
+			recovery := core.NewRecovery()
+			recovery.SetRetryCount(faultRetryCount)
+			faultCharge.SetRecovery(*recovery)
+			_, err := faultClient.Charge(ctx, faultCharge)
 			if err == nil {
 				return "", errors.New("fault-injected charge succeeded — expected TransientFailure")
 			}

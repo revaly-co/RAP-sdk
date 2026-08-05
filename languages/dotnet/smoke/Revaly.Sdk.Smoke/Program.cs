@@ -31,6 +31,9 @@ namespace Revaly.Sdk.Smoke;
 internal static class Program
 {
     private const string FaultInjectHeader = "X-Backbone-Fault-Inject";
+    // The fault-injected charge must not present as a first attempt — the route
+    // it takes depends on it. See charge-not-processed-503.
+    private const int FaultRetryCount = 1;
     // One synthetic test PAN; the EXPIRY drives the outcome
     // (staging-verified matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
     private const string TestPan = "4111111111111111";
@@ -207,9 +210,19 @@ internal static class Program
                 {
                     throw new SmokeSkip("RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)");
                 }
+                // retryCount > 0 keeps this charge on the route that carries the
+                // seam. Backbone admits only FIRST attempts to the direct path
+                // (DirectPathAttemptEligibility.IsFirstAttempt ==
+                // "recovery.retryCount is not > 0"), and the pre-dispatch
+                // injector exists only on the TransactionApi dispatch path — so
+                // on a direct-path-enrolled account a first-attempt charge takes
+                // the direct-send fork, never reaches the injector, and approves
+                // (nightly 30983100997: red 6/6, 2026-08-05).
+                var faultCharge = BuildCharge(FreshId("fault"), TestPan, "2027", routingId);
+                faultCharge.Recovery = new Recovery(retryCount: new Option<int?>(FaultRetryCount));
                 try
                 {
-                    await faultClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("fault"), TestPan, "2027", routingId));
+                    await faultClient.Payments.ChargePaymentAsync(faultCharge);
                 }
                 catch (TransientFailureException ex)
                 {
