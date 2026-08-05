@@ -35,6 +35,9 @@ import {
 // gateway dispatch — the only deterministic live trigger for the
 // 503 + code=not_processed fast-failover row.
 const FAULT_INJECT_HEADER = 'X-Backbone-Fault-Inject';
+// The fault-injected charge must not present as a first attempt — the route it
+// takes depends on it. See charge-not-processed-503.
+const FAULT_RETRY_COUNT = 1;
 // One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
 // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
 const TEST_PAN = '4111111111111111';
@@ -263,8 +266,19 @@ test('charge-auth-rejected', () =>
 // unavailable (it is structurally inert outside staging/testing).
 test.skipIf(!faultClient)('charge-not-processed-503', () =>
     guard(async () => {
+        // retryCount > 0 keeps this charge on the route that carries the seam.
+        // Backbone admits only FIRST attempts to the direct path
+        // (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is
+        // not > 0"), and the pre-dispatch injector exists only on the
+        // TransactionApi dispatch path — so on a direct-path-enrolled account a
+        // first-attempt charge takes the direct-send fork, never reaches the
+        // injector, and approves (nightly 30983100997: red 6/6, 2026-08-05).
+        const faultCharge = {
+            ...buildCharge(freshId('fault'), TEST_PAN, '2027'),
+            recovery: { retryCount: FAULT_RETRY_COUNT },
+        };
         const failure = await expectFailure(
-            () => faultClient!.charge(buildCharge(freshId('fault'), TEST_PAN, '2027')),
+            () => faultClient!.charge(faultCharge),
             'expected RapTransientFailure',
         );
         if (!(failure instanceof RapTransientFailure)) {

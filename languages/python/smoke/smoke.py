@@ -43,6 +43,7 @@ from revaly_sdk import (
     RapTransactionOutcome,
     RapTransientFailure,
     ReconcilePolicy,
+    Recovery,
 )
 from revaly_sdk.errors import RapError
 from revaly_sdk.transport import _Urllib3Wire
@@ -52,6 +53,10 @@ from revaly_sdk.transport import _Urllib3Wire
 # gateway dispatch — the only deterministic live trigger for the
 # 503 + code=not_processed fast-failover row.
 FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject"
+
+# The fault-injected charge must not present as a first attempt — the route it
+# takes depends on it. See charge_not_processed_503.
+FAULT_RETRY_COUNT = 1
 
 # One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
 # matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
@@ -279,8 +284,17 @@ def main() -> int:
         # class here — it is the row that licenses immediate failover.
         if fault_client is None:
             raise SmokeSkip("RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)")
+        # retryCount > 0 keeps this charge on the route that carries the seam.
+        # Backbone admits only FIRST attempts to the direct path
+        # (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is
+        # not > 0"), and the pre-dispatch injector exists only on the
+        # TransactionApi dispatch path — so on a direct-path-enrolled account a
+        # first-attempt charge takes the direct-send fork, never reaches the
+        # injector, and approves (nightly 30983100997: red 6/6, 2026-08-05).
+        fault_charge = build_charge(fresh_id("fault"), TEST_PAN, "2027", routing_id)
+        fault_charge.recovery = Recovery(retry_count=FAULT_RETRY_COUNT)
         try:
-            fault_client.charge(build_charge(fresh_id("fault"), TEST_PAN, "2027", routing_id))
+            fault_client.charge(fault_charge)
         except RapTransientFailure as transient:
             if transient.status != 503:
                 raise SmokeFailure(f"expected HTTP 503, got {transient.status}") from None
