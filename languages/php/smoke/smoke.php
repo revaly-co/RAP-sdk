@@ -127,6 +127,32 @@ function classified(string $context, \Throwable $err): SmokeFailure
  * The verdict set is open — an unrecognized verdict is a real finding here,
  * not a pass.
  */
+const SETTLE_ATTEMPTS = 6;
+const SETTLE_DELAY_MICROSECONDS = 2_000_000;
+
+/**
+ * Reconciles until the outcome settles. Under load a charge can be visible
+ * (Found) while its outcome is still Pending — a transient truth, not a
+ * verdict miss — so Found(Pending) gets a bounded re-poll instead of an
+ * instant assert. The loop lives in the harness because the caller owns the
+ * re-poll budget (ADR-SDK-009); NotFoundYet and settled outcomes return
+ * immediately.
+ */
+function reconcileSettled(RapClient $client, string $merchantTransactionId): RapReconcileVerdict
+{
+    $policy = new ReconcilePolicy(maxAttempts: 5, overallBudgetSeconds: 30.0, initialDelaySeconds: 1.0);
+    $verdict = $client->reconcile($merchantTransactionId, $policy);
+    for ($settle = 0; $settle < SETTLE_ATTEMPTS; $settle++) {
+        if (!$verdict instanceof Found || $verdict->getOutcome() !== RapTransactionOutcome::Pending) {
+            break;
+        }
+        usleep(SETTLE_DELAY_MICROSECONDS);
+        $verdict = $client->reconcile($merchantTransactionId, $policy);
+    }
+
+    return $verdict;
+}
+
 function expectFound(RapReconcileVerdict $verdict, RapTransactionOutcome $want): string
 {
     if ($verdict instanceof Found) {
@@ -336,11 +362,7 @@ $scenarios = [
         // Found(Approved) through the runtime's own outcome mapping is the
         // approval proof for the first charge; visibility is asynchronous,
         // hence the budget.
-        $verdict = $client->reconcile($chargedId, new ReconcilePolicy(
-            maxAttempts: 5,
-            overallBudgetSeconds: 30.0,
-            initialDelaySeconds: 1.0,
-        ));
+        $verdict = reconcileSettled($client, $chargedId);
 
         return expectFound($verdict, RapTransactionOutcome::Approved);
     },
@@ -348,11 +370,7 @@ $scenarios = [
     'reconcile-found-declined' => function () use ($client, $declinedId): string {
         // The declined charge must reconcile as Found(Declined) — the outcome
         // branch that tells a merchant their own gateway is safe.
-        $verdict = $client->reconcile($declinedId, new ReconcilePolicy(
-            maxAttempts: 5,
-            overallBudgetSeconds: 30.0,
-            initialDelaySeconds: 1.0,
-        ));
+        $verdict = reconcileSettled($client, $declinedId);
 
         return expectFound($verdict, RapTransactionOutcome::Declined);
     },
