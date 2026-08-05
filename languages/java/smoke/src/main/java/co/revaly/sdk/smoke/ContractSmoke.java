@@ -12,7 +12,6 @@ import co.revaly.sdk.errors.TransientFailureException;
 import co.revaly.sdk.reconcile.RapReconcileVerdict;
 import co.revaly.sdk.reconcile.RapTransactionOutcome;
 import co.revaly.sdk.reconcile.ReconcilePolicy;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -376,7 +375,6 @@ public final class ContractSmoke {
                 // (class, status, code, correlation only).
                 failures++;
                 System.out.printf("FAIL %s: unexpected %s%n", name, rapFailure.getMessage());
-                printDecodeDiag(name, rapFailure);
             } catch (Exception unexpected) {
                 // Never print raw exception messages — transport error chains
                 // can carry endpoint details into CI logs.
@@ -472,24 +470,5 @@ public final class ContractSmoke {
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
-    }
-
-    /**
-     * TEMP defect-B triage: names the field a 2xx decode failure died on — Jackson class names and
-     * path references only (model/field names, never messages or values, per ADR-SDK-020). Remove
-     * once the direct-path response decodes across all six languages.
-     */
-    private static void printDecodeDiag(String name, Throwable failure) {
-        Throwable cause = failure;
-        for (int depth = 0; cause != null && depth < 8; depth++) {
-            if (cause instanceof JsonMappingException) {
-                JsonMappingException mapping = (JsonMappingException) cause;
-                System.out.printf(
-                        "DIAG %s: %s at %s%n",
-                        name, mapping.getClass().getSimpleName(), mapping.getPathReference());
-                return;
-            }
-            cause = cause.getCause();
-        }
     }
 }
