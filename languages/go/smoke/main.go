@@ -351,6 +351,14 @@ func main() {
 		default:
 			failures++
 			fmt.Printf("FAIL %s: %v\n", s.name, err)
+			// TEMP defect-B triage: a 2xx the core could not decode names the
+			// failing field/format in the core error (json field paths and
+			// time layouts only — no payload values, no hosts, no keys).
+			// Remove once the direct-path response decodes across all six.
+			var coreErr *core.GenericOpenAPIError
+			if errors.As(err, &coreErr) {
+				fmt.Printf("DIAG %s: core decode: %v\n", s.name, coreErr)
+			}
 		}
 	}
 	passed := len(scenarios) - failures - skips
