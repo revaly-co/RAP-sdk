@@ -40,8 +40,23 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
 
-## Status snapshot (2026-08-03)
+## Status snapshot (2026-08-05)
 
+- **ADR-SDK-032 cutover EXECUTED through runbook step 7 (private phase), 2026-08-05**: this
+  repository at `revaly-co/RAP-sdk` is the **new** repository carrying the sanitized-history
+  transplant (153 commits; HEAD tree byte-identical to the archive's final `main`; zero
+  sanitization residue — verification record in SC-263). The prior repository is
+  **`RAP-sdk-archive`** (private permanently; Actions disabled; archive banner +
+  `cutover-commit-map.txt` at its root; PRs #1–#55 and pre-cutover releases v0.1.0–v0.4.1
+  with their provenance resolve only there). Plumbing recreated in full (three rulesets,
+  `staging`/`publish` environments with the six tag policies, re-issued
+  `SPEC_ARTIFACT_READ_TOKEN`); stages 1–4 proof dispatch green; **cutover release v0.5.0 ×6
+  green** — restoring the interim GitHub-release artifact feed and rehearsing the dark
+  stage-6 registry job on the new plumbing. dotnet and go were re-cut solo after a
+  staging-load flake on the `reconcile-found-*` smoke rows (six concurrent release runs;
+  `Found(Pending)` before settlement); the settle-poll hardening rides this repo's first
+  PR. The repository **stays private**: step 8 (public flip) waits on the ADR-SDK-019
+  written ack and the PyPI org approval, unchanged.
 - **NuGet `Revaly.*` ID-prefix RESERVED, 2026-08-03** — NuGet.org admin confirmed "reserved
   the prefix 'Revaly' for account 'revaly'" to the owner mailbox, one business day after the
   2026-07-31 owner-mailbox resubmission. **PyPI org approval is now the only provisioning act
