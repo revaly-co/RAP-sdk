@@ -3,8 +3,10 @@
 **Status:** OQ-3 **naming closed** (ADR-SDK-030, 2026-07-30); namespaces reserved on all six
 registries; **NuGet `Revaly.*` ID-prefix RESERVED 2026-08-03** (NuGet.org admin confirmation to
 the owner mailbox — one business day after the 2026-07-31 resubmission). **One provisioning act
-still sits in an external queue** (PyPI org approval). Publish still embargoed.
-**Last updated:** 2026-08-03
+still sits in an external queue** (PyPI org approval). The **Maven GPG signing key is generated and
+vaulted** (2026-08-06 — `maven-signing-key.md`; recorded deviation, no registry contact, nothing
+public). Publish still embargoed.
+**Last updated:** 2026-08-06
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
 ADR-SDK-019 (license), ADR-SDK-022 (GitHub namespace), ADR-SDK-030 (final names). This runbook
@@ -43,7 +45,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
 | NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
-| Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) | — | GPG signing keys in Key Vault, fetched inside the environment-scoped job; publisher token |
+| Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) | — | ✅ **GPG signing key vaulted 2026-08-06** (`maven-signing-key.md` — recorded deviation: ahead of the ADR-SDK-019 written gate, no registry contact, nothing public). Publish-day: keyserver upload, Central Portal token, workload-identity + per-secret Key Vault bindings, javadoc-jar fix |
 | Go (pkg.go.dev) | `github.com/revaly-co/rap-sdk/languages/go` | ✅ n/a — the path binds to the GitHub org (ADR-SDK-022) | — | Repo public + a `languages/go/v*` tag; the tag ruleset currently **blocks** go-module-form tags, and lifting it is the deliberate admin ceremony (ADR-SDK-026). Go publishes **last** |
 
 Namespace URLs and the owning group-email address live in the corporate secret store, not in
@@ -150,12 +152,17 @@ runbook, not a build. Per-registry push mechanics (which push lives in the workf
    environment `publish`), PyPI (`revaly-sdk`), NuGet trusted-publishing policy (by a
    leadership org-member account; policies expire after 7 unused days — create last) + set
    the `NUGET_TRUSTED_PUBLISHING_USER` variable.
-6. **Maven Central:** GPG keypair → Key Vault (`maven-gpg-private-key`,
-   `maven-gpg-passphrase`), public key → keyservers, Central Portal token →
-   `maven-central-token`; federated credential for the `publish` environment +
-   `PUBLISH_AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID` + `PUBLISH_KEYVAULT_NAME` variables.
-   **Fix the javadoc-jar gap first** (standing flip-readiness finding: stage 5 skips
-   javadoc; Central rejects bundles without it).
+6. **Maven Central** — ✅ **the GPG keypair is already vaulted** (2026-08-06,
+   `maven-signing-key.md`: `maven-gpg-private-key`, `maven-gpg-passphrase`, plus public-key and
+   revocation-cert custody copies). Remaining here: public key → keyservers (do it a few days
+   ahead, not on the day — propagation), Central Portal token → `maven-central-token`, and the
+   workload identity + federated credential for the `publish` environment + per-secret
+   `Key Vault Secrets User` assignments + `PUBLISH_AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID` +
+   `PUBLISH_KEYVAULT_NAME` variables. The federated subject is the **immutable-ID** form —
+   derive it with `gh api /repos/revaly-co/RAP-sdk/actions/oidc/customization/sub --jq
+   .sub_claim_prefix` and append `:environment:publish`. **Fix the javadoc-jar gap first**
+   (standing flip-readiness finding: stage 5 skips javadoc; Central rejects bundles without
+   it).
 7. **Packagist:** provision `PACKAGIST_MIRROR_PUSH_TOKEN` (environment secret; prefer an
    org GitHub App scoped to `revaly-co/rap-sdk-php` — same credential family as OQ-17);
    register the Packagist webhook on the mirror; **delete the placeholder `revaly/rap-sdk`**
@@ -184,5 +191,5 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 | --- | --- | --- |
 | **PyPI org approval** (application pending in PyPI's queue — the last provisioning act in an external queue) | SC squad | Before first PyPI publish |
 | Apache-2.0 Legal ratification **in writing** (verbal 2026-07-29) | Leadership + Legal | Before first publish (ADR-SDK-019); also gates every OIDC registration |
-| OIDC / GPG / webhook bindings (the npm `@revaly/sdk` metadata rename shipped 2026-08-03 with the stage-6 prep) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030/031) |
+| OIDC / webhook bindings + the Maven workload-identity and per-secret Key Vault assignments (the npm `@revaly/sdk` metadata rename shipped 2026-08-03 with the stage-6 prep; the **GPG key itself is done** — 2026-08-06, `maven-signing-key.md`) | SC squad + DevOps | Publish day, after the written ratification (ADR-SDK-013/030/031) — except the Maven Key Vault bindings, which need production access and can land earlier |
 | Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |
