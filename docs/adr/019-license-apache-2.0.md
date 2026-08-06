@@ -20,7 +20,8 @@ repo and the first (even pre-1.0) publish exist.
 
 - **Apache-2.0** (decided by Charles, 2026-07-10). MIT was the acceptable alternative; Apache-2.0
   selected.
-- **Copyright remains with Revaly.**
+- **Copyright remains with Revaly** — exact legal entity confirmed 2026-08-06:
+  **Revaly Technologies Inc.** (see the ratification record below).
 - **Legal ratifies before the first publish** — the decision is made; ratification is a tracked
   gate on publishing, not on build (see `../open-items.md`). **Gate closed 2026-08-06** — see
   the ratification record below.
@@ -74,7 +75,12 @@ gate 1 (`../registry-provisioning.md` § Flip to LIVE) are **closed**. Publish r
 on the OQ-3 residual (PyPI org approval) and executes only via the flip runbook; the embargo
 guards and the dark stage-6 job are unchanged until then.
 
-Follow-up (verification): the ratification text's item 2 asked Legal to confirm the exact
-copyright-entity name. Check the signed record's entry against the repository's
-`LICENSE`/`NOTICE` line ("Revaly") and correct those files if Legal specified a different form;
-likewise record item 5's third-party-review status when filing the artifact.
+Item 2 (copyright-entity name) — **resolved 2026-08-06**: the exact legal entity is
+**Revaly Technologies Inc.** (confirmed by the program owner). The repository's copyright
+surfaces carried an incorrect "Revaly, Inc." form and were corrected the same day: `NOTICE`,
+the dotnet runtime `Revaly.Sdk.csproj` Company/Copyright fields, and the stage-5 nuspec
+metadata stamp in `pipeline/package.sh` (whose MSBuild comma-escape workaround retired with
+the comma). The `LICENSE` file stays pristine Apache-2.0 text — the copyright assertion lives
+in `NOTICE`. No registry ever received the incorrect form (publish was embargoed); pre-flip
+GitHub release artifacts v0.1.0–v0.5.0 carry it and are superseded at the next cut.
+Item 5 (third-party-review status) remains to record when the signed artifact is filed.

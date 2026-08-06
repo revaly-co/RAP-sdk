@@ -51,7 +51,10 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   approval** (gate 2) plus the flip acts themselves. Nothing publishes yet: the embargo
   guards, the dark stage-6 job, and `REGISTRY_PUBLISH_MODE` are unchanged — going live remains
   the runbook ceremony (`registry-provisioning.md` § Flip to LIVE). The dated record lives in
-  ADR-SDK-019 § Ratification record, including the entity-name/third-party follow-up checks.
+  ADR-SDK-019 § Ratification record. Its item-2 check resolved same-day: the exact legal
+  entity is **Revaly Technologies Inc.** — `NOTICE`, the dotnet runtime csproj, and the
+  stage-5 nuspec stamp corrected from the incorrect "Revaly, Inc." form (no registry ever
+  received it); the item-5 third-party-review status remains to record.
 - **Maven signing key GENERATED + VAULTED, 2026-08-06** (`maven-signing-key.md`): RSA-4096
   `07E856878E77A944169F56683ED2EB632E4EAAE7`, identity `packages@revaly.co`, expires
   2028-08-05; `maven-gpg-private-key` / `-passphrase` / `-public-key` / `-revocation-cert` in
