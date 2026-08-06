@@ -83,4 +83,9 @@ metadata stamp in `pipeline/package.sh` (whose MSBuild comma-escape workaround r
 the comma). The `LICENSE` file stays pristine Apache-2.0 text — the copyright assertion lives
 in `NOTICE`. No registry ever received the incorrect form (publish was embargoed); pre-flip
 GitHub release artifacts v0.1.0–v0.5.0 carry it and are superseded at the next cut.
+One residual is tracked: the **generated** `Revaly.Sdk.Core.csproj` carries the generator's
+`No Copyright` placeholder — masked in the packed artifact by the corrected stage-5
+override, and fixed properly via generator config + regeneration (repo rule 1; the
+ADR-SDK-023 pre-GA follow-up from the external audit) before the first `dotnet/v*` registry
+publish.
 Item 5 (third-party-review status) remains to record when the signed artifact is filed.

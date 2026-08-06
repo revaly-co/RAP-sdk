@@ -2,11 +2,12 @@
 
 **Status:** Accepted — decided 2026-08-03 by Dimitri (SC-263 track); closes the standing
 "git-history sanitize-vs-accept" leadership decision. Execution is gated on the flip
-preconditions (ADR-SDK-019 written ratification; PyPI org approval), per the flip runbook.
+preconditions (ADR-SDK-019 written ratification — **recorded 2026-08-06**; PyPI org
+approval — pending), per the flip runbook.
 **Executed through runbook step 7 on 2026-08-05** (Dimitri-directed, private phase): rename,
 transplant, plumbing recreation, green stages-1–4 dispatch, and the v0.5.0 ×6 cutover
-release all landed; the repository stays private. Step 8 (public flip) remains gated on the
-flip preconditions above.
+release all landed; the repository stays private. Step 8 (public flip) now waits only on
+the PyPI org approval (the ADR-SDK-019 written ratification was recorded 2026-08-06).
 **Source:** ADR-SDK-012 (public repo requirement), ADR-SDK-013 (publish gate — trusted
 publishers bind to repo identity), ADR-SDK-022 (namespace), ADR-SDK-031 (flip runbook),
 2026-07-29 history leak-scan record

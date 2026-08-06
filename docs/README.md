@@ -55,6 +55,16 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   entity is **Revaly Technologies Inc.** — `NOTICE`, the dotnet runtime csproj, and the
   stage-5 nuspec stamp corrected from the incorrect "Revaly, Inc." form (no registry ever
   received it); the item-5 third-party-review status remains to record.
+- **Maven Central Portal custody deviation RECORDED + ACCEPTED, 2026-08-06**
+  (`registry-provisioning.md` § Known deviation: Maven Central Portal account custody):
+  `co.revaly` is owned by a leadership Portal account anchored to an individual corporate
+  mailbox (GitHub-SSO), not the `packages@` group mailbox — **accepted by Charles**, the
+  accountable owner, on the Packagist-placeholder basis, with a post-flip closure plan
+  (group-mailbox Portal account → support-add/transfer → token rotation → individual
+  accounts to break-glass). A support request is in flight to add a second squad publisher
+  on an individual personal mailbox; **that grant is not covered by the acceptance** — the
+  review recommendation is to land the group-mailbox registration first. Account identities
+  stay out of this repo (public per ADR-SDK-012).
 - **Maven signing key GENERATED + VAULTED, 2026-08-06** (`maven-signing-key.md`): RSA-4096
   `07E856878E77A944169F56683ED2EB632E4EAAE7`, identity `packages@revaly.co`, expires
   2028-08-05; `maven-gpg-private-key` / `-passphrase` / `-public-key` / `-revocation-cert` in

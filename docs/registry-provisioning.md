@@ -131,13 +131,20 @@ support request. Execution state (2026-08-06):
 
 - **`co.revaly` is verified and owned** by a leadership-held Portal account anchored to an
   **individual corporate mailbox** (a GitHub-SSO signup), not the `packages@` group mailbox —
-  an accepted interim deviation from ADR-SDK-011's group-email custody rule.
+  an interim deviation from ADR-SDK-011's group-email custody rule, including its explicitly
+  rejected "individual leadership mailbox" alternative. **Accepted by Charles, the accountable
+  owner, 2026-08-06** (PR #6 review record) — on the same basis as the Packagist placeholder
+  (2026-07-17) and the GPG-key head start (2026-08-06).
 - A **support request is in flight** (sent 2026-08-06 from the owner account's registered
   mailbox — the sender-identity lesson from the NuGet prefix reservation — with the group
   mailbox on copy) asking Sonatype to add a **second publisher**: an SC-squad account
   anchored to an individual personal mailbox (also GitHub-SSO). Two authorized publishers is
   Central's only bus-factor mitigation, so the addition itself is desired custody practice;
-  the mailbox anchoring is the deviation.
+  the mailbox anchoring is the deviation. **This grant is not covered by the 2026-08-06
+  acceptance** — it is a different identity, and it awaits either its own named acceptance
+  or, per the review recommendation, re-sequencing: land the group-mailbox Portal
+  registration **before** the grant, so the bus-factor mitigation arrives on a corporate
+  identity.
 - Account identities live in the support thread and the corporate secret store, not here
   (this repo goes public — ADR-SDK-012).
 - **Unchanged by this:** `maven-central-token` is created only at the flip (rule 3), from
