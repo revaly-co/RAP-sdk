@@ -329,7 +329,31 @@ func main() {
 		}},
 	}
 
+	// Advisory preflight: asserts nothing and can never fail the suite. The
+	// elapsed time is printed so a cold path stays VISIBLE rather than hidden.
+	// Go's per-request bound comes from the context, so the warm-up budget is
+	// carried there rather than by OverallDeadline alone.
+	warmClient := mustClient(revaly.Config{
+		APIKey:          apiKey,
+		BaseURL:         baseURL,
+		ConnectTimeout:  5 * time.Second,
+		OverallDeadline: warmupDeadline,
+	})
+	warmCtx, cancelWarm := context.WithTimeout(context.Background(), warmupDeadline)
+	warmStarted := time.Now()
+	_, warmErr := warmClient.Reconcile(warmCtx, freshID("warmup"), revaly.ReconcilePolicy{
+		MaxAttempts:   1,
+		OverallBudget: warmupDeadline,
+		InitialDelay:  500 * time.Millisecond,
+	})
+	cancelWarm()
+	warmDetail := fmt.Sprintf("ready in %.1fs", time.Since(warmStarted).Seconds())
+	if warmErr != nil {
+		warmDetail = fmt.Sprintf("not confirmed after %.1fs (%T)", time.Since(warmStarted).Seconds(), warmErr)
+	}
+
 	fmt.Printf("RAP contract smoke (go): %d scenarios\n", len(scenarios))
+	fmt.Printf("WARM reconcile path %s\n", warmDetail)
 	failures, skips := 0, 0
 	for _, s := range scenarios {
 		detail, err := s.run(context.Background())
@@ -356,6 +380,16 @@ func main() {
 const (
 	settleAttempts = 6
 	settleDelay    = 2 * time.Second
+
+	// The reconcile path (Backbone -> Olympus) is COLD after hours of idle: on
+	// the 06:00 UTC nightly the first byMerchantTransactionId lookup was served
+	// in 41 s against ~100 ms warm (run 31078676574, 2026-08-06 — 7.4 h idle
+	// gap), and the three suites whose 15 s deadline expired first reported
+	// NotFoundYet with no HTTP status. That warm-up cost is an environment
+	// property, not SDK behaviour, so it is paid ONCE before the scenarios,
+	// which keeps every scenario assert strict instead of loosening the 404
+	// check into a timeout tolerance.
+	warmupDeadline = 90 * time.Second
 )
 
 // reconcileSettled re-polls while the charge is visible but not yet settled:
