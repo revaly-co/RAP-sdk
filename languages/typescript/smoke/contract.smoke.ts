@@ -19,7 +19,7 @@
  * values, never the key; unexpected non-SDK errors are reported by type name
  * only so transport error chains cannot leak endpoint details into CI logs.
  */
-import { test } from 'vitest';
+import { beforeAll, test } from 'vitest';
 import {
     RapClient,
     RapError,
@@ -92,6 +92,38 @@ const faultClient = faultValue
 function freshId(label: string): string {
     return `smoke-typescript-${label}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
+
+/**
+ * The reconcile path (Backbone → Olympus) is COLD after hours of idle: on the
+ * 06:00 UTC nightly the first byMerchantTransactionId lookup was served in 41 s
+ * against ~100 ms warm (run 31078676574, 2026-08-06 — 7.4 h idle gap), and the
+ * three suites whose 15 s deadline expired first reported NotFoundYet with no
+ * HTTP status. That warm-up cost is an environment property, not SDK behaviour,
+ * so it is paid ONCE below — before the scenarios — which keeps every scenario
+ * assert strict instead of loosening the 404 check into a timeout tolerance.
+ */
+const WARMUP_DEADLINE_MS = 90_000;
+
+// Advisory preflight: asserts nothing and can never fail the suite. The elapsed
+// time is logged so a cold path stays VISIBLE rather than hidden. The explicit
+// hook timeout overrides the config's 30 s hookTimeout, which is shorter than
+// the warm-up budget it has to accommodate.
+beforeAll(async () => {
+    const warmClient = new RapClient({ apiKey, baseUrl, overallDeadlineMs: WARMUP_DEADLINE_MS });
+    const started = Date.now();
+    const elapsed = () => `${((Date.now() - started) / 1000).toFixed(1)}s`;
+    try {
+        await warmClient.reconcile(freshId('warmup'), {
+            maxAttempts: 1,
+            overallBudgetMs: WARMUP_DEADLINE_MS,
+            initialDelayMs: 500,
+        });
+        console.log(`WARM reconcile path ready in ${elapsed()}`);
+    } catch (failure) {
+        const cause = failure?.constructor?.name ?? typeof failure;
+        console.log(`WARM reconcile path not confirmed after ${elapsed()} (${cause})`);
+    }
+}, WARMUP_DEADLINE_MS + 10_000);
 
 /**
  * Charge request with the minimal live-approving field set (staging-verified

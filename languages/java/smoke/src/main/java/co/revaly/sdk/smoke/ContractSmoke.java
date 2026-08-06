@@ -348,7 +348,32 @@ public final class ContractSmoke {
                             "unrecognized verdict " + verdict.getClass().getSimpleName());
                 });
 
+        // Advisory preflight: asserts nothing and can never fail the suite. The
+        // elapsed time is printed so a cold path stays VISIBLE rather than hidden.
+        RapClient warmClient =
+                RapClient.builder()
+                        .apiKey(apiKey)
+                        .baseUrl(baseUrl)
+                        .connectTimeout(Duration.ofSeconds(5))
+                        .overallDeadline(WARMUP_DEADLINE)
+                        .build();
+        long warmStarted = System.nanoTime();
+        String warmDetail;
+        try {
+            warmClient.reconcile(
+                    freshId("warmup"),
+                    new ReconcilePolicy(1, WARMUP_DEADLINE, Duration.ofMillis(500)));
+            warmDetail = String.format("ready in %.1fs", warmElapsedSeconds(warmStarted));
+        } catch (Exception warmFailure) {
+            warmDetail =
+                    String.format(
+                            "not confirmed after %.1fs (%s)",
+                            warmElapsedSeconds(warmStarted),
+                            warmFailure.getClass().getSimpleName());
+        }
+
         System.out.printf("RAP contract smoke (java): %d scenarios%n", scenarios.size());
+        System.out.printf("WARM reconcile path %s%n", warmDetail);
         int failures = 0;
         int skips = 0;
         for (Map.Entry<String, Scenario> entry : scenarios.entrySet()) {
@@ -449,6 +474,20 @@ public final class ContractSmoke {
 
     private static final int SETTLE_ATTEMPTS = 6;
     private static final long SETTLE_DELAY_MS = 2_000L;
+
+    /**
+     * The reconcile path (Backbone to Olympus) is COLD after hours of idle: on the 06:00 UTC
+     * nightly the first byMerchantTransactionId lookup was served in 41 s against ~100 ms warm (run
+     * 31078676574, 2026-08-06 — 7.4 h idle gap), and the three suites whose 15 s deadline expired
+     * first reported NotFoundYet with no HTTP status. That warm-up cost is an environment property,
+     * not SDK behaviour, so it is paid ONCE before the scenarios, which keeps every scenario assert
+     * strict instead of loosening the 404 check into a timeout tolerance.
+     */
+    private static final Duration WARMUP_DEADLINE = Duration.ofSeconds(90);
+
+    private static double warmElapsedSeconds(long startedNanos) {
+        return (System.nanoTime() - startedNanos) / 1_000_000_000.0;
+    }
 
     /**
      * Asserts a Found verdict carrying the wanted outcome and a correlation id. The verdict set is

@@ -140,6 +140,15 @@ def classified(context: str, err: Exception) -> SmokeFailure:
 SETTLE_ATTEMPTS = 6
 SETTLE_DELAY_SECONDS = 2.0
 
+# The reconcile path (Backbone -> Olympus) is COLD after hours of idle: on the
+# 06:00 UTC nightly the first byMerchantTransactionId lookup was served in 41 s
+# against ~100 ms warm (run 31078676574, 2026-08-06 — 7.4 h idle gap), and the
+# three suites whose 15 s deadline expired first reported NotFoundYet with no
+# HTTP status. That warm-up cost is an environment property, not SDK behaviour,
+# so it is paid ONCE below — before the scenarios — which keeps every scenario
+# assert strict instead of loosening the 404 check into a timeout tolerance.
+WARMUP_DEADLINE_SECONDS = 90.0
+
 
 def expect_found(verdict, want: RapTransactionOutcome) -> str:
     """Asserts Found(want) with a correlation id. The verdict set is open — an
@@ -373,7 +382,29 @@ def main() -> int:
         ("reconcile-not-found-yet", reconcile_not_found_yet),
     ]
 
+    # Advisory preflight: asserts nothing and can never fail the suite. The
+    # elapsed time is printed so a cold path stays VISIBLE rather than hidden.
+    warm_client = RapClient(
+        api_key,
+        base_url=base_url,
+        connect_timeout=5.0,
+        overall_deadline=WARMUP_DEADLINE_SECONDS,
+    )
+    warm_started = time.monotonic()
+    try:
+        warm_client.reconcile(
+            fresh_id("warmup"),
+            ReconcilePolicy(
+                max_attempts=1, overall_budget=WARMUP_DEADLINE_SECONDS, initial_delay=0.5
+            ),
+        )
+        warm_detail = f"ready in {time.monotonic() - warm_started:.1f}s"
+    except Exception as err:  # noqa: BLE001 — advisory only, never a suite failure
+        elapsed = time.monotonic() - warm_started
+        warm_detail = f"not confirmed after {elapsed:.1f}s ({type(err).__name__})"
+
     print(f"RAP contract smoke (python): {len(scenarios)} scenarios")
+    print(f"WARM reconcile path {warm_detail}")
     failures = 0
     skips = 0
     for name, run in scenarios:

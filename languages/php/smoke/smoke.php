@@ -125,6 +125,15 @@ function classified(string $context, \Throwable $err): SmokeFailure
 const SETTLE_ATTEMPTS = 6;
 const SETTLE_DELAY_MICROSECONDS = 2_000_000;
 
+// The reconcile path (Backbone -> Olympus) is COLD after hours of idle: on the
+// 06:00 UTC nightly the first byMerchantTransactionId lookup was served in 41 s
+// against ~100 ms warm (run 31078676574, 2026-08-06 — 7.4 h idle gap), and the
+// three suites whose 15 s deadline expired first reported NotFoundYet with no
+// HTTP status. That warm-up cost is an environment property, not SDK behaviour,
+// so it is paid ONCE before the scenarios, which keeps every scenario assert
+// strict instead of loosening the 404 check into a timeout tolerance.
+const WARMUP_DEADLINE_SECONDS = 90.0;
+
 /**
  * Reconciles until the outcome settles. Under load a charge can be visible
  * (Found) while its outcome is still Pending — a transient truth, not a
@@ -402,7 +411,32 @@ $scenarios = [
     },
 ];
 
+// Advisory preflight: asserts nothing and can never fail the suite. The elapsed
+// time is printed so a cold path stays VISIBLE rather than hidden.
+$warmClient = new RapClient(
+    apiKey: $apiKey,
+    baseUrl: $baseUrl,
+    connectTimeout: 5.0,
+    overallDeadline: WARMUP_DEADLINE_SECONDS,
+);
+$warmStarted = microtime(true);
+try {
+    $warmClient->reconcile(freshId('warmup'), new ReconcilePolicy(
+        maxAttempts: 1,
+        overallBudgetSeconds: WARMUP_DEADLINE_SECONDS,
+        initialDelaySeconds: 0.5,
+    ));
+    $warmDetail = sprintf('ready in %.1fs', microtime(true) - $warmStarted);
+} catch (\Throwable $warmFailure) {
+    $warmDetail = sprintf(
+        'not confirmed after %.1fs (%s)',
+        microtime(true) - $warmStarted,
+        get_class($warmFailure),
+    );
+}
+
 printf("RAP contract smoke (php): %d scenarios\n", count($scenarios));
+printf("WARM reconcile path %s\n", $warmDetail);
 $failures = 0;
 $skips = 0;
 foreach ($scenarios as $name => $run) {

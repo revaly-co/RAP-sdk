@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Revaly.Sdk.Core.Client;
 using Revaly.Sdk.Core.Model;
 using Revaly.Sdk.Errors;
@@ -294,7 +295,32 @@ internal static class Program
             ),
         };
 
+        // Advisory preflight: asserts nothing and can never fail the suite. The
+        // elapsed time is printed so a cold path stays VISIBLE rather than hidden.
+        using var warmClient = new RapClient(new RapClientOptions
+        {
+            ApiKey = apiKey,
+            BaseUrl = new Uri(baseUrl),
+            ConnectTimeout = TimeSpan.FromSeconds(5),
+            OverallDeadline = WarmupDeadline,
+        });
+        var warmStarted = Stopwatch.StartNew();
+        string warmDetail;
+        try
+        {
+            await warmClient.ReconcileAsync(FreshId("warmup"), new ReconcilePolicy(
+                maxAttempts: 1,
+                overallBudget: WarmupDeadline,
+                initialDelay: TimeSpan.FromMilliseconds(500)));
+            warmDetail = $"ready in {warmStarted.Elapsed.TotalSeconds:F1}s";
+        }
+        catch (Exception warmFailure)
+        {
+            warmDetail = $"not confirmed after {warmStarted.Elapsed.TotalSeconds:F1}s ({warmFailure.GetType().Name})";
+        }
+
         Console.WriteLine($"RAP contract smoke (dotnet): {scenarios.Length} scenarios");
+        Console.WriteLine($"WARM reconcile path {warmDetail}");
         var failures = 0;
         var skips = 0;
         foreach (var (name, run) in scenarios)
@@ -417,6 +443,17 @@ internal static class Program
 
     private const int SettleAttempts = 6;
     private static readonly TimeSpan SettleDelay = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// The reconcile path (Backbone to Olympus) is COLD after hours of idle: on the
+    /// 06:00 UTC nightly the first byMerchantTransactionId lookup was served in 41 s
+    /// against ~100 ms warm (run 31078676574, 2026-08-06 — 7.4 h idle gap), and the
+    /// three suites whose 15 s deadline expired first reported NotFoundYet with no
+    /// HTTP status. That warm-up cost is an environment property, not SDK behaviour,
+    /// so it is paid ONCE before the scenarios, which keeps every scenario assert
+    /// strict instead of loosening the 404 check into a timeout tolerance.
+    /// </summary>
+    private static readonly TimeSpan WarmupDeadline = TimeSpan.FromSeconds(90);
 
     /// <summary>
     /// Unique merchantTransactionId — every reconcile scenario uses a fresh one
