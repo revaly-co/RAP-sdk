@@ -25,6 +25,7 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 | [`runtime-tdd.md`](runtime-tdd.md) | Technical design of the hand-written runtime layer (per-language surface) |
 | [`pipeline-and-release.md`](pipeline-and-release.md) | CI/CD pipeline stages, publish mechanics per registry, versioning & release policy |
 | [`registry-provisioning.md`](registry-provisioning.md) | OQ-3 runbook: final names (ADR-SDK-030), the per-registry what-is-left board, ownership/custody, how publishing will work, and the tracked Packagist placeholder deviation |
+| [`maven-signing-key.md`](maven-signing-key.md) | The Maven Central signing key: fingerprint/expiry, what is in the publish vault, what still blocks the java publish path, incident + custody notes, and the recorded early-provisioning deviation |
 | [`dx-contract.md`](dx-contract.md) | Developer Experience contract (RFC §6 a–f) with acceptance criteria |
 | [`open-items.md`](open-items.md) | Open questions (OQ-1/2/3/6/11 from the RFC; post-RFC OQ-16+) and tracked follow-ups — the implementation gates |
 | [`decision-log.md`](decision-log.md) | Traceability: every decision → ADR → RFC anchor → provenance |
@@ -40,7 +41,18 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
 
-## Status snapshot (2026-08-05)
+## Status snapshot (2026-08-06)
+
+- **Maven signing key GENERATED + VAULTED, 2026-08-06** (`maven-signing-key.md`): RSA-4096
+  `07E856878E77A944169F56683ED2EB632E4EAAE7`, identity `packages@revaly.co`, expires
+  2028-08-05; `maven-gpg-private-key` / `-passphrase` / `-public-key` / `-revocation-cert` in
+  the publish Key Vault under leadership custody. **No registry contact, no Central Portal
+  token, nothing public** — the keyserver upload is deliberately deferred and the embargo
+  guards are untouched. This pulled one flip-act-6 item ahead of the ADR-SDK-019 written gate;
+  accepted and recorded as a deviation (Charles, 2026-08-06) alongside the Packagist
+  placeholder precedent. The java publish path is still blocked on the workload-identity +
+  scoped Key Vault bindings, the Central Portal token, the keyserver upload, and the
+  javadoc-jar gap.
 
 - **ADR-SDK-032 cutover EXECUTED through runbook step 7 (private phase), 2026-08-05**: this
   repository at `revaly-co/RAP-sdk` is the **new** repository carrying the sanitized-history
