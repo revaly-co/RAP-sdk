@@ -6,8 +6,9 @@ the owner mailbox — one business day after the 2026-07-31 resubmission). **One
 still sits in an external queue** (PyPI org approval). The **Maven GPG signing key is generated and
 vaulted** (2026-08-06 — `maven-signing-key.md`; recorded deviation, no registry contact, nothing
 public). **Apache-2.0 is Legal-ratified IN WRITING — recorded 2026-08-06** (gate 3 closed;
-signed record in the internal RFC-046 record). Publish still embargoed pending the PyPI org
-approval + the flip runbook.
+signed record in the internal RFC-046 record). A **Maven Portal custody deviation** is recorded
+below (owner account on an individual mailbox; second-publisher support request in flight
+2026-08-06). Publish still embargoed pending the PyPI org approval + the flip runbook.
 **Last updated:** 2026-08-06
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
@@ -48,7 +49,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
 | NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
-| Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) | — | ✅ **GPG signing key vaulted 2026-08-06** (`maven-signing-key.md` — recorded deviation: ahead of the ADR-SDK-019 written gate, no registry contact, nothing public). Publish-day: keyserver upload, Central Portal token, workload-identity + per-secret Key Vault bindings, javadoc-jar fix |
+| Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) · owner = leadership Portal account on an individual mailbox; second-publisher support request in flight 2026-08-06 (recorded deviation below) | — | ✅ **GPG signing key vaulted 2026-08-06** (`maven-signing-key.md` — recorded deviation: ahead of the ADR-SDK-019 written gate, no registry contact, nothing public). Publish-day: keyserver upload, Central Portal token, workload-identity + per-secret Key Vault bindings, javadoc-jar fix |
 | Go (pkg.go.dev) | `github.com/revaly-co/rap-sdk/languages/go` | ✅ n/a — the path binds to the GitHub org (ADR-SDK-022) | — | Repo public + a `languages/go/v*` tag; the tag ruleset currently **blocks** go-module-form tags, and lifting it is the deliberate admin ceremony (ADR-SDK-026). Go publishes **last** |
 
 Namespace URLs and the owning group-email address live in the corporate secret store, not in
@@ -79,8 +80,9 @@ this repo (the repo is public per ADR-SDK-012).
   - **npm / PyPI / NuGet** — OIDC trusted publishing (no stored tokens), registered only at
     publish day (gate 3).
   - **Maven Central** — GPG signing; keys in Key Vault, fetched inside the
-    environment-scoped job. Access is by publisher token, not by adding member usernames
-    (Maven Central has no member model).
+    environment-scoped job. Access is by publisher token; there is no self-serve member
+    model — additional publishers are granted only via a Sonatype support request (see the
+    Portal custody deviation below).
   - **Packagist** — webhook from the public repo; the tag drives it.
   - **pkg.go.dev** — pull-based; the tag is the release.
 - Per-language tags (for example `dotnet/v1.0.0`) drive the publish matrix. Every published
@@ -120,6 +122,34 @@ publishing an actual package**. To hold `revaly/` during Week 1, a placeholder w
   (Apache-2.0, from the public monorepo) when the publish gates close.
 - **Owner:** SC squad (execution) — remove the placeholder as part of the first real
   Packagist publish.
+
+## Known deviation: Maven Central Portal account custody (interim)
+
+The Central Portal has no self-serve organization or member model — a namespace binds to
+individual Portal accounts, and additional publishers are granted only through a Sonatype
+support request. Execution state (2026-08-06):
+
+- **`co.revaly` is verified and owned** by a leadership-held Portal account anchored to an
+  **individual corporate mailbox** (a GitHub-SSO signup), not the `packages@` group mailbox —
+  an accepted interim deviation from ADR-SDK-011's group-email custody rule.
+- A **support request is in flight** (sent 2026-08-06 from the owner account's registered
+  mailbox — the sender-identity lesson from the NuGet prefix reservation — with the group
+  mailbox on copy) asking Sonatype to add a **second publisher**: an SC-squad account
+  anchored to an individual personal mailbox (also GitHub-SSO). Two authorized publishers is
+  Central's only bus-factor mitigation, so the addition itself is desired custody practice;
+  the mailbox anchoring is the deviation.
+- Account identities live in the support thread and the corporate secret store, not here
+  (this repo goes public — ADR-SDK-012).
+- **Unchanged by this:** `maven-central-token` is created only at the flip (rule 3), from
+  whichever authorized account executes it, straight into the publish Key Vault — tokens are
+  freely rotatable and leave no trace in published artifacts, so a later account or token
+  swap breaks nothing.
+- **Interim hardening:** 2FA + vaulted recovery codes on both anchoring identities (for a
+  GitHub-SSO Portal account, the GitHub account's security IS the Portal account's security).
+- **Closure (post-flip, tracked under OQ-3):** register a Portal account under the group
+  mailbox (email registration, not SSO), have support add it to `co.revaly` (or transfer
+  ownership to it), rotate `maven-central-token` to that account, and demote the individual
+  accounts to break-glass. Owner: Leadership + SC squad.
 
 ## Flip to LIVE — runbook (ADR-SDK-031)
 
