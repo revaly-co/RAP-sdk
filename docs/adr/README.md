@@ -43,7 +43,7 @@ they are tracked as post-RFC open items (OQ-16+) in `../open-items.md`.
 | [016](016-monorepo-layout.md) | Monorepo `revaly-co/rap-sdk`; read-only mirrors only if demanded | OQ-7 |
 | [017](017-rtn-sdk-decoupled.md) | Decoupled from the RTN SDK (PRD-049); no pipeline reuse commitment | OQ-8 |
 | [018](018-devops-ownership-sc-squad.md) | DevOps ownership: SC squad collectively | OQ-9 |
-| [019](019-license-apache-2.0.md) | License: Apache-2.0; Legal ratifies before first publish | OQ-12, §7.1 |
+| [019](019-license-apache-2.0.md) | License: Apache-2.0; **Legal-ratified in writing — recorded 2026-08-06** (publish gate closed) | OQ-12, §7.1 |
 | [020](020-pci-scope-values-free-logging.md) | PCI scope merchant-side; values-free logging obligation | OQ-13, §9 |
 | [021](021-prd-057-deviation-acceptance.md) | PRD-057 Musts resolved via formal deviation acceptance | OQ-14 |
 | [022](022-github-namespace-revaly-co.md) | Create under `revaly-co`; park `FlexPay-io` permanently | OQ-15, §7 |

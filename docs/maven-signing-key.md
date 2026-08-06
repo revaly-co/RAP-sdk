@@ -70,9 +70,11 @@ The key alone does not make stage 6 work. In dependency order:
      ID. The credential does not need recreating later.
    - Give the SDK/DevOps group `Managed Identity Contributor` scoped to that one identity so the
      binding can be maintained without going back to leadership each time.
-2. **`maven-central-token`.** A Central Portal token, embargoed until the ADR-SDK-019 written
-   ratification. Two minutes on flip day — but note the fetch step reads it **unconditionally**, so
-   the java live path fails without it. Do not meet that failure for the first time on flip day.
+2. **`maven-central-token`.** A Central Portal token — a registry credential, so it stays a
+   flip-runbook act under rule 3 (the ADR-SDK-019 written ratification was recorded 2026-08-06,
+   so Legal no longer blocks it). Two minutes on flip day — but note the fetch step reads it
+   **unconditionally**, so the java live path fails without it. Do not meet that failure for the
+   first time on flip day.
 3. **Public key on a keyserver.** Central will not accept a signed bundle until the public key is
    published: `gpg --keyserver keyserver.ubuntu.com --send-keys 07E856878E77A944169F56683ED2EB632E4EAAE7`.
    This is public and permanent — keyservers never delete — so it is deliberately deferred, but do
@@ -116,3 +118,8 @@ recorded here rather than left implicit. What makes it narrow:
 
 Net effect on the runbook: flip act 6 reduces to the Central Portal token, the workload-identity
 bindings, and the keyserver upload.
+
+**Postscript (2026-08-06):** the ADR-SDK-019 written ratification was recorded later the same
+day (ADR-SDK-019 § Ratification record) — gate 1 of the flip runbook is closed and this
+deviation's head start shrank to hours. The token, the keyserver upload, and the bindings
+remain flip-runbook acts.

@@ -1,6 +1,6 @@
 # ADR-SDK-019 — License: Apache-2.0 (Legal Ratifies Before First Publish)
 
-**Status:** Accepted — decided 2026-07-10 (OQ-12, Charles); Legal ratification pending (gate on first publish); ratified with RFC-046 approval 2026-07-10
+**Status:** Accepted — decided 2026-07-10 (OQ-12, Charles); ratified with RFC-046 approval 2026-07-10; **Legal-ratified in writing — recorded 2026-08-06** (the publish-gate ratification; signed record held in the internal RFC-046 record)
 **Source:** RFC-046 §7.1 / §11 OQ-12
 **Owner:** Leadership + Legal
 
@@ -22,7 +22,8 @@ repo and the first (even pre-1.0) publish exist.
   selected.
 - **Copyright remains with Revaly.**
 - **Legal ratifies before the first publish** — the decision is made; ratification is a tracked
-  gate on publishing, not on build (see `../open-items.md`).
+  gate on publishing, not on build (see `../open-items.md`). **Gate closed 2026-08-06** — see
+  the ratification record below.
 
 ## Rationale
 
@@ -57,3 +58,23 @@ repo and the first (even pre-1.0) publish exist.
 - Use SPDX `Apache-2.0` consistently in all metadata; registry listings render from it.
 - The release-cut checklist (ADR-SDK-013) includes "license metadata present and correct per
   package" — Maven Central will hard-fail without it; the others fail softer but must not drift.
+
+## Ratification record (2026-08-06)
+
+Legal ratified the license **in writing** — recorded 2026-08-06. Per the ratification runbook,
+the signed record is held in the **internal RFC-046 record** (it is not committed to this
+repository, which goes public per ADR-SDK-012) and supersedes the 2026-07-29 verbal approval.
+Scope as ratified: Apache-2.0 for all six SDKs (generated code, hand-written runtime,
+documentation, examples), **all releases and distribution channels including pre-1.0**,
+publication under the ADR-SDK-030 final package names, and making `revaly-co/RAP-sdk` public
+with its history as published.
+
+Gate effect: the ADR-SDK-019 leg of the publish embargo (CLAUDE.md rule 3) and flip-runbook
+gate 1 (`../registry-provisioning.md` § Flip to LIVE) are **closed**. Publish remains embargoed
+on the OQ-3 residual (PyPI org approval) and executes only via the flip runbook; the embargo
+guards and the dark stage-6 job are unchanged until then.
+
+Follow-up (verification): the ratification text's item 2 asked Legal to confirm the exact
+copyright-entity name. Check the signed record's entry against the repository's
+`LICENSE`/`NOTICE` line ("Revaly") and correct those files if Legal specified a different form;
+likewise record item 5's third-party-review status when filing the artifact.

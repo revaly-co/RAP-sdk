@@ -3,15 +3,16 @@
 Six server-side SDKs (**.NET, Java, PHP, TypeScript, Python, Go**) for the **RAP V2 API**
 (RAP-core, `api.revaly.co`), per **RFC-046** (Approved 2026-07-10 v10; SC-215, Epic SC-234).
 One monorepo, one deterministic pipeline consuming only gated spec artifacts, one merchant-facing
-failover contract. `docs/` is the complete, self-contained design set (30 ADRs + 10 design docs) —
+failover contract. `docs/` is the complete, self-contained design set (32 ADRs + 11 design docs) —
 **docs are the source of truth; this file is the enforcement summary.**
 
 **Namespace:** the repo lives at **`revaly-co/RAP-sdk`** — the org migration landed 2026-07-17
 (fleet-wide transfer; `FlexPay-io` is parked with redirects alive, per ADR-SDK-022). The
 namespace publish-gate is satisfied, the `publish` environment exists (2026-07-29), and names
-are final (ADR-SDK-030); the remaining publish gates (OQ-3 provisioning residuals, publish-day
-OIDC bindings, ADR-SDK-019 **written** Legal ratification) still stand — **publish remains
-embargoed** (rule 3).
+are final (ADR-SDK-030), and Apache-2.0 is **Legal-ratified in writing** (recorded 2026-08-06
+— the ADR-SDK-019 gate is closed); the remaining publish gates (OQ-3 provisioning residuals —
+PyPI org approval — and the publish-day OIDC bindings via the flip runbook) still stand —
+**publish remains embargoed** (rule 3).
 
 **Current phase:** see `docs/README.md` § Status snapshot (dated facts live there, not here).
 Standing build sequencing: global rules → repo bootstrap → pipeline stages 1–4 → per-language
@@ -41,7 +42,8 @@ build stories.
    Maven Central / pkg.go.dev), no OIDC trusted-publisher registration, no registry tokens —
    until the `revaly-co` namespace is final (ADR-SDK-022), registry accounts + the protected
    publish environment exist (OQ-3, ADR-SDK-011/013), and Apache-2.0 is Legal-ratified
-   (ADR-SDK-019). Pre-1.0 betas count as publishing. Interim distribution = per-language
+   (ADR-SDK-019 — ✅ ratified in writing, recorded 2026-08-06). Pre-1.0 betas count as
+   publishing. Interim distribution = per-language
    **GitHub release artifacts** from this repo (model: the platform's `spec/v*` releases —
    asset + `.sha256` + `provenance.json`). The stage-6 registry job exists but runs **DARK**
    (ADR-SDK-031): rehearsal only, double-keyed flip — editing it is fine; setting
@@ -49,8 +51,8 @@ build stories.
    embargo guards (npm `"private"`, python `Private :: Do Not Upload`) IS the embargoed act
    and happens only via the flip runbook in `docs/registry-provisioning.md`.
 4. **Do not decide open items.** OQ-2 (full error-code taxonomy) and the OQ-3 provisioning
-   residuals (NuGet prefix, PyPI org, publish-day OIDC/GPG) have owners and gates in
-   `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
+   residuals (PyPI org approval; publish-day OIDC/webhook + Maven workload-identity bindings)
+   have owners and gates in `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
    OQ. (OQ-1 is decided — ADR-SDK-023; generator changes are ADR revisions, never quiet
    pipeline edits. OQ-6 is decided — ADR-SDK-027: overall-deadline default 75 s ×6,
    telemetry-ratified. OQ-11 is decided — ADR-SDK-029: connect default 10 s ×6, edge rows
