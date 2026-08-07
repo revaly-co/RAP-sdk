@@ -5,9 +5,9 @@ transactions, and notify — with a **merchant-facing failover contract** built 
 package (`revaly/sdk`), one import namespace (`Revaly\Sdk`); the generated API core
 ships inside it as `Revaly\Sdk\Core`.
 
-> Package name and registry availability are provisional until registry provisioning
-> completes (OQ-3). Interim distribution is via this repository's per-language GitHub
-> release artifacts — nothing is on Packagist yet.
+> **Install:** `composer require revaly/sdk` — published on Packagist (served from the
+> generated read-only mirror `revaly-co/rap-sdk-php`). GitHub release artifacts remain
+> the provenance anchor and fallback channel.
 
 Requires PHP 8.1+ with `ext-curl`, `ext-json`, `ext-mbstring`; HTTP via Guzzle 7.
 

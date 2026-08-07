@@ -93,12 +93,13 @@ is never an exercise for the reader.
 | Python | [`languages/python`](languages/python/README.md) | `revaly-sdk` (PyPI) |
 | Go | [`languages/go`](languages/go/README.md) | `github.com/revaly-co/rap-sdk/languages/go` |
 
-**Installing today:** SDKs ship as per-language
-[GitHub release artifacts](https://github.com/revaly-co/RAP-sdk/releases) — each asset comes
-with a `.sha256` checksum and a `provenance.json` binding it to the exact source and spec it
-was built from. The registry names above are final and reserved; registry publishing opens
-once the release gates close, and the install lines switch to the registries then. There is
-no separate sandbox host: your API key's scope selects sandbox or live on the same URL.
+**Installing:** install from the registries above — they are the primary, documented
+install path. Per-language
+[GitHub release artifacts](https://github.com/revaly-co/RAP-sdk/releases) continue with
+every version — each asset comes with a `.sha256` checksum and a `provenance.json`
+binding it to the exact source and spec it was built from — as the provenance anchor
+and registry-outage fallback (ADR-SDK-031). There is no separate sandbox host: your API
+key's scope selects sandbox or live on the same URL.
 
 ## What these SDKs never do — deliberately
 

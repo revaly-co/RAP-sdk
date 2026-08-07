@@ -5,9 +5,8 @@ notify — with a **merchant-facing failover contract** built in. Every failed p
 call raises exactly one of three typed classes that tell you what you may safely do
 next.
 
-> **Package status:** the PyPI name `revaly-sdk` is **[Proposed]** until registry
-> provisioning (OQ-3), and registry publish is embargoed — install from the
-> per-language GitHub release artifact until then. Requires Python ≥ 3.9.
+> **Install:** `pip install revaly-sdk` — published on PyPI. Requires Python ≥ 3.9.
+> GitHub release artifacts remain the provenance anchor and fallback channel.
 
 ## Why the error classes matter (read this first)
 
