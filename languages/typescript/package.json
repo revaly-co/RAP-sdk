@@ -1,8 +1,7 @@
 {
   "name": "@revaly/sdk",
   "version": "0.0.0",
-  "private": true,
-  "description": "Server-side TypeScript SDK for the RAP V2 API. Package name is final per ADR-SDK-030; \"private\" stays true while registry publish is embargoed (repo rule 3 — the flip-day PR removes it, ADR-SDK-031) — interim distribution is per-language GitHub release artifacts. Version 0.0.0 is the development placeholder; stage 5 stamps release versions at packaging time.",
+  "description": "Server-side TypeScript SDK for the RAP V2 API (payments, payment methods, transactions, notify) with the merchant failover contract built in. Version 0.0.0 is the development placeholder; stage 5 stamps release versions at packaging time.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
