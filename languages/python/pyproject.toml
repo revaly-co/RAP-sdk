@@ -1,7 +1,7 @@
 # revaly-sdk — Python runtime package (RFC-046; runtime-tdd.md §2 one-package surface).
 # Distribution name "revaly-sdk" is FINAL (ADR-SDK-030, runtime-tdd.md §7).
-# PUBLISH IS EMBARGOED (repo rule 3): the "Private :: Do Not Upload" classifier makes
-# PyPI reject any upload of this package until the embargo gates close.
+# Publishing goes only through the gated stage-6 pipeline (ADR-SDK-013/031) — the
+# per-language release tag on main is the one human act.
 # The generated core (core/revaly_sdk_core) ships INSIDE this one distribution —
 # php/ts precedent: merchants install one package and import only revaly_sdk.
 
@@ -13,7 +13,6 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.9"
 classifiers = [
-  "Private :: Do Not Upload",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
 ]
