@@ -3,13 +3,15 @@
 **Status:** OQ-3 **naming closed** (ADR-SDK-030, 2026-07-30); namespaces reserved on all six
 registries; **NuGet `Revaly.*` ID-prefix RESERVED 2026-08-03** (NuGet.org admin confirmation to
 the owner mailbox — one business day after the 2026-07-31 resubmission). **One provisioning act
-still sits in an external queue** (PyPI org approval). The **Maven GPG signing key is generated and
+still sits in an external queue** (PyPI org approval — no longer launch-blocking: the
+**pending-publisher deviation was accepted for launch 2026-08-07**, see the PyPI deviation record
+below). The **Maven GPG signing key is generated and
 vaulted** (2026-08-06 — `maven-signing-key.md`; recorded deviation, no registry contact, nothing
 public). **Apache-2.0 is Legal-ratified IN WRITING — recorded 2026-08-06** (gate 3 closed;
 signed record in the internal RFC-046 record). A **Maven Portal custody deviation** is recorded
 below (owner account on an individual mailbox; second-publisher support request in flight
-2026-08-06). Publish still embargoed pending the PyPI org approval + the flip runbook.
-**Last updated:** 2026-08-06
+2026-08-06). Publish still embargoed pending the flip runbook itself.
+**Last updated:** 2026-08-07
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
 ADR-SDK-019 (license), ADR-SDK-022 (GitHub namespace), ADR-SDK-030 (final names). This runbook
@@ -46,7 +48,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 | Registry | Final name | Namespace held | Outstanding **now** | Publish-day (embargoed) |
 | --- | --- | --- | --- | --- |
 | npm | `@revaly/sdk` | ✅ org `revaly` (2026-07-17; owns the `@revaly` scope) · ✅ `package.json` renamed to `@revaly/sdk` 2026-08-03 (stage-6 prep, ADR-SDK-030/031) | — | OIDC trusted publisher · quickstart install lines switch to `npm install @revaly/sdk` at flip |
-| PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
+| PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | Org approval remains in PyPI's queue, but is **no longer launch-blocking**: the pending-publisher deviation was **accepted for launch 2026-08-07** (see the deviation record below) — first publish creates the project under an SC-squad user account; transfer to the org on approval | OIDC trusted publisher (pending publisher, registered on the user account) |
 | NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
 | Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) · owner = leadership Portal account on an individual mailbox; second-publisher support request in flight 2026-08-06 (recorded deviation below) | — | ✅ **GPG signing key vaulted 2026-08-06** (`maven-signing-key.md` — recorded deviation: ahead of the ADR-SDK-019 written gate, no registry contact, nothing public). Publish-day: keyserver upload, Central Portal token, workload-identity + per-secret Key Vault bindings, javadoc-jar fix |
@@ -123,6 +125,26 @@ publishing an actual package**. To hold `revaly/` during Week 1, a placeholder w
 - **Owner:** SC squad (execution) — remove the placeholder as part of the first real
   Packagist publish.
 
+## Known deviation: PyPI launch via pending publisher on a user account (interim)
+
+PyPI's organization application (submitted Week 1) is still in PyPI's approval queue — the only
+namespace of the six not yet held. Waiting on that queue would put an external, unbounded delay
+on the whole flip. Execution state (2026-08-07):
+
+- **Decision (accepted by Charles, the accountable owner, 2026-08-07):** launch PyPI via a
+  **pending publisher** registered under an **SC-squad member's user account** (an individual
+  account — a deviation from ADR-SDK-011's group-custody rule, on the same basis as the
+  Packagist placeholder and the Maven Portal custody deviations). The first gated publish
+  creates the `revaly-sdk` project under that account.
+- **Mechanics unchanged:** publishing is still OIDC trusted publishing from the gated pipeline's
+  protected `publish` environment — no token, no password in CI. The deviation is only about
+  which account anchors the project pre-org.
+- **Interim hardening:** 2FA + vaulted recovery codes on the anchoring account.
+- **Closure (post-approval, tracked under OQ-3):** when PyPI approves the `revaly` org, transfer
+  the project to the org, re-register the trusted publisher org-side, and demote the individual
+  account. Account identity lives in the corporate secret store, not here (public repo,
+  ADR-SDK-012).
+
 ## Known deviation: Maven Central Portal account custody (interim)
 
 The Central Portal has no self-serve organization or member model — a namespace binds to
@@ -174,7 +196,9 @@ runbook, not a build. Per-registry push mechanics (which push lives in the workf
    ratification landed and is held in the internal RFC-046 record (ADR-SDK-019
    § Ratification record; it supersedes the 2026-07-29 verbal approval and the 2026-07-31
    Teams confirmation, neither of which closed the gate).
-2. **PyPI org approved** (or the recorded pending-publisher deviation accepted for launch).
+2. **PyPI org approved** (or the recorded pending-publisher deviation accepted for launch) —
+   ✅ **closed 2026-08-07 by deviation acceptance** (Charles; see the PyPI deviation record
+   above). The org application stays queued; transfer on approval is the closure path.
 3. **Execute the ADR-SDK-032 fresh-repo cutover, ending public** (decided 2026-08-03:
    Variant B sanitized-history transplant — rename the current repo to the private
    `RAP-sdk-archive`, push the `filter-repo`-transplanted history to a new
@@ -232,6 +256,6 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 
 | Item | Owner | Gate |
 | --- | --- | --- |
-| **PyPI org approval** (application pending in PyPI's queue — the last provisioning act in an external queue) | SC squad | Before first PyPI publish |
+| **PyPI org approval** (application pending in PyPI's queue; **no longer launch-blocking** — pending-publisher deviation accepted 2026-08-07, launch proceeds on a user account) | SC squad | Post-approval closure: transfer the project + trusted publisher to the org, demote the individual account |
 | OIDC / webhook bindings + the Maven workload-identity and per-secret Key Vault assignments (the npm `@revaly/sdk` metadata rename shipped 2026-08-03 with the stage-6 prep; the **GPG key itself is done** — 2026-08-06, `maven-signing-key.md`) | SC squad + DevOps | Publish day, via the flip runbook (ADR-SDK-013/030/031; the ADR-SDK-019 written ratification landed 2026-08-06, so Legal no longer gates these) — except the Maven Key Vault bindings, which need production access and can land earlier |
 | Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |
