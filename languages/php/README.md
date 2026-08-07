@@ -27,11 +27,9 @@ licenses failover:
 
 ## Quickstart (sandbox key → first charge, ≤ 15 minutes)
 
-Install (interim, from a GitHub release artifact of this repository):
+Install:
 
 ```bash
-# Download revaly-sdk-php.zip from the release, verify its .sha256, then:
-composer config repositories.revaly artifact ./path/to/release-artifacts/
 composer require revaly/sdk
 ```
 
