@@ -49,7 +49,7 @@ only from the gated pipeline's protected environment (ADR-SDK-013).
 | PyPI | `revaly-sdk` | ⏳ org application **pending PyPI approval** | **Org approval** — in PyPI's queue; the only namespace still not held. Interim custody: pending-publisher under a user account, transferred to the org later (recorded deviation) | OIDC trusted publisher |
 | NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` | ✅ org (2026-07-17; access confirmed 2026-07-30) · ✅ **`Revaly.*` ID-prefix reserved 2026-08-03** — NuGet.org admin: "reserved the prefix 'Revaly' for account 'revaly'", confirmed to the owner mailbox one business day after the 2026-07-31 resubmission (first send had bounced the sender-identity check: registry support requests must originate **from the email registered to the account**) | — | Trusted-publishing policy — created close to publish day (policies on private repos auto-expire after 7 unused days), by a leadership account that is an org member |
 | Packagist | `revaly/sdk` | ✅ vendor `revaly` held via placeholder `revaly/rap-sdk` v0.0.1 (2026-07-17; verified live 2026-07-30) | — | Delete the placeholder; publish `revaly/sdk` from the public monorepo via webhook (see the deviation record below) |
-| Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) · owner = leadership Portal account on an individual mailbox; second-publisher support request in flight 2026-08-06 (recorded deviation below) | — | ✅ **GPG signing key vaulted 2026-08-06** (`maven-signing-key.md` — recorded deviation: ahead of the ADR-SDK-019 written gate, no registry contact, nothing public). Publish-day: keyserver upload, Central Portal token, workload-identity + per-secret Key Vault bindings, javadoc-jar fix |
+| Maven Central | `co.revaly:revaly-sdk` | ✅ namespace `co.revaly` reserved + DNS-verified (2026-07-17; no publish needed to hold it) · owner = leadership Portal account on an individual mailbox; second-publisher support request in flight 2026-08-06 (recorded deviation below) | — | ✅ **GPG signing key vaulted 2026-08-06** (`maven-signing-key.md` — recorded deviation: ahead of the ADR-SDK-019 written gate, no registry contact, nothing public). Publish-day: keyserver upload, Central Portal token, workload-identity + per-secret Key Vault bindings (the javadoc-jar gap closed 2026-08-07 — stage 5 ships sources + javadoc jars for both artifacts) |
 | Go (pkg.go.dev) | `github.com/revaly-co/rap-sdk/languages/go` | ✅ n/a — the path binds to the GitHub org (ADR-SDK-022) | — | Repo public + a `languages/go/v*` tag; the tag ruleset currently **blocks** go-module-form tags, and lifting it is the deliberate admin ceremony (ADR-SDK-026). Go publishes **last** |
 
 Namespace URLs and the owning group-email address live in the corporate secret store, not in
@@ -201,9 +201,9 @@ runbook, not a build. Per-registry push mechanics (which push lives in the workf
    `Key Vault Secrets User` assignments + `PUBLISH_AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID` +
    `PUBLISH_KEYVAULT_NAME` variables. The federated subject is the **immutable-ID** form —
    derive it with `gh api /repos/revaly-co/RAP-sdk/actions/oidc/customization/sub --jq
-   .sub_claim_prefix` and append `:environment:publish`. **Fix the javadoc-jar gap first**
-   (standing flip-readiness finding: stage 5 skips javadoc; Central rejects bundles without
-   it).
+   .sub_claim_prefix` and append `:environment:publish`. The javadoc-jar gap is **closed
+   2026-08-07**: stage 5 builds sources + javadoc jars for both artifacts (core template
+   doclint fork + runtime pom plugins), and the flip-readiness lint enforces their presence.
 7. **Packagist:** provision `PACKAGIST_MIRROR_PUSH_TOKEN` (environment secret; prefer an
    org GitHub App scoped to `revaly-co/rap-sdk-php` — same credential family as OQ-17);
    register the Packagist webhook on the mirror; **delete the placeholder `revaly/rap-sdk`**

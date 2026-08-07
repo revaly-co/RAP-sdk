@@ -79,8 +79,9 @@ The key alone does not make stage 6 work. In dependency order:
    published: `gpg --keyserver keyserver.ubuntu.com --send-keys 07E856878E77A944169F56683ED2EB632E4EAAE7`.
    This is public and permanent — keyservers never delete — so it is deliberately deferred, but do
    it a few days before flip so propagation is not on the critical path.
-4. **The javadoc-jar gap.** Stage 5 does not build a javadoc jar and Central rejects bundles
-   without one. Standing flip-readiness finding; a code change, no production access needed.
+4. **The javadoc-jar gap — closed 2026-08-07.** Stage 5 now builds sources + javadoc jars for
+   both artifacts (core pom template doclint fork + runtime pom source/javadoc plugins); the
+   stage-6 flip-readiness lint enforces their presence.
 
 ## Incident and custody notes
 
