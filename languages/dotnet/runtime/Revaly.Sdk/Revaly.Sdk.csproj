@@ -13,8 +13,8 @@
     <Version>0.0.0-dev</Version>
     <Description>Revaly RAP V2 server-side SDK for .NET — hand-written runtime over the generated core (ADR-SDK-001). Failover-safe typed errors, reconcile helper, values-free logging, mock transport.</Description>
     <Authors>Revaly</Authors>
-    <Company>Revaly, Inc.</Company>
-    <Copyright>Copyright 2026 Revaly, Inc.</Copyright>
+    <Company>Revaly Technologies Inc.</Company>
+    <Copyright>Copyright 2026 Revaly Technologies Inc.</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/revaly-co/rap-sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

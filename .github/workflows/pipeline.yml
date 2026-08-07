@@ -55,8 +55,8 @@ name: Pipeline
 # unless the repo variable REGISTRY_PUBLISH_MODE is exactly 'live' AND the
 # flip-day guard-removal PR has shipped — the flip is double-keyed
 # (pipeline/registry-publish.sh enforces both). Registry publish itself stays
-# embargoed until ADR-SDK-019's written ratification + the OQ-3 residuals
-# close; flipping is the runbook in docs/registry-provisioning.md.
+# embargoed until the OQ-3 residuals close (ADR-SDK-019's written ratification
+# landed 2026-08-06); flipping is the runbook in docs/registry-provisioning.md.
 
 permissions:
   contents: read

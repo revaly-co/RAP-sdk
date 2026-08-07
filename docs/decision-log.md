@@ -38,13 +38,14 @@ Every finalized decision from **RFC-046 "RAP Integration SDK"** (internal Conflu
 | OQ-9 | DevOps contribution owned collectively by the SC squad (Charles); squad signs §7, walks §10 NFR audit, confirms OQ-15 findings | 2026-07-10 | SC lead | ADR-SDK-018 |
 | OQ-10 | *Promoted to D-8 (GA blocker)* — see D-series | 2026-07-09 | — | ADR-SDK-008 |
 | OQ-11 | AFD/WAF edge behaviour verified against the live production edge: §2 edge rows ratified unchanged; connect-timeout default **10 s** ×6 (TS documentation-level); timeout ordering 75 s < ≈100 s < 120 s + ops guardrail | 2026-07-21 | SC Eng + DevOps | ADR-SDK-029 |
-| OQ-12 | Apache-2.0 (Charles); Legal ratifies before first publish; copyright Revaly | 2026-07-10 | Leadership + Legal | ADR-SDK-019 |
+| OQ-12 | Apache-2.0 (Charles); Legal ratifies before first publish; copyright Revaly (exact entity confirmed 2026-08-06: **Revaly Technologies Inc.**) — **Legal-ratified in writing, recorded 2026-08-06** (ADR-SDK-019 § Ratification record) | 2026-07-10 | Leadership + Legal | ADR-SDK-019 |
 | OQ-13 | Approval explicitly covers the PCI scope determination + values-free logging obligation (Charles); QSA link = follow-up | 2026-07-10 | Leadership + Compliance | ADR-SDK-020 |
 | OQ-14 | PRD-057 Musts resolved via formal deviation acceptance recorded on the PRD (Charles); approval given ahead as tracked follow-up | 2026-07-10 | Product | ADR-SDK-021 |
 | OQ-15 | Create `rap-sdk` under existing `revaly-co` org (created 2026-06-09, verified); decoupled from org rename; `FlexPay-io` parked permanently | 2026-07-10 | DevOps + Leadership | ADR-SDK-022 |
 
-Still open: **OQ-2** and the **OQ-3 provisioning residuals** (NuGet `Revaly.*` prefix, PyPI
-org approval, publish-day OIDC/GPG bindings — per-registry table in
+Still open: **OQ-2** and the **OQ-3 provisioning residuals** (PyPI org approval; publish-day
+OIDC/webhook + Maven workload-identity bindings via the flip runbook — the NuGet `Revaly.*`
+prefix was reserved 2026-08-03 and the Maven GPG key vaulted 2026-08-06; per-registry table in
 `registry-provisioning.md`) → `open-items.md`.
 
 ## Review-thread provenance

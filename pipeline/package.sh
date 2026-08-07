@@ -191,12 +191,13 @@ package_dotnet() {
   # The -p:Authors/-p:Copyright/-p:PackageDescription/-p:RepositoryUrl overrides replace
   # the generator's placeholder nuspec metadata (authors "OpenAPI", GIT_USER_ID repo URL,
   # "No Copyright") in the packed artifact only — same staging-copy philosophy as above.
-  # %2C = MSBuild's escaped comma: bare commas in -p: values are pair separators
-  # (MSB1006), so "Revaly, Inc." must ride through escaped.
+  # NB: bare commas in -p: values are MSBuild pair separators (MSB1006) — escape as %2C
+  # if a value ever needs one again (the retired "Revaly, Inc." form did); the verify
+  # below still rejects undecoded %2C residue.
   dotnet pack "$core_csproj" \
     -c Release -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true \
-    -p:Authors=Revaly -p:Company="Revaly%2C Inc." \
-    -p:Copyright="Copyright 2026 Revaly%2C Inc." \
+    -p:Authors=Revaly -p:Company="Revaly Technologies Inc." \
+    -p:Copyright="Copyright 2026 Revaly Technologies Inc." \
     -p:AssemblyTitle=Revaly.Sdk.Core \
     -p:PackageDescription="Generated API core for the Revaly RAP V2 .NET SDK. Reference the Revaly.Sdk runtime package instead of using this package directly." \
     -p:PackageReleaseNotes="See the GitHub release notes for the version-to-spec traceability table." \
@@ -235,8 +236,8 @@ package_dotnet() {
     *) die "packed core nuspec is missing <authors>Revaly</authors> — metadata override did not land" ;;
   esac
   case "$nuspec" in
-    *"Copyright 2026 Revaly, Inc."*) ;;
-    *) die "packed core nuspec is missing the decoded copyright line (comma-escape regression?)" ;;
+    *"Copyright 2026 Revaly Technologies Inc."*) ;;
+    *) die "packed core nuspec is missing the ratified copyright line — metadata override did not land" ;;
   esac
 }
 

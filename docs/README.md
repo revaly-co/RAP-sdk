@@ -19,7 +19,7 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 
 | Document | Purpose |
 | --- | --- |
-| [`adr/`](adr/README.md) | **30 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
+| [`adr/`](adr/README.md) | **32 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
 | [`architecture.md`](architecture.md) | System architecture: components, data flow, trust boundary, repo shape |
 | [`failover-contract.md`](failover-contract.md) | The merchant-facing failover & reconciliation contract, with sequence diagrams — the safety core of the product |
 | [`runtime-tdd.md`](runtime-tdd.md) | Technical design of the hand-written runtime layer (per-language surface) |
@@ -43,6 +43,28 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 
 ## Status snapshot (2026-08-06)
 
+- **ADR-SDK-019 Apache-2.0 Legal-ratified IN WRITING — recorded 2026-08-06**: the written
+  ratification landed; per the ratification runbook the signed record is held in the internal
+  RFC-046 record (not committed here) and supersedes the 2026-07-29 verbal approval.
+  Flip-runbook **gate 1 is closed** — with the ADR-SDK-032 cutover already executed through
+  step 7, the step-8 public flip and the registry flip now wait **only on the PyPI org
+  approval** (gate 2) plus the flip acts themselves. Nothing publishes yet: the embargo
+  guards, the dark stage-6 job, and `REGISTRY_PUBLISH_MODE` are unchanged — going live remains
+  the runbook ceremony (`registry-provisioning.md` § Flip to LIVE). The dated record lives in
+  ADR-SDK-019 § Ratification record. Its item-2 check resolved same-day: the exact legal
+  entity is **Revaly Technologies Inc.** — `NOTICE`, the dotnet runtime csproj, and the
+  stage-5 nuspec stamp corrected from the incorrect "Revaly, Inc." form (no registry ever
+  received it); the item-5 third-party-review status remains to record.
+- **Maven Central Portal custody deviation RECORDED + ACCEPTED, 2026-08-06**
+  (`registry-provisioning.md` § Known deviation: Maven Central Portal account custody):
+  `co.revaly` is owned by a leadership Portal account anchored to an individual corporate
+  mailbox (GitHub-SSO), not the `packages@` group mailbox — **accepted by Charles**, the
+  accountable owner, on the Packagist-placeholder basis, with a post-flip closure plan
+  (group-mailbox Portal account → support-add/transfer → token rotation → individual
+  accounts to break-glass). A support request is in flight to add a second squad publisher
+  on an individual personal mailbox; **that grant is not covered by the acceptance** — the
+  review recommendation is to land the group-mailbox registration first. Account identities
+  stay out of this repo (public per ADR-SDK-012).
 - **Maven signing key GENERATED + VAULTED, 2026-08-06** (`maven-signing-key.md`): RSA-4096
   `07E856878E77A944169F56683ED2EB632E4EAAE7`, identity `packages@revaly.co`, expires
   2028-08-05; `maven-gpg-private-key` / `-passphrase` / `-public-key` / `-revocation-cert` in
@@ -67,13 +89,14 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   stage-6 registry job on the new plumbing. dotnet and go were re-cut solo after a
   staging-load flake on the `reconcile-found-*` smoke rows (six concurrent release runs;
   `Found(Pending)` before settlement); the settle-poll hardening rides this repo's first
-  PR. The repository **stays private**: step 8 (public flip) waits on the ADR-SDK-019
-  written ack and the PyPI org approval, unchanged.
+  PR. The repository **stays private**: step 8 (public flip) now waits only on the
+  PyPI org approval (the ADR-SDK-019 written ack was recorded 2026-08-06).
 - **NuGet `Revaly.*` ID-prefix RESERVED, 2026-08-03** — NuGet.org admin confirmed "reserved
   the prefix 'Revaly' for account 'revaly'" to the owner mailbox, one business day after the
   2026-07-31 owner-mailbox resubmission. **PyPI org approval is now the only provisioning act
-  still in an external queue**; everything else outstanding is publish-day (OIDC/GPG/webhook),
-  embargoed until the ADR-SDK-019 **written** ack — per-registry board in
+  still in an external queue**; everything else outstanding is publish-day (OIDC/webhook +
+  the Maven bindings), Legal-unblocked since the ADR-SDK-019 written ack (recorded 2026-08-06)
+  but executed only via the flip runbook — per-registry board in
   `registry-provisioning.md`.
 - **History decision DECIDED: fresh-repo cutover, 2026-08-03** (ADR-SDK-032 Accepted —
   Dimitri): the public repo will be a **new** `revaly-co/RAP-sdk` carrying a
@@ -175,8 +198,8 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   temporary hold (Charles, 2026-07-17) to be deleted and republished through the gated pipeline
   at first real publish. The `publish` environment was created 2026-07-29 (per-language
   tag-pattern policies; `languages/go/v*` excluded until the Go ceremony); OIDC/GPG bindings
-  stay unregistered until the ADR-SDK-019 written ack. Names finalized 2026-07-30 →
-  ADR-SDK-030.
+  stay unregistered until the flip runbook (the ADR-SDK-019 written ack was recorded
+  2026-08-06). Names finalized 2026-07-30 → ADR-SDK-030.
 - **OQ-1 decided 2026-07-14 → ADR-SDK-023**: OpenAPI Generator v7.23.0, digest-pinned, all six
   cores; no Kiota split (toolchain pin: `../pipeline/generator-pin.yaml`). Evidence:
   `generator-bakeoff.md` — all six cores generated hands-on; Stainless exited the market

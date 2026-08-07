@@ -65,5 +65,6 @@ release — **built 2026-07-20**, ADR-SDK-026: per-language release tags `<lang>
 `main` drive `package.sh` and `gh release create`; go tags as `go/vX.Y.Z`, its
 module-activating `languages/go/v*` form is reserved for the gated Go registry publish).
 Registry stage 6 (npm / PyPI / NuGet / Packagist / Maven Central / pkg.go.dev) remains
-**embargoed** until OQ-3 + ADR-SDK-013 machine gates + ADR-SDK-019 Legal ratification close.
+**embargoed** until the OQ-3 residuals + ADR-SDK-013 machine gates close (ADR-SDK-019 Legal
+ratification: ✅ in writing, recorded 2026-08-06); going live is the flip runbook.
 Each stage appends a job to `pipeline.yml` chained with `needs:`.

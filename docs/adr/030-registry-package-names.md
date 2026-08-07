@@ -22,7 +22,8 @@ namespace (domain-verified), the Packagist vendor `revaly` (held via the tracked
 the NuGet org, the PyPI org application (pending approval), and the Go module path bound to
 the GitHub org (ADR-SDK-022). Publishing remains embargoed (rule 3): OIDC registrations,
 registry tokens, and any publish — pre-1.0 included — wait on the remaining OQ-3 provisioning
-acts and the ADR-SDK-019 written ratification.
+acts and the ADR-SDK-019 written ratification (the latter recorded 2026-08-06; the remaining
+OQ-3 act is the PyPI org approval).
 
 ## Decision
 
@@ -61,4 +62,5 @@ why Go publishes last (ADR-SDK-015/022).
   `revaly/sdk` through the gated pipeline (the deviation record in
   `../registry-provisioning.md` stands until then).
 - **Nothing here relaxes the publish embargo.** The gates of rule 3 stand unchanged: OQ-3
-  provisioning residuals (NuGet prefix, PyPI org) and the ADR-SDK-019 written ratification.
+  provisioning residuals (NuGet prefix — reserved 2026-08-03; PyPI org — pending) and the
+  ADR-SDK-019 written ratification (recorded 2026-08-06).
