@@ -8,6 +8,10 @@
 # jackson-databind advisories, e.g. GHSA-j3rv-43j4-c7qm/GHSA-rmj7-2vxq-3g9f). Dependency
 # floors in generated manifests are fixed HERE, never by editing core/ (rule 1): a
 # Dependabot PR against core/ can never pass the stage-2 regen-diff.
+# pom.mustache re-forked 2026-08-07: maven-javadoc-plugin gains <doclint>none</doclint> +
+# <quiet>true</quiet> so stage 5 can ship the javadoc jar Maven Central requires
+# (registry-provisioning.md flip act 6) without doclinting hundreds of undocumented
+# generated members into warnings; the attach-javadocs skip came out of package.sh with it.
 # templates/libraries/native/api_doc.mustache + README.mustache — forked 2026-07-15
 # solely to fix auth guidance: the stock java api_doc emits okhttp-gson-style
 # `ApiKeyAuth`/`setApiKeyPrefix` snippets that DO NOT COMPILE against the `native`

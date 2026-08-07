@@ -250,12 +250,13 @@ package_java() {
   # in the staging copy that becomes the artifact.
   mvn -B -ntp -f "$src/pom.xml" versions:set \
     -DnewVersion="$VERSION" -DprocessAllModules -DgenerateBackupPoms=false
-  # -Dmaven.javadoc.skip=true: skip the generated core's attach-javadocs execution —
-  # it doclints undocumented generated members into hundreds of "no comment" warnings,
-  # and the interim file-repo bundle does not ship javadoc jars (sources jar is kept).
-  # GA/Maven-Central javadoc is handled at the generator-template level, not here.
+  # Sources + javadoc jars build for BOTH artifacts — Maven Central rejects bundles
+  # without them (registry-publish.sh flip-readiness). Doclint noise on undocumented
+  # generated members is handled in the poms, not by skipping javadoc: the core
+  # template pins <doclint>none</doclint> (pipeline/java/config.yaml fork log), the
+  # runtime keeps doclint minus only the missing-comment group.
   mvn -B -ntp -f "$src/pom.xml" -pl runtime -am -DskipTests \
-    -Dmaven.repo.local="$m2" -Dmaven.javadoc.skip=true install
+    -Dmaven.repo.local="$m2" install
   # Maven-repository bundle: exactly our two artifacts, consumable via a
   # file:// repository or an unzip into ~/.m2/repository.
   mkdir -p "$bundle/co/revaly"

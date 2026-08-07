@@ -133,6 +133,38 @@
                 </configuration>
             </plugin>
             <plugin>
+                <!-- Maven Central rejects bundles without sources + javadoc jars for every
+                     artifact (stage-6 flip-readiness); versions match the generated core's
+                     template. Doclint keeps reference/syntax checks but not the
+                     missing-comment group — private members carry no doc comments. -->
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <doclint>all,-missing</doclint>
+                    <quiet>true</quiet>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>${spotless-version}</version>

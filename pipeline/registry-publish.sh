@@ -225,7 +225,7 @@ check_java() {
     [ -f "$base-sources.jar" ] \
       || note "java: $artifact-$VERSION-sources.jar missing — Maven Central requires a sources jar"
     [ -f "$base-javadoc.jar" ] \
-      || note "java: $artifact-$VERSION-javadoc.jar missing — Maven Central requires a javadoc jar (known stage-5 gap: javadoc is skipped for the interim channel; fix before flip)"
+      || note "java: $artifact-$VERSION-javadoc.jar missing — Maven Central requires a javadoc jar"
   done
   echo "   java: bundle layout co.revaly:{revaly-sdk,revaly-sdk-core}:$VERSION verified"
 }

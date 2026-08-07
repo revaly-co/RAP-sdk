@@ -84,8 +84,8 @@ alternative is building it now and proving it inert.
 - Every release until then emits a flip-readiness report; readiness regressions (a pom
   losing its `<developers>`, a metadata drift) surface on the next tag, not on flip day.
   Known findings today: the stage-5 Java bundle ships no javadoc jars (Maven Central
-  requires them — fix lands before the Maven flip), and the placeholder deletion on
-  Packagist is a one-time manual act at flip.
+  requires them — fixed 2026-08-07: stage 5 ships sources + javadoc jars for both
+  artifacts), and the placeholder deletion on Packagist is a one-time manual act at flip.
 - The npm rename to `@revaly/sdk` (ADR-SDK-030 stage-6 prep) ships with this ADR's PR; the
   interim tarball name (`revaly-sdk-<v>.tgz`, thus `revaly-sdk-typescript.tgz`) is
   unchanged by scoping. The one known external consumer of the import specifier —

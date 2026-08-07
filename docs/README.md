@@ -74,8 +74,9 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   guards are untouched. This pulled one flip-act-6 item ahead of the ADR-SDK-019 written gate;
   accepted and recorded as a deviation (Charles, 2026-08-06) alongside the Packagist
   placeholder precedent. The java publish path is still blocked on the workload-identity +
-  scoped Key Vault bindings, the Central Portal token, the keyserver upload, and the
-  javadoc-jar gap.
+  scoped Key Vault bindings, the Central Portal token, and the keyserver upload — the
+  javadoc-jar gap closed 2026-08-07 (stage 5 ships sources + javadoc jars for both
+  artifacts).
 
 - **ADR-SDK-032 cutover EXECUTED through runbook step 7 (private phase), 2026-08-05**: this
   repository at `revaly-co/RAP-sdk` is the **new** repository carrying the sanitized-history

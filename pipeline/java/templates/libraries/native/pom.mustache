@@ -121,6 +121,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <!-- Fork (pipeline/java/config.yaml, 2026-08-07): generated members carry no
+                     doc comments; doclint off keeps the Maven Central-required javadoc jar
+                     buildable without hundreds of "no comment" warnings. -->
+                <configuration>
+                    <doclint>none</doclint>
+                    <quiet>true</quiet>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
