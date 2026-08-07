@@ -41,6 +41,22 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
 
+## Status snapshot (2026-08-07)
+
+- **REGISTRY PUBLISH IS LIVE — the ADR-SDK-031 flip runbook executed 2026-08-07 in one
+  sitting**: repository public (secret scanning, push protection, private-vulnerability
+  reporting, fork-PR approval all enabled), guard-removal PR merged, `REGISTRY_PUBLISH_MODE=live`,
+  and **v0.5.1 released ×6 from one commit as the first registry release**: NuGet
+  (`Revaly.Sdk`/`Revaly.Sdk.Core`), Maven Central (`co.revaly` — Portal validation 2/2, GPG
+  `packages@revaly.co`), npm (`@revaly/sdk`), PyPI (`revaly-sdk`), Packagist (`revaly/sdk`,
+  placeholder deleted), and the `languages/go/v0.5.1` tag ceremony (`BlockGoModuleFormTags`
+  retired; `ReleaseTagsAdminOnly` still governs). Every registry was client-verified same-day
+  (install + mock-transport quickstart; npm/PyPI bytes identical to the release anchors; Maven
+  signature verified). Two recorded execution deviations (npm manual first publish; php
+  registry-job re-run) and the remaining custody closures live in
+  `registry-provisioning.md` § The flip / § Open items. GitHub releases continue as the
+  provenance anchor and fallback channel (ADR-SDK-031).
+
 ## Status snapshot (2026-08-06)
 
 - **ADR-SDK-019 Apache-2.0 Legal-ratified IN WRITING — recorded 2026-08-06**: the written

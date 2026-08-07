@@ -7,17 +7,17 @@ failover contract. `docs/` is the complete, self-contained design set (32 ADRs +
 **docs are the source of truth; this file is the enforcement summary.**
 
 **Namespace:** the repo lives at **`revaly-co/RAP-sdk`** — the org migration landed 2026-07-17
-(fleet-wide transfer; `FlexPay-io` is parked with redirects alive, per ADR-SDK-022). The
-namespace publish-gate is satisfied, the `publish` environment exists (2026-07-29), and names
-are final (ADR-SDK-030), and Apache-2.0 is **Legal-ratified in writing** (recorded 2026-08-06
-— the ADR-SDK-019 gate is closed); the remaining publish gates (OQ-3 provisioning residuals —
-PyPI org approval — and the publish-day OIDC bindings via the flip runbook) still stand —
-**publish remains embargoed** (rule 3).
+(fleet-wide transfer; `FlexPay-io` is parked with redirects alive, per ADR-SDK-022). Names are
+final (ADR-SDK-030), Apache-2.0 is **Legal-ratified in writing** (2026-08-06, ADR-SDK-019), and
+**the ADR-SDK-031 flip runbook EXECUTED 2026-08-07**: the repository is **public** and
+**registry publishing is LIVE** — v0.5.1 ×6 is the first registry release (NuGet, Maven
+Central, npm, PyPI, Packagist, pkg.go.dev). Remaining items are post-flip **custody closures**
+(`docs/registry-provisioning.md` § Open items), not publish gates.
 
 **Current phase:** see `docs/README.md` § Status snapshot (dated facts live there, not here).
-Standing build sequencing: global rules → repo bootstrap → pipeline stages 1–4 → per-language
-**GitHub release artifacts** as interim distribution → registry publish **last**, only after its
-gates close.
+Steady state: release tags on `main` drive the full pipeline through registry publish;
+per-language GitHub release artifacts continue as the provenance anchor and fallback channel
+(ADR-SDK-031).
 
 ## Read before writing code
 
@@ -38,20 +38,20 @@ build stories.
 2. **Spec input = pinned gated artifact only** (ADR-SDK-006): a `spec/v*` release tag from the
    platform repo, verified against its `.sha256` and `provenance.json` (pin lives in `spec/`).
    Never generate from a branch checkout, a URL, or a locally edited spec.
-3. **Publish is embargoed.** No registry publish (npm / PyPI / NuGet / Packagist /
-   Maven Central / pkg.go.dev), no OIDC trusted-publisher registration, no registry tokens —
-   until the `revaly-co` namespace is final (ADR-SDK-022), registry accounts + the protected
-   publish environment exist (OQ-3, ADR-SDK-011/013), and Apache-2.0 is Legal-ratified
-   (ADR-SDK-019 — ✅ ratified in writing, recorded 2026-08-06). Pre-1.0 betas count as
-   publishing. Interim distribution = per-language
-   **GitHub release artifacts** from this repo (model: the platform's `spec/v*` releases —
-   asset + `.sha256` + `provenance.json`). The stage-6 registry job exists but runs **DARK**
-   (ADR-SDK-031): rehearsal only, double-keyed flip — editing it is fine; setting
-   `REGISTRY_PUBLISH_MODE=live`, provisioning any registry binding/secret, or removing the
-   embargo guards (npm `"private"`, python `Private :: Do Not Upload`) IS the embargoed act
-   and happens only via the flip runbook in `docs/registry-provisioning.md`.
-4. **Do not decide open items.** OQ-2 (full error-code taxonomy) and the OQ-3 provisioning
-   residuals (PyPI org approval; publish-day OIDC/webhook + Maven workload-identity bindings)
+3. **Publishing goes only through the gated pipeline** (the embargo era ended 2026-08-07 —
+   the ADR-SDK-031 flip executed; `REGISTRY_PUBLISH_MODE=live` and the removed embargo
+   guards are the steady state, never to be reverted casually). The one human act is a
+   per-language release tag on `main`; the stage-6 registry job publishes from the protected
+   `publish` environment (ADR-SDK-013). **Never publish, re-publish, or yank out-of-band**,
+   never mint registry credentials outside the custody records in
+   `docs/registry-provisioning.md` (the 2026-08-07 npm manual first publish is the recorded
+   one-time exception), and never hand-edit the `rap-sdk-php` Packagist mirror — it is
+   pipeline output. A failed release never resumes via manual re-run of the build stages —
+   fix, then cut a new tag (an idempotent registry-side completion from the already-verified
+   artifact is the recorded narrow exception, used for php v0.5.1).
+4. **Do not decide open items.** OQ-2 (full error-code taxonomy) and the OQ-3 post-flip
+   custody closures (PyPI org transfer; Maven `packages@` Portal account; NuGet policy
+   re-anchor; Packagist webhook / OQ-17 GitHub App)
    have owners and gates in `docs/open-items.md`. Where code needs the answer, leave an explicit marker referencing the
    OQ. (OQ-1 is decided — ADR-SDK-023; generator changes are ADR revisions, never quiet
    pipeline edits. OQ-6 is decided — ADR-SDK-027: overall-deadline default 75 s ×6,

@@ -1,16 +1,13 @@
 # RAP Integration SDK — Registry Provisioning Runbook
 
-**Status:** OQ-3 **naming closed** (ADR-SDK-030, 2026-07-30); namespaces reserved on all six
-registries; **NuGet `Revaly.*` ID-prefix RESERVED 2026-08-03** (NuGet.org admin confirmation to
-the owner mailbox — one business day after the 2026-07-31 resubmission). **One provisioning act
-still sits in an external queue** (PyPI org approval — no longer launch-blocking: the
-**pending-publisher deviation was accepted for launch 2026-08-07**, see the PyPI deviation record
-below). The **Maven GPG signing key is generated and
-vaulted** (2026-08-06 — `maven-signing-key.md`; recorded deviation, no registry contact, nothing
-public). **Apache-2.0 is Legal-ratified IN WRITING — recorded 2026-08-06** (gate 3 closed;
-signed record in the internal RFC-046 record). A **Maven Portal custody deviation** is recorded
-below (owner account on an individual mailbox; second-publisher support request in flight
-2026-08-06). Publish still embargoed pending the flip runbook itself.
+**Status: PUBLISH IS LIVE — the flip runbook EXECUTED 2026-08-07.** The repository is public,
+the embargo guards are removed (PR #8), `REGISTRY_PUBLISH_MODE=live`, and **v0.5.1 is the first
+registry release across all six channels** (per-lane record in § The flip — executed, below).
+The rule-3 embargo is retired; publishing now follows ADR-SDK-013 steady state: one human act —
+a release tag on `main` — publishes through the gated pipeline's protected `publish`
+environment. Remaining items are **post-flip custody closures**, tracked in the open-items
+table below (PyPI org transfer on approval; Maven `packages@` Portal account; NuGet
+leadership-account policy recreation; Packagist webhook / OQ-17 GitHub App).
 **Last updated:** 2026-08-07
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
@@ -21,10 +18,50 @@ This is the human-readable record of where the SDK's six package-registry namesp
 who owns them, and how publishing will work. It is a status + how-it-works doc, not a
 decision doc.
 
-## The one rule that governs everything here
+## The flip — executed 2026-08-07
 
-**Publishing is embargoed** (CLAUDE.md rule 3). No registry publish, no OIDC
-trusted-publisher registration, and no registry tokens until all three gates close:
+All three gates closed (Legal 2026-08-06 in writing; PyPI by accepted pending-publisher
+deviation 2026-08-07; public flip 2026-08-07 with secret scanning + push protection +
+private-vulnerability-reporting + fork-PR approval enabled), then acts 4–10 ran in one
+sitting. v0.5.1, cut from one commit (`9d745a9`), is live and client-verified on every
+registry — install + mock-transport quickstart exercised from the public registry per
+language, plus byte/signature provenance:
+
+| Registry | Live | Verification |
+| --- | --- | --- |
+| NuGet | `Revaly.Sdk` + `Revaly.Sdk.Core` 0.5.1 | gallery + flat-container; `dotnet add package` + mock quickstart green (byte-compare N/A — nuget.org re-signs nupkgs) |
+| Maven Central | `co.revaly:{revaly-sdk,revaly-sdk-core}` 0.5.1 | Portal validation 2/2 → `repo1` sync; fresh-repo resolve + mock quickstart green; `.asc` = Good signature from `packages@revaly.co` (07E8…AAE7) |
+| npm | `@revaly/sdk` 0.5.1 | registry tarball sha256 **identical** to the release anchor; install + mock quickstart green |
+| PyPI | `revaly-sdk` 0.5.1 | sdist sha256 **identical** to the release anchor; venv install + mock quickstart green |
+| Packagist | `revaly/sdk` v0.5.1 | mirror-fed; `composer require` + autoload green; placeholder package **and** its stray `v0.0.1` mirror tag deleted 2026-08-07 |
+| pkg.go.dev | `languages/go/v0.5.1` tag ceremony | `BlockGoModuleFormTags` lifted (disabled — its purpose completed; `ReleaseTagsAdminOnly` still covers `**/v*`) |
+
+Two same-day execution deviations, recorded here:
+
+- **npm first publish was manual** (ADR-SDK-013 deviation, one-time): npm cannot register a
+  trusted publisher on a package that does not exist, so the `typescript/v0.5.1` registry
+  step failed by plan (`ENEEDAUTH`) and the **sha256-verified release tarball** was published
+  manually by an org member (`npm publish --access public`). The trusted publisher was
+  registered immediately after (publish-only permission); v0.5.1 is the only version without
+  provenance attestation — v0.5.2+ publish via OIDC `--provenance` like every other release.
+- **php registry job was re-run once**: the first attempt failed on mirror push permissions
+  (the fine-grained PAT is capped by the holder's repo role, and the holder had read-only on
+  the mirror until granted Write). The GitHub release was already green; the re-run executed
+  the identical idempotent push from the same verified artifact inside the protected
+  environment. Versions were not burned; no new tag was needed.
+- **the first module-form Go tag produced a red run**: the stage-5 tag parser still carried
+  the embargo-era fail-closed guard on `languages/go/v*` and errored after stages 1–4 had
+  validated the commit. The module publish itself was unaffected (pkg.go.dev is pull-based —
+  the tag is the release, and the proxy verified it same-day); the go GitHub-release channel
+  rides the interim-form `go/v0.5.1` tag as designed. Fixed with the post-flip sweep: stages
+  5–6 now **skip cleanly** on module-form tags (job-level exclusion; every future Go release
+  cuts both tag forms — `go/vX.Y.Z` for the release channel, `languages/go/vX.Y.Z` for the
+  module).
+
+## The one rule that governed everything here (retired 2026-08-07)
+
+**Publishing was embargoed** (CLAUDE.md rule 3) until all three gates closed — preserved for
+the record:
 
 1. GitHub namespace is final (ADR-SDK-022) — **satisfied** (repo at `revaly-co/RAP-sdk`
    since 2026-07-17).
@@ -40,10 +77,11 @@ trusted-publisher registration, and no registry tokens until all three gates clo
 **Pre-1.0 betas count as publishing.** Until the gates close, distribution is per-language
 **GitHub release artifacts** from this repo, not registry packages (ADR-SDK-026).
 
-## Current state — what is left, per registry
+## Provisioning record — per registry (pre-flip state, superseded 2026-08-07)
 
-Names are final (ADR-SDK-030). "Publish-day" items are embargoed behind gate 3 and executed
-only from the gated pipeline's protected environment (ADR-SDK-013).
+Names are final (ADR-SDK-030). This table records what stood between provisioning and the
+flip; it is preserved as the audit trail — current state lives in § The flip above, and the
+remaining custody closures in § Open items below.
 
 | Registry | Final name | Namespace held | Outstanding **now** | Publish-day (embargoed) |
 | --- | --- | --- | --- | --- |
@@ -124,6 +162,12 @@ publishing an actual package**. To hold `revaly/` during Week 1, a placeholder w
   (Apache-2.0, from the public monorepo) when the publish gates close.
 - **Owner:** SC squad (execution) — remove the placeholder as part of the first real
   Packagist publish.
+- ✅ **CLOSED 2026-08-07:** `revaly/sdk` v0.5.1 submitted from the mirror and live;
+  the placeholder package was deleted **after** the submit (deliberate resequencing of
+  "delete immediately before" — submit-then-delete leaves the `revaly` vendor name owned
+  continuously, with no takeover window). The placeholder's stray `v0.0.1` tag in the
+  mirror — which Packagist had imported as an installable MIT version of `revaly/sdk` —
+  was also deleted the same day.
 
 ## Known deviation: PyPI launch via pending publisher on a user account (interim)
 
@@ -256,6 +300,8 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 
 | Item | Owner | Gate |
 | --- | --- | --- |
-| **PyPI org approval** (application pending in PyPI's queue; **no longer launch-blocking** — pending-publisher deviation accepted 2026-08-07, launch proceeds on a user account) | SC squad | Post-approval closure: transfer the project + trusted publisher to the org, demote the individual account |
-| OIDC / webhook bindings + the Maven workload-identity and per-secret Key Vault assignments (the npm `@revaly/sdk` metadata rename shipped 2026-08-03 with the stage-6 prep; the **GPG key itself is done** — 2026-08-06, `maven-signing-key.md`) | SC squad + DevOps | Publish day, via the flip runbook (ADR-SDK-013/030/031; the ADR-SDK-019 written ratification landed 2026-08-06, so Legal no longer gates these) — except the Maven Key Vault bindings, which need production access and can land earlier |
-| Delete the Packagist placeholder; publish `revaly/sdk` via pipeline | SC squad | First gated Packagist publish |
+| **PyPI org transfer**: when the `revaly` org application is approved, transfer the `revaly-sdk` project + trusted publisher to the org and demote the individual anchoring account (closes the 2026-08-07 pending-publisher deviation) | SC squad | PyPI org approval (external queue) |
+| **Maven Portal custody closure**: group-mailbox Portal account → support-add/transfer on `co.revaly` → rotate `maven-central-token` → individual accounts to break-glass (closes the 2026-08-06 custody deviation) | Leadership + SC squad | Post-flip, per the custody deviation record |
+| **NuGet policy re-anchor**: recreate the trusted-publishing policy from a leadership org account and swap `NUGET_TRUSTED_PUBLISHING_USER` (the flip-day policy was created by an SC-squad collaborator account — ADR-SDK-011 nuance; policies + variable rotate freely) | Leadership + SC squad | Convenience, with the other custody closures |
+| **Packagist auto-update webhook** on the `rap-sdk-php` mirror (vendor-account API token or GitHub integration); longer term, replace the mirror-push fine-grained PAT (expires 2027-08-08) with an org GitHub App — same credential family as OQ-17 | SC squad + DevOps | Before the next php release (until then, "Update" is a manual click on packagist.org) |
+| **Quickstart drift check** (ADR-SDK-013): arm the drift check for the new registry bindings; `RAP-sdk-integration-tests` gains the registry-install variant and the `@revaly/sdk` import | SC squad | Post-flip sweep follow-up |

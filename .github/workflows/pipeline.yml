@@ -1012,9 +1012,12 @@ jobs:
   # Runs ONLY on a per-language release tag, and only after all six languages
   # passed build+test AND contract smoke on this very run. The tag names
   # exactly one language (dotnet|java|php|typescript|python|go)/vX.Y.Z; the
-  # Go tag is go/vX.Y.Z deliberately — languages/go/vX.Y.Z would activate the
-  # Go subdir module the moment the repo goes public, and is reserved for the
-  # real, gated, last-in-line Go registry publish (ADR-SDK-026).
+  # Go RELEASE tag is go/vX.Y.Z deliberately. languages/go/vX.Y.Z is the Go
+  # MODULE tag — since the 2026-08-07 flip it IS the Go registry publish
+  # (pkg.go.dev is pull-based; the tag is the release), so stages 5–6 have
+  # nothing to do for it: the job-level exclusion below skips them cleanly
+  # (a skipped `package` skips both stage-6 jobs via `needs`). Stages 1–4
+  # still validate the tagged commit.
   # ---------------------------------------------------------------------------
 
   package:
@@ -1027,7 +1030,7 @@ jobs:
       - smoke-typescript
       - smoke-python
       - smoke-go
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/languages/go/')
 
     steps:
       - name: Checkout Repository (full history for the on-main check)
@@ -1045,7 +1048,11 @@ jobs:
           case "$LANG_ID" in
             dotnet|java|php|typescript|python|go) ;;
             languages/go)
-              echo "::error::Tag ${REF} uses the Go MODULE tag form. Interim Go releases tag as go/vX.Y.Z; languages/go/v* is reserved for the gated Go registry publish (ADR-SDK-026)."
+              # Defense in depth: the job-level if excludes module-form tags, so this
+              # branch is unreachable — but if the exclusion ever drifts, fail closed
+              # rather than package a module tag (the module tag IS the Go publish;
+              # the go GitHub-release channel rides go/vX.Y.Z — ADR-SDK-026).
+              echo "::error::Tag ${REF} is the Go MODULE tag form — stages 5-6 have nothing to package for it and the job-level exclusion should have skipped this job (ADR-SDK-026)."
               exit 1 ;;
             *)
               echo "::error::Tag ${REF} does not name a packageable language (expected <dotnet|java|php|typescript|python|go>/vX.Y.Z — ADR-SDK-026)."
