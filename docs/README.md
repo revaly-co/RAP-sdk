@@ -47,8 +47,9 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   ratification landed; per the ratification runbook the signed record is held in the internal
   RFC-046 record (not committed here) and supersedes the 2026-07-29 verbal approval.
   Flip-runbook **gate 1 is closed** — with the ADR-SDK-032 cutover already executed through
-  step 7, the step-8 public flip and the registry flip now wait **only on the PyPI org
-  approval** (gate 2) plus the flip acts themselves. Nothing publishes yet: the embargo
+  step 7 and **gate 2 closed 2026-08-07** (PyPI pending-publisher deviation accepted for
+  launch — `registry-provisioning.md` § PyPI deviation), the step-8 public flip and the
+  registry flip now wait **only on the flip acts themselves**. Nothing publishes yet: the embargo
   guards, the dark stage-6 job, and `REGISTRY_PUBLISH_MODE` are unchanged — going live remains
   the runbook ceremony (`registry-provisioning.md` § Flip to LIVE). The dated record lives in
   ADR-SDK-019 § Ratification record. Its item-2 check resolved same-day: the exact legal
@@ -89,8 +90,9 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
   stage-6 registry job on the new plumbing. dotnet and go were re-cut solo after a
   staging-load flake on the `reconcile-found-*` smoke rows (six concurrent release runs;
   `Found(Pending)` before settlement); the settle-poll hardening rides this repo's first
-  PR. The repository **stays private**: step 8 (public flip) now waits only on the
-  PyPI org approval (the ADR-SDK-019 written ack was recorded 2026-08-06).
+  PR. The repository **stays private**: step 8 (public flip) is now unblocked —
+  gate 2 closed 2026-08-07 via the accepted PyPI pending-publisher deviation (the
+  ADR-SDK-019 written ack was recorded 2026-08-06) — and executes with the flip sitting.
 - **NuGet `Revaly.*` ID-prefix RESERVED, 2026-08-03** — NuGet.org admin confirmed "reserved
   the prefix 'Revaly' for account 'revaly'" to the owner mailbox, one business day after the
   2026-07-31 owner-mailbox resubmission. **PyPI org approval is now the only provisioning act
