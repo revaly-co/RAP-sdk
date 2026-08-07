@@ -12,23 +12,17 @@ github.com/revaly-co/rap-sdk/languages/go/core     ← generated core (full V2 s
 github.com/revaly-co/rap-sdk/languages/go/raptest  ← mock transport for your tests
 ```
 
-> **Pre-release status.** Registry publish is embargoed until the release
-> gates close; interim releases ship as per-language **GitHub release
-> artifacts** from this repository under `go/vX.Y.Z` tags — see the repo's
-> Releases page for the current version (each release ships the module zip
-> + `.sha256` + `provenance.json`). The source tree between releases carries
-> the placeholder version `0.0.0-dev`. To consume a release zip:
+> **Install:**
 >
 > ```bash
-> unzip revaly-sdk-go.zip -d third_party/revaly-sdk-go
-> go mod edit -replace github.com/revaly-co/rap-sdk/languages/go=./third_party/revaly-sdk-go
-> go get github.com/revaly-co/rap-sdk/languages/go
+> go get github.com/revaly-co/rap-sdk/languages/go@latest
 > ```
 >
-> (From a repository checkout, the same `replace` directive pointed at the
-> checkout path — or `GOPRIVATE=github.com/revaly-co` for VCS fetches — works
-> identically.) The supported Go floor is **go 1.21** (the `go.mod`
-> directive); it is re-evaluated at the GA gate.
+> Module-form releases are `languages/go/vX.Y.Z` tags, served via the Go module
+> proxy / pkg.go.dev. The source tree between releases carries the placeholder
+> version `0.0.0-dev`; per-language GitHub release artifacts (module zip +
+> `.sha256` + `provenance.json`) remain the provenance anchor and fallback
+> channel. The supported Go floor is **go 1.21** (the `go.mod` directive).
 
 ## Why this SDK is different: the failover contract
 

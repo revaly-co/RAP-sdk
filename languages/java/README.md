@@ -8,11 +8,18 @@ first-class mock transport.
 **Requires:** JDK 11+. **Depends on:** the generated core (`revaly-sdk-core`, built in
 this repo), Jackson, SLF4J (bring your own binding).
 
-> **Install (interim):** registry publish is embargoed until the namespace and registry
-> gates close (OQ-3 / ADR-SDK-022); the Maven coordinates `co.revaly:revaly-sdk` are the
-> proposed working scheme, not yet final. Until then, consume the per-language GitHub
-> release artifact from this repo, or build locally:
-> `mvn -f languages/java/pom.xml install`.
+> **Install:** from Maven Central —
+>
+> ```xml
+> <dependency>
+>     <groupId>co.revaly</groupId>
+>     <artifactId>revaly-sdk</artifactId>
+>     <version>0.5.1</version><!-- or newer -->
+> </dependency>
+> ```
+>
+> Artifacts are GPG-signed (`packages@revaly.co`). GitHub release artifacts remain the
+> provenance anchor and fallback channel.
 
 ## Why the error classes matter (read this first)
 

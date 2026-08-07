@@ -1,7 +1,7 @@
 {
   "name": "@revaly/sdk",
   "version": "0.0.0",
-  "description": "Server-side TypeScript SDK for the RAP V2 API (payments, payment methods, transactions, notify) with the merchant failover contract built in. Version 0.0.0 is the development placeholder; stage 5 stamps release versions at packaging time.",
+  "description": "Server-side TypeScript SDK for the RAP V2 API (payments, payment methods, transactions, notify) with the merchant failover contract built in.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {

@@ -4,10 +4,9 @@ Server-side .NET SDK for the RAP V2 API. One package: a hand-written runtime
 (`runtime/Revaly.Sdk`) over the generated API core (`core/`, never hand-edited).
 Requires .NET 10.
 
-> **Install (interim):** packages are distributed as GitHub release artifacts until
-> registry publishing opens (the NuGet id `Revaly.Sdk` is proposed, not final). Download
-> the release asset, verify its `.sha256`, and reference the package locally. This
-> section becomes `dotnet add package Revaly.Sdk` at GA.
+> **Install:** `dotnet add package Revaly.Sdk` — published on NuGet (the generated core
+> rides in as the `Revaly.Sdk.Core` dependency). GitHub release artifacts (asset +
+> `.sha256` + `provenance.json`) remain the provenance anchor and fallback channel.
 
 The quickstart below is the complete safety-critical path — **read the error handling,
 not just the happy path**. Target: sandbox key in hand → first successful sandbox charge
