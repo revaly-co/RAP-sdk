@@ -21,7 +21,8 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 | --- | --- |
 | [`adr/`](adr/README.md) | **32 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
 | [`architecture.md`](architecture.md) | System architecture: components, data flow, trust boundary, repo shape |
-| [`failover-contract.md`](failover-contract.md) | The merchant-facing failover & reconciliation contract, with sequence diagrams — the safety core of the product |
+| [`failover-contract.md`](failover-contract.md) | The merchant-facing failover & reconciliation contract, with sequence diagrams — the safety core of the product. Appendix A carries the normative prohibitions verbatim |
+| [`failover-cookbook.md`](failover-cookbook.md) | Task-oriented recipes for integrators: handling each outcome, choosing a reconcile policy, testing offline, debugging with correlation ids |
 | [`runtime-tdd.md`](runtime-tdd.md) | Technical design of the hand-written runtime layer (per-language surface) |
 | [`pipeline-and-release.md`](pipeline-and-release.md) | CI/CD pipeline stages, publish mechanics per registry, versioning & release policy |
 | [`registry-provisioning.md`](registry-provisioning.md) | OQ-3 runbook: final names (ADR-SDK-030), the per-registry what-is-left board, ownership/custody, how publishing will work, and the tracked Packagist placeholder deviation |
@@ -40,6 +41,16 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 4. `runtime-tdd.md` + `dx-contract.md` — the surface you're implementing and the bar it must meet.
 5. `pipeline-and-release.md` + ADRs 010–023 — how it ships and the governance around it.
 6. `open-items.md` — what is *not* yet decided; don't guess at these, they have owners.
+
+## Reading order for an integrator
+
+Building *on* the SDK rather than *in* it? The path is shorter:
+
+1. `../README.md` — what the SDK gives you, and the contract in thirty seconds.
+2. `languages/<language>/README.md` — sandbox key to first classified charge, ≤ 15 minutes.
+3. `failover-cookbook.md` — recipes for each outcome, reconcile policy, offline tests.
+4. `failover-contract.md` — the normative contract, when a boundary question comes up.
+5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
 ## Status snapshot (2026-08-07)
 

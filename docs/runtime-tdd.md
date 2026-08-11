@@ -88,9 +88,10 @@ GET-only and side-effect-free — the only loop the runtime owns (ADR-SDK-004).
 - `User-Agent: revaly-sdk-<language>/<semver> (<runtime-version>; <os>)` — exact grammar in
   ADR-SDK-005; set at transport level so the core cannot bypass it; merchant tokens may append,
   never replace.
-- No hidden retries anywhere; single-shot semantics except the explicit reconcile loop.
+- Single-shot delivery semantics throughout; the explicit reconcile loop is the one exception, and
+  the caller bounds it.
 - "Provably never sent" detection uses the transport's own connect-vs-response phase semantics;
-  where the stack can't distinguish, classify OutcomeUnknown.
+  where the stack can't distinguish, the outcome is OutcomeUnknown.
 
 ## 6. Logging, scrubbing, debuggability (DX contract §c · ADR-SDK-020)
 
@@ -147,7 +148,11 @@ classes** → reconcile worked example (all §3 verdict branches incl. default).
 successful sandbox charge in **≤ 15 minutes** using only the quickstart. The failover + reconcile
 example is part of the quickstart, not an appendix.
 
-## 10. Out of scope for the runtime
+## 10. Runtime scope
 
-Circuit breaking, suppression, routing, resubmission, `bypassPlatform`, phone-home telemetry,
-persistent state of any kind (ADR-SDK-004/005; PRD non-goals).
+The runtime stays small on purpose: config, classification, the reconcile helper, transport
+concerns, logging and scrubbing, and the mock transport — the list in §§1–9 is the whole surface.
+Circuit breaking, suppression, routing, resubmission, `bypassPlatform`, phone-home telemetry, and
+persistent state of any kind sit outside it, each with an owner elsewhere (ADR-SDK-004/005; PRD
+non-goals; `architecture.md` §8). The normative form of these boundaries is
+`failover-contract.md` Appendix A.

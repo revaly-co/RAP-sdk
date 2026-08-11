@@ -33,13 +33,13 @@ result or exactly one of:
 
 | Class | Meaning | Your action |
 | --- | --- | --- |
-| `*revaly.PermanentRejection` | Received and rejected (HTTP 400/401/403/404/422) | Fix or decline. **Never fail over** — the same request fails anywhere. |
+| `*revaly.PermanentRejection` | Received and rejected (HTTP 400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
 | `*revaly.TransientFailure` | **Definitively not processed** (provably never sent, or 503 with `code: not_processed`) | Route to your own gateway immediately. |
 | `*revaly.OutcomeUnknown` | **May have been processed** (deadline after send, reset mid-flight, other 5xx) | **Reconcile before acting** (below). |
 
-Classification is by error **type** and HTTP status only — never message
-text, never latency heuristics. Dispatch with `errors.As`; the class is the
-whole contract.
+Classification rests on the error **type** and HTTP status alone — message text
+and latency are reported to you and excluded from the verdict. Dispatch with
+`errors.As`; the class is the whole contract.
 
 ## Quickstart (sandbox key → first charge)
 
@@ -173,10 +173,21 @@ func reconcileBeforeActing(client *revaly.Client, merchantTransactionID string) 
 Cancellation is idiomatic Go: every operation takes a `context.Context`, and
 `Reconcile` additionally enforces its caller-bounded policy budget.
 
-What the runtime never does: no retries, no resubmission, no circuit breaker,
-no redirect-following (a 307 re-POST would resubmit a payment — the stdlib
-default is overridden), no cross-request state. The only loop it owns is the
-explicit reconcile re-poll you bound.
+### Design guarantees
+
+- **Each charge is sent exactly once.** Redirects stay off (the runtime overrides the
+  stdlib default), so a `307` on `POST /payments` arrives as a response to classify
+  rather than a re-POST that resubmits a payment.
+- **Every call stands alone** — no cross-request state, no circuit breaker, so
+  behaviour under load is the behaviour you tested.
+- **The reconcile re-poll you bound is the only loop the runtime owns.**
+- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`.
+  Message text and latency are reported to you and excluded from the verdict.
+- **Recovery beyond this boundary belongs to RAP-core** — resubmission and
+  `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
+
+Normative form: [`docs/failover-contract.md`](../../docs/failover-contract.md) §5 and
+Appendix A.
 
 ## Testing your failover handler (no network)
 
@@ -242,3 +253,12 @@ payment operations, `time.Duration` for all bounds, pointer-typed error
 classes dispatched via `errors.As`, the sealed-interface verdict pattern with
 a mandatory default branch, and the `raptest` companion-package name (now at
 the module root, outside the internal fence).
+
+## Where to go next
+
+- [Failover cookbook](../../docs/failover-cookbook.md) — recipes for each outcome, choosing a
+  reconcile policy, testing offline, debugging with correlation ids.
+- [Failover contract](../../docs/failover-contract.md) — the normative specification, with
+  sequence diagrams and the verbatim prohibitions in Appendix A.
+- [AGENTS.md](../../AGENTS.md) — the whole contract on one page, for AI coding agents.
+- [Support](../../SUPPORT.md) · [Contributing](../../CONTRIBUTING.md) · [Security](../../SECURITY.md)

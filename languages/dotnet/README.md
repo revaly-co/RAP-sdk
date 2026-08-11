@@ -1,7 +1,7 @@
 # Revaly RAP SDK for .NET
 
 Server-side .NET SDK for the RAP V2 API. One package: a hand-written runtime
-(`runtime/Revaly.Sdk`) over the generated API core (`core/`, never hand-edited).
+(`runtime/Revaly.Sdk`) over the generated API core (`core/`, produced by regeneration only).
 Requires .NET 10.
 
 > **Install:** `dotnet add package Revaly.Sdk` — published on NuGet (the generated core
@@ -85,7 +85,7 @@ try
 catch (PermanentRejectionException ex)
 {
     // Received and rejected (400/401/403/404/422): fix the request or decline.
-    // NEVER fail over — the same request fails at any gateway.
+    // Failing over reproduces the same rejection at any gateway.
     Console.WriteLine($"rejected ({ex.StatusCode}): {ex.ErrorMessage} [correlation {ex.CorrelationId}]");
 }
 catch (TransientFailureException)
@@ -121,7 +121,7 @@ async Task ReconcileBeforeActing(RapClient rap, string merchantTransactionId)
     switch (verdict)
     {
         case FoundVerdict { Outcome: RapTransactionOutcome.Approved } found:
-            // The money moved at RAP. Do NOT fail over; fulfil the order.
+            // The money moved at RAP: this payment is complete — fulfil the order.
             Console.WriteLine($"already approved: {found.Transaction!.TransactionId}");
             break;
 
@@ -182,9 +182,27 @@ TlsFailure/ResetMidFlight`, `ReturnsPending`, and `Stub(method, path)` for anyth
 `mock.Requests` records every request (the mock also asserts the SDK `User-Agent` is
 present — it is part of the platform's adoption telemetry, ADR-SDK-005).
 
-## What this SDK never does
+## Design guarantees
 
-No retries, no resubmission, no circuit breaker, no cross-request state. The only loop
-is the explicit, caller-bounded reconcile poll above. Classification never derives from
-error message text or latency heuristics — only from the normative algorithm
-(`docs/failover-contract.md` §2).
+- **Each charge is sent exactly once.** Retry policy stays yours, with the
+  classification that makes it safe to exercise.
+- **Every call stands alone** — no cross-request state, no circuit breaker, so
+  behaviour under load is the behaviour you tested.
+- **The reconcile poll above is the only loop the SDK owns**, and you bound it.
+- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`, via the
+  normative algorithm (`docs/failover-contract.md` §2). Message text and latency are
+  reported to you and excluded from the verdict.
+- **Recovery beyond this boundary belongs to RAP-core** — resubmission and
+  `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
+
+Normative form: [`docs/failover-contract.md`](../../docs/failover-contract.md) §5 and
+Appendix A.
+
+## Where to go next
+
+- [Failover cookbook](../../docs/failover-cookbook.md) — recipes for each outcome, choosing a
+  reconcile policy, testing offline, debugging with correlation ids.
+- [Failover contract](../../docs/failover-contract.md) — the normative specification, with
+  sequence diagrams and the verbatim prohibitions in Appendix A.
+- [AGENTS.md](../../AGENTS.md) — the whole contract on one page, for AI coding agents.
+- [Support](../../SUPPORT.md) · [Contributing](../../CONTRIBUTING.md) · [Security](../../SECURITY.md)

@@ -21,7 +21,7 @@ licenses failover:
 
 | Exception | Meaning | What you do |
 | --- | --- | --- |
-| `PermanentRejectionException` | Received and rejected (400/401/403/404/422) | Fix or decline. **Never fail over** — the same request fails anywhere. |
+| `PermanentRejectionException` | Received and rejected (400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
 | `TransientFailureException` | **Definitively not processed** (provably never sent, or `503` + `code: not_processed`) | Route to your own gateway immediately. |
 | `OutcomeUnknownException` | **May have been processed** (timeout after send, 500/502/504, bare 503, reset) | **Reconcile before acting** — see the quickstart. |
 
@@ -82,7 +82,7 @@ try {
     $transaction = $client->charge($request);
     echo "approved: {$transaction->getTransactionId()}\n";
 } catch (PermanentRejectionException $e) {
-    // Fix or decline. NEVER fail over — the same request fails anywhere.
+    // Fix or decline — failing over reproduces the same rejection anywhere.
     echo "rejected [{$e->getStatusCode()}]: {$e->getApiError()} (ref {$e->getCorrelationId()})\n";
 } catch (TransientFailureException $e) {
     // Definitively not processed — route to your own gateway immediately.
@@ -118,9 +118,11 @@ try {
 }
 ```
 
-`reconcile()` is GET-only and side-effect-free; its bounds are yours (`ReconcilePolicy`
-has no defaults). On sustained `NotFoundYet`, escalate per your risk policy — V1 has no
-`SafeToFailover` verdict, deliberately.
+`reconcile()` is GET-only and side-effect-free, so it is always safe to call again; its
+bounds are yours to set (`ReconcilePolicy` ships no defaults, because the right budget is
+your checkout's). On sustained `NotFoundYet`, escalate per your risk policy: V1's verdict
+set is exactly what the platform can prove today, and `SafeToFailover` arrives with
+platform P-2 as a minor release.
 
 ### Timeouts
 
@@ -187,12 +189,23 @@ escapes (`returns()`, `throwsIo()`).
 - `wireTraceHook` receives a scrubbed request/response observer (`RapWireTrace`) for
   escalations; observer exceptions are swallowed.
 
-## What this SDK never does
+## Design guarantees
 
-No retries, no resubmission, no circuit breaker, no redirect-following, no cross-request
-state. The only loop is the explicit, caller-bounded reconcile poll. Failover execution
-belongs to your code against your risk policy — the SDK's job is to tell you, honestly,
-which failure class you are in.
+The SDK's job is to tell you, honestly, which failure class you are in. Failover execution
+belongs to your code, against your risk policy.
+
+- **Each charge is sent exactly once** — redirects are not followed, so a `307` on
+  `POST /payments` arrives as a response to classify rather than a silent re-send.
+- **Every call stands alone** — no cross-request state, no circuit breaker, so behaviour
+  under load is the behaviour you tested.
+- **The reconcile poll you bound is the only loop the SDK owns.**
+- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`. Message
+  text and latency are reported to you and excluded from the verdict.
+- **Recovery beyond this boundary belongs to RAP-core** — resubmission and
+  `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
+
+Normative form: [`docs/failover-contract.md`](../../docs/failover-contract.md) §5 and
+Appendix A.
 
 ## Beyond payments
 
@@ -210,3 +223,12 @@ summary (via Guzzle) and `getResponseBody()` returns the body raw. Response bodi
 contain PII (names, emails, masked card data): never log raw core exception messages or
 bodies; log the correlation id and the typed runtime errors (values-free by design)
 instead.
+
+## Where to go next
+
+- [Failover cookbook](../../docs/failover-cookbook.md) — recipes for each outcome, choosing a
+  reconcile policy, testing offline, debugging with correlation ids.
+- [Failover contract](../../docs/failover-contract.md) — the normative specification, with
+  sequence diagrams and the verbatim prohibitions in Appendix A.
+- [AGENTS.md](../../AGENTS.md) — the whole contract on one page, for AI coding agents.
+- [Support](../../SUPPORT.md) · [Contributing](../../CONTRIBUTING.md) · [Security](../../SECURITY.md)

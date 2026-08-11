@@ -1,0 +1,60 @@
+# OpenSSF Scorecard — supply-chain posture analysis.
+#
+# Backs the Scorecard badge in README.md. Read-only analysis of this repository's own
+# configuration (branch protection, action pinning, workflow permissions, dependency update
+# tooling); it never touches the release pipeline and never publishes anything.
+#
+# Every action is SHA-pinned, per repo convention and Scorecard's own Pinned-Dependencies check.
+# `results_format: sarif` plus the upload step is what makes the public badge resolve — dropping
+# the upload leaves the badge endpoint with nothing to serve. The badge stays blank until this
+# workflow's first run on `main` completes.
+
+name: Scorecard
+
+on:
+  branch_protection_rule:
+  schedule:
+    # Weekly, Mondays 07:00 UTC — posture drifts on config changes, not on commits.
+    - cron: '0 7 * * 1'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # Publish results to the public OpenSSF API so the README badge resolves.
+      id-token: write
+      # Upload the SARIF to the repository's code-scanning dashboard.
+      security-events: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (node24)
+        with:
+          name: scorecard-results
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload to code scanning
+        uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3
+        with:
+          sarif_file: results.sarif
