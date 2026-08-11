@@ -1,0 +1,43 @@
+# Revaly RAP SDK
+
+> Server-side SDKs for the Revaly RAP V2 API (`https://api.revaly.co`) in six languages — .NET,
+> Java, PHP, TypeScript, Python, Go. Each one implements the same failover & reconciliation
+> contract: every failed payment call resolves to exactly one of three typed outcomes
+> (PermanentRejection, TransientFailure, OutcomeUnknown) that state what the caller may safely do
+> next, and the ambiguous outcome ships with a bounded reconcile helper that resolves it.
+
+Read AGENTS.md first: it states the normative classification algorithm, the reconcile procedure,
+the per-language class names, and the configuration surface on one page. Integration code that
+classifies failures from message text or latency, or that omits the default branch on a reconcile
+verdict, is incorrect.
+
+## Core
+
+- [AGENTS.md](AGENTS.md): the whole contract on one page, structured for coding agents.
+- [README.md](README.md): what the SDK is, who it is for, install lines, design guarantees.
+- [docs/failover-contract.md](docs/failover-contract.md): normative safety contract with sequence diagrams.
+- [docs/failover-cookbook.md](docs/failover-cookbook.md): task-oriented recipes per outcome, in all six languages.
+
+## Reference
+
+- [docs/runtime-tdd.md](docs/runtime-tdd.md): per-language runtime surface, setting by setting.
+- [docs/architecture.md](docs/architecture.md): components, data flow, trust boundary.
+- [docs/dx-contract.md](docs/dx-contract.md): the developer-experience bar every SDK meets.
+- [docs/pipeline-and-release.md](docs/pipeline-and-release.md): pipeline stages, publish mechanics, versioning.
+- [docs/adr/README.md](docs/adr/README.md): every architectural decision, numbered and dated.
+- [docs/open-items.md](docs/open-items.md): questions that are still open, with owners.
+
+## Quickstarts
+
+- [languages/dotnet/README.md](languages/dotnet/README.md): `dotnet add package Revaly.Sdk`
+- [languages/java/README.md](languages/java/README.md): `co.revaly:revaly-sdk`
+- [languages/php/README.md](languages/php/README.md): `composer require revaly/sdk`
+- [languages/typescript/README.md](languages/typescript/README.md): `npm install @revaly/sdk`
+- [languages/python/README.md](languages/python/README.md): `pip install revaly-sdk`
+- [languages/go/README.md](languages/go/README.md): `go get github.com/revaly-co/rap-sdk/languages/go`
+
+## Contributing
+
+- [CONTRIBUTING.md](CONTRIBUTING.md): generated code is never hand-edited; spec input is a pinned gated artifact.
+- [SUPPORT.md](SUPPORT.md): where to ask questions and what to include.
+- [SECURITY.md](SECURITY.md): vulnerability reporting via security@revaly.co, never a public issue.

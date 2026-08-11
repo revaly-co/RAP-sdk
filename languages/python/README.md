@@ -16,7 +16,7 @@ charged **twice**. The SDK classifies every failure so you never have to guess:
 
 | Class | Meaning | What you do |
 | --- | --- | --- |
-| `RapPermanentRejection` | Received and rejected (400/401/403/404/422) | Fix or decline. **Never fail over** — the same request fails anywhere. |
+| `RapPermanentRejection` | Received and rejected (400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
 | `RapTransientFailure` | **Definitively not processed** (provably never sent, or `503` + `code: not_processed`) | Route to your own gateway immediately. |
 | `RapOutcomeUnknown` | **May have been processed** (timeout after send, reset, 5xx) | **Reconcile before acting** — see below. |
 
@@ -26,10 +26,13 @@ Your API key's scope selects the environment: sandbox and live share the same UR
 there is no separate sandbox host. Use the sandbox-scoped key issued by Enablement.
 
 ```bash
-# Download revaly-sdk-python.tar.gz from the release, verify its .sha256, then:
-pip install ./revaly-sdk-python.tar.gz
-# (the release also attaches a wheel — either file installs the same package)
+pip install revaly-sdk
 ```
+
+> Prefer to install from a verified artifact? Every release attaches
+> `revaly-sdk-python.tar.gz` and a wheel, each with a `.sha256` and a `provenance.json`;
+> verify the checksum, then `pip install ./revaly-sdk-python.tar.gz` — either file installs
+> the same package.
 
 ```python
 import os
@@ -72,7 +75,7 @@ try:
     transaction = client.charge(request)
     print("approved", transaction.transaction_id)
 except RapPermanentRejection as failure:
-    # Fix or decline. Never fail over — the same request fails anywhere.
+    # Fix or decline — failing over reproduces the same rejection anywhere.
     print("rejected", failure.status, failure.api_error, failure.correlation_id)
 except RapTransientFailure:
     # Definitively not processed — route to your own gateway immediately.
@@ -181,14 +184,25 @@ Synthetic data only — no real PAN/CVV/PII ever appears in the mock.
 - Every response and every typed error carries the `X-Correlation-ID`; quote it in
   support tickets to join RAP-core telemetry directly.
 
-## What this SDK never does
+## Design guarantees
 
-No hidden retries, no resubmission, no circuit breaker, no cross-request state, no
-`bypassPlatform`. The explicit, caller-bounded reconcile re-poll is the only loop the
-SDK owns. Classification never derives from message text, latency, or wait
-heuristics. (Concretely: urllib3's default connect retries and redirect-following are
-disabled on every request — a `307` on `POST /payments` comes back as a response and
-classifies `RapOutcomeUnknown` instead of being silently re-sent.)
+- **Each charge is sent exactly once.** Retry policy stays yours, with the
+  classification that makes it safe to exercise.
+- **Every call stands alone** — no cross-request state, no circuit breaker, so
+  behaviour under load is the behaviour you tested.
+- **The reconcile re-poll you bound is the only loop the SDK owns.**
+- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`.
+  Message text, latency and wait length are reported to you and excluded from the
+  verdict.
+- **Recovery beyond this boundary belongs to RAP-core** — resubmission and
+  `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
+
+Concretely, on the transport: urllib3's default connect retries and redirect-following are
+switched off per request, so a `307` on `POST /payments` arrives as a response and
+classifies `RapOutcomeUnknown` rather than being silently re-sent.
+
+Normative form: [`docs/failover-contract.md`](../../docs/failover-contract.md) §5 and
+Appendix A.
 
 ## Beyond payments
 
@@ -205,3 +219,12 @@ One logging caution on this surface: raw core operations raise the generator's
 HTTP response body. Response bodies can contain PII (names, emails, masked card data):
 never log raw core exceptions or response bodies; log the correlation id and the typed
 runtime errors (values-free by design) instead.
+
+## Where to go next
+
+- [Failover cookbook](../../docs/failover-cookbook.md) — recipes for each outcome, choosing a
+  reconcile policy, testing offline, debugging with correlation ids.
+- [Failover contract](../../docs/failover-contract.md) — the normative specification, with
+  sequence diagrams and the verbatim prohibitions in Appendix A.
+- [AGENTS.md](../../AGENTS.md) — the whole contract on one page, for AI coding agents.
+- [Support](../../SUPPORT.md) · [Contributing](../../CONTRIBUTING.md) · [Security](../../SECURITY.md)

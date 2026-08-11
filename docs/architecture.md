@@ -41,9 +41,11 @@ flowchart LR
 
 Trust boundary consequences (RFC §5.1, ADR-SDK-004): RAP-core's responsibility ends at the HTTP
 response; the SDK's ends at classifying the failure as a typed error; routing decisions belong to
-the merchant's system above the SDK. The SDK is an untrusted client — `User-Agent` is telemetry,
-never a trust signal. API keys are merchant-held, injected at init, never persisted or logged. The
-SDK never resubmits and never calls `bypassPlatform`.
+the merchant's system above the SDK. The SDK is an untrusted client — `User-Agent` carries
+telemetry only, and the platform treats it as such. API keys are merchant-held, injected at init,
+and live only in memory for the life of the client. Payment delivery is single-shot: the SDK
+reports the outcome, and resubmission plus second-layer recovery (`bypassPlatform`) stay
+RAP-core-internal.
 
 ## 3. Component model (per language)
 
@@ -108,9 +110,18 @@ rap-sdk/
 | Sandbox parity + Enablement-issued test keys (OQ-4) | contract-smoke + GA | ADR-SDK-014 |
 | Apache-2.0 Legal ratification (OQ-12) | first publish — ✅ ratified in writing, recorded 2026-08-06 | ADR-SDK-019 |
 
-## 8. What this architecture deliberately does not do
+## 8. Scope this architecture holds to
 
-- No browser/mobile targets; no traffic splitting or A/B routing; no automatic resubmission; no
-  `bypassPlatform`; no retry/treatment configuration; no Client Portal surfacing (PRD non-goals).
-- No client-side circuit breaker, no hidden retries, no cross-request state (ADR-SDK-004).
-- No RTN SDK coupling — separate product, separate pipeline (ADR-SDK-017).
+The boundaries below are designed, not incidental — each one keeps a decision with the party that
+owns it (PRD non-goals; ADR-SDK-004/017).
+
+| Boundary | Where that responsibility lives |
+| --- | --- |
+| Server-side targets only | Browser and mobile clients call the merchant's backend, which calls RAP |
+| Routing, traffic splitting, A/B | The merchant's system, above the SDK, where their business rules already are |
+| Resubmission, `bypassPlatform`, retry/treatment configuration | RAP-core — second-layer recovery is platform-internal |
+| Breaker state, suppression, cross-request state | Nowhere: the runtime is stateless and deterministic by design (ADR-SDK-004) |
+| Client Portal surfacing | The Portal |
+| RTN | A separate product with its own SDK and pipeline (ADR-SDK-017) |
+
+Verbatim normative form: `failover-contract.md` Appendix A.
