@@ -114,7 +114,32 @@ RFC:
 3. Fix: **immediate patch release from the last good spec artifact** through the same pipeline —
    no expedited side channel.
 4. Announce: yanked release announced **together with its patched replacement in the same
-   notice**; channels per DX contract §e (release notes + registry deprecation metadata).
+   notice**; channels per DX contract §e (release notes + registry deprecation metadata), and the
+   internal notice per §5.1.
+
+### 5.1 Release notices (engineering notices channel)
+
+`.github/workflows/notify-teams-on-release.yml` posts one Adaptive Card per released package to
+the engineering notices channel — package, version, registry, tag, commit, releaser, and the
+release notes.
+
+Design points, adapted from `revaly-co/RTN-horizon-relay`'s workflow of the same name:
+
+- **It fires on the same triggers as the thing it announces** — `push: tags` as well as
+  `release: published`. Stages 5-6 publish on tag push, so a tag pushed without a GitHub Release
+  ships an irreversible registry publish; notifying only on the release event would let that go
+  out silently. When no Release exists, the notice falls back to the annotated tag message and
+  says so.
+- **One card per language tag.** Release tags are per-language and each publishes an independent
+  package, so a six-language release posts six cards — which is what actually shipped. The Go
+  module-form tag `languages/go/vX.Y.Z` is skipped, since `go/vX.Y.Z` already announced that
+  release (ADR-SDK-026).
+- **It is a separate workflow, never a step in `pipeline.yml`.** Stage 6 publishes from the
+  protected `publish` environment under the ADR-SDK-013 single human gate; a chat webhook does not
+  belong inside that gate, and a webhook outage must not colour a release's status.
+- **Unparseable tags fail closed**, as the pipeline's own tag parse does.
+- Requires the repository secret `TEAMS_WEBHOOK_URL`. An unset secret fails the run loudly rather
+  than skipping — a silent notifier is the failure this workflow exists to prevent.
 
 ## 6. Inputs & secrets
 
