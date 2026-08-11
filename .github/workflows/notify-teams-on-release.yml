@@ -1,39 +1,44 @@
 # Announce a per-language release to the engineering notices channel.
 #
-# Strategy mirrors revaly-co/RTN-horizon-relay's notify-teams-on-release: notification follows
-# the SAME trigger as the thing it announces, so it cannot be skipped by choosing
-# `git push --tags` over `gh release create`. There, a tag pushed without a GitHub Release
-# deployed to prod and announced nothing for ~20 hours (v1.2.0, 2026-08-06). Here the exposure
-# is the same shape: stages 5-6 fire on `push: tags`, so a tag alone publishes to a public
-# registry — an irreversible act — with no notice.
+# Modelled on revaly-co/RTN-horizon-relay's notify-teams-on-release, with one deliberate
+# divergence — the trigger set. That workflow also fires on `push: tags`, because its prod deploy
+# fires on tag push and a human choosing `git push --tags` over `gh release create` would deploy
+# and announce nothing (that happened there with v1.2.0 on 2026-08-06: prod changed, channel
+# silent ~20 hours).
+#
+# That failure mode cannot occur here, because of this repository's job graph:
+#
+#   package → github-release → registry-publish   (pipeline.yml; registry-publish `needs:` it)
+#
+# The GitHub Release is created by stage 6 itself, and every registry publish is strictly
+# downstream of it. So `release: published` always fires, always before anything reaches a
+# registry, and no human choice can skip it. Adding `push: tags` here would not close a gap; it
+# would open one — the notification would run minutes before stage 5 finishes, find no release,
+# and post a false "shipped without a release" alarm ahead of the real card on every single
+# release. Concurrency-cancel does not rescue that: the gap is a full blocking contract-smoke
+# run, not the quick succession RTN's comment assumes.
+#
+# The backfill path is `workflow_dispatch`, for the case this workflow itself failed or was
+# added after a release.
 #
 # Deliberately a separate workflow, not a step in pipeline.yml: stage 6 publishes from the
-# protected `publish` environment under a single human gate (ADR-SDK-013), and a chat webhook
-# has no business inside that gate. A failed notification must never mark a good release red,
-# nor a failed release green.
+# protected `publish` environment under a single human gate (ADR-SDK-013), and a chat webhook has
+# no business inside that gate. A failed notification must never mark a good release red, nor a
+# failed release green.
 #
-# TAG SHAPES HERE (ADR-SDK-016/026) — this is where the RTN template needed real adaptation.
-# Release tags are per-language, `<lang>/vX.Y.Z`, and each one publishes an independent package
-# to its own registry. So a six-language release posts six cards, one per package — matching
-# what actually shipped, since any language can be released alone. The Go module-form tag
-# `languages/go/vX.Y.Z` is a distribution mechanic rather than a second release, and is
-# excluded exactly as stages 5-6 exclude it.
+# TAG SHAPES (ADR-SDK-016/026): release tags are per-language `<lang>/vX.Y.Z`, and each one
+# publishes an independent package to its own registry, so a six-language release posts six cards
+# — matching what actually shipped, since any language can be released alone.
 #
-# SETUP: needs a repository secret TEAMS_WEBHOOK_URL pointing at the engineering notices
-# channel. Until it exists, every run fails loudly at the final step — chosen over skipping,
-# because a silent notifier is the failure mode this workflow exists to prevent.
+# SETUP: repository secret TEAMS_WEBHOOK_URL, pointing at the engineering notices channel. An
+# unset secret fails the run loudly rather than skipping — a silent notifier is the failure this
+# workflow exists to prevent.
 
 name: Notify Teams on Release
 
 on:
   release:
     types: [published]
-
-  push:
-    tags:
-      # Same filter as pipeline.yml's release trigger. The module-form Go tag matches too and
-      # is filtered out in the job below, where the reason can be stated.
-      - "**/v*"
 
   workflow_dispatch:
     inputs:
@@ -45,37 +50,27 @@ on:
 permissions:
   contents: read
 
-# Pushing a tag and publishing its release in quick succession fires both triggers. The
-# release-event run carries the human-written notes, so a later run cancels an in-flight
-# earlier one. A release published long after its tag notifies again — correct, that is a
-# distinct human-meaningful event. Keyed per tag so six per-language releases never cancel
-# each other.
+# Keyed per tag, so the six per-language releases of one version never cancel each other. A
+# re-dispatch for the same tag supersedes an in-flight run.
 concurrency:
-  group: notify-teams-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  group: notify-teams-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: true
 
 jobs:
   notify_teams:
     runs-on: ubuntu-latest
     steps:
-      # Full history: the annotated tag message stands in for release notes when a tag was
-      # pushed without a GitHub Release.
-      - name: Checkout Repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
+      # No checkout: everything comes from the Releases API. Nothing here reads the work tree.
       - name: Parse Release Tag
         id: tag
         run: |
           set -euo pipefail
 
-          case "${{ github.event_name }}" in
-            release) tag="${{ github.event.release.tag_name }}" ;;
-            push)    tag="${GITHUB_REF#refs/tags/}" ;;
-            *)       tag="${{ inputs.tag }}" ;;
-          esac
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            tag="${{ github.event.release.tag_name }}"
+          else
+            tag="${{ inputs.tag }}"
+          fi
 
           lang="${tag%/v*}"
           version="${tag##*/v}"
@@ -89,15 +84,16 @@ jobs:
             python)     package="revaly-sdk";              registry="PyPI";          url="https://pypi.org/project/revaly-sdk/${version}/" ;;
             go)         package="github.com/revaly-co/rap-sdk/languages/go"; registry="Go module proxy"; url="https://pkg.go.dev/github.com/revaly-co/rap-sdk/languages/go@v${version}" ;;
             languages/go)
-              # The Go MODULE tag. Its sibling `go/vX.Y.Z` is the release that stages 5-6 act
-              # on and that this workflow announces; announcing both would double-post one
-              # release (ADR-SDK-026).
+              # The Go MODULE tag. Stage 5 skips it, so stage 6 mints no release for it and this
+              # branch is unreachable via the release event — kept for a hand-created release or
+              # a mistaken dispatch. Its sibling `go/vX.Y.Z` carries the announcement
+              # (ADR-SDK-026).
               echo "::notice::${tag} is the Go module-form tag — the go/v${version} release tag carries the announcement. Nothing to post."
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0 ;;
             *)
-              # Fail closed, as the pipeline does: an unannounceable tag under `**/v*` means
-              # either a typo or a new tag convention, and both deserve a red run.
+              # Fail closed, as the pipeline's own tag parse does: an unannounceable tag means a
+              # typo or a new tag convention, and both deserve a red run.
               echo "::error::Tag ${tag} does not name a releasable language (expected <dotnet|java|php|typescript|python|go>/vX.Y.Z — ADR-SDK-026)."
               exit 1 ;;
           esac
@@ -128,29 +124,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          # A tag push can arrive before — or entirely without — a GitHub Release, which is the
-          # whole reason the push trigger exists. This lookup is allowed to fail.
-          if release_json=$(gh api "repos/${{ github.repository }}/releases/tags/${TAG}" 2>/dev/null); then
-            title=$(jq -r '.name // .tag_name'  <<<"$release_json")
-            body=$(jq  -r '.body // ""'         <<<"$release_json")
-            commit=$(jq -r '.target_commitish'  <<<"$release_json")
-            author=$(jq -r '.author.login'      <<<"$release_json")
-          else
-            title="${TAG}"
-            body=$(git tag -l --format='%(contents)' "${TAG}")
-            [[ -n "${body}" ]] || body="_No GitHub Release for this tag, and the annotated tag carried no message._"
-            body="${body}"$'\n\n'"_⚠️ Announced from the pushed tag: no GitHub Release exists for \`${TAG}\`. Stages 5-6 publish on tag push, so this shipped regardless — publish a Release to add proper notes and the spec commit._"
-            commit=$(git rev-list -n 1 "${TAG}")
-            author="${{ github.actor }}"
+          # Every announceable tag has a release: stage 6 creates it before any registry publish.
+          # A missing one means a dispatch for a tag that never completed a release run — say so
+          # rather than inventing a card.
+          if ! release_json=$(gh api "repos/${{ github.repository }}/releases/tags/${TAG}" 2>/dev/null); then
+            echo "::error::No GitHub Release exists for ${TAG}. Stage 6 creates the release before any registry publish, so either the release run has not finished, or it failed before stage 6 — check the pipeline run for this tag rather than announcing it."
+            exit 1
           fi
 
           {
-            echo "title=${title}"
-            echo "commit=${commit}"
-            echo "author=${author}"
+            echo "title=$(jq -r '.name // .tag_name' <<<"$release_json")"
+            echo "commit=$(jq -r '.target_commitish'  <<<"$release_json")"
+            echo "author=$(jq -r '.author.login'      <<<"$release_json")"
           } >> "$GITHUB_OUTPUT"
 
-          printf '%s' "$body" > release_body.md
+          jq -r '.body // ""' <<<"$release_json" > release_body.md
 
       - name: Build Teams Adaptive Card Payload
         if: steps.tag.outputs.skip == 'false'

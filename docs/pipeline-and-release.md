@@ -125,15 +125,23 @@ release notes.
 
 Design points, adapted from `revaly-co/RTN-horizon-relay`'s workflow of the same name:
 
-- **It fires on the same triggers as the thing it announces** — `push: tags` as well as
-  `release: published`. Stages 5-6 publish on tag push, so a tag pushed without a GitHub Release
-  ships an irreversible registry publish; notifying only on the release event would let that go
-  out silently. When no Release exists, the notice falls back to the annotated tag message and
-  says so.
+- **It fires on `release: published` only** (plus `workflow_dispatch` to backfill). This diverges
+  from the RTN workflow, which also triggers on `push: tags` because its prod deploy does, and a
+  human choosing `git push --tags` over `gh release create` would deploy and announce nothing.
+  That failure mode cannot occur here: `registry-publish` declares `needs: github-release`, so the
+  release is minted by stage 6 itself and every registry publish is strictly downstream of it. The
+  release event therefore always fires, always before anything reaches a registry, and no human
+  choice can skip it. Adding a tag trigger would instead *create* a defect — it would run minutes
+  ahead of stage 5, find no release, and post a false "shipped without a release" alarm before the
+  real card on every release. Concurrency-cancel does not cover that gap, which is a full blocking
+  contract-smoke run rather than the quick succession RTN's design assumes.
+- **A missing release is an error, not a fallback.** If a dispatched tag has no release, the run
+  fails and points at the pipeline run instead of announcing something unverified.
 - **One card per language tag.** Release tags are per-language and each publishes an independent
   package, so a six-language release posts six cards — which is what actually shipped. The Go
-  module-form tag `languages/go/vX.Y.Z` is skipped, since `go/vX.Y.Z` already announced that
-  release (ADR-SDK-026).
+  module-form tag `languages/go/vX.Y.Z` never reaches the release event (stage 5 skips it, so
+  stage 6 mints nothing), and is guarded anyway; `go/vX.Y.Z` carries that announcement
+  (ADR-SDK-026).
 - **It is a separate workflow, never a step in `pipeline.yml`.** Stage 6 publishes from the
   protected `publish` environment under the ADR-SDK-013 single human gate; a chat webhook does not
   belong inside that gate, and a webhook outage must not colour a release's status.
