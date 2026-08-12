@@ -26,10 +26,12 @@
     "prelint": "node -e \"if(!require('fs').existsSync('lint/node_modules'))require('child_process').execSync('npm ci --prefix lint --no-audit --no-fund',{stdio:'inherit'})\"",
     "lint": "node lint/node_modules/eslint/bin/eslint.js .",
     "build": "tsc -p tsconfig.build.json",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   }

@@ -96,6 +96,22 @@ on release tags, on the nightly schedule, and on manual dispatch — not on plai
 **Any language red blocks the release for all six.** That's the point: one behaviour across six
 languages is a promise the pipeline keeps, not a review convention.
 
+Stage 3 also reports test coverage per language, scoped to the hand-written runtime — the
+generated core is excluded, since the regeneration diff and the contract smoke are what prove it
+(`docs/pipeline-and-release.md` §2.1). No threshold gates the build, so treat the number as review
+signal: if your PR moves it down, say why in the description.
+
+Running it locally:
+
+| Language | Command (from the language directory) |
+| --- | --- |
+| dotnet | `dotnet test Revaly.Sdk.slnx -c Release --collect:"XPlat Code Coverage" --settings coverlet.runsettings` |
+| java | `mvn -B -ntp -f pom.xml test` (writes `tests/target/site/jacoco-aggregate/`) |
+| php | `vendor/bin/phpunit --coverage-text` (needs pcov or xdebug) |
+| typescript | `npm run test:coverage` |
+| python | `python -m coverage run --source=revaly_sdk -m pytest tests && python -m coverage report` |
+| go | `go test ./tests/... -coverpkg=./,./internal/runtime,./raptest -coverprofile=cover.out && go tool cover -func=cover.out` |
+
 ## House style
 
 - Terminal commands in docs are single-line, copy-pasteable — no backslash continuations.

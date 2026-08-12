@@ -23,6 +23,7 @@
         <spotless-version>2.43.0</spotless-version>
         <google-java-format-version>1.17.0</google-java-format-version>
         <error-prone-version>2.50.0</error-prone-version>
+        <jacoco-version>0.8.12</jacoco-version>
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
@@ -85,6 +86,44 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+            </plugin>
+            <!--
+              Coverage lives here rather than in runtime/, because this is the module
+              surefire runs: the agent must be attached to the JVM executing the tests.
+              report-aggregate then reports across the reactor's dependency modules, which
+              is how runtime's classes get measured from tests run in this module.
+
+              Bound to the `test` phase on purpose, so the existing stage-3 command
+              (`mvn test`) produces the report with no pipeline change to the build itself.
+              The generated core is excluded — it is generator output (ADR-SDK-001), proven
+              by the stage-2 regeneration diff and the stage-4 contract smoke, and its size
+              would bury the runtime's number.
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>co/revaly/sdk/core/**</exclude>
+                            </excludes>
+                            <outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
