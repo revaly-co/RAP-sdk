@@ -224,6 +224,36 @@ support request. Execution state (2026-08-06):
   ownership to it), rotate `maven-central-token` to that account, and demote the individual
   accounts to break-glass. Owner: Leadership + SC squad.
 
+## Known deviation: npm skips 0.5.2 — provenance needs `repository` metadata
+
+**Recorded 2026-08-12.** The `typescript/v0.5.2` registry job failed and npm stayed on 0.5.1
+while the other five registries went to 0.5.2:
+
+```
+npm error 422 Unprocessable Entity — Error verifying sigstore provenance bundle:
+package.json: "repository.url" is "", expected to match "https://github.com/revaly-co/RAP-sdk"
+```
+
+`languages/typescript/package.json` carried no `repository` field at all. npm's provenance
+verification requires one that matches the building repository, so `npm publish --provenance`
+cannot succeed without it.
+
+**Why it surfaced only now.** The flip-day npm publish was manual (recorded above), and a manual
+`npm publish` performs no provenance attestation — so the automated OIDC `--provenance` path, which
+the flip record itself flagged as starting at "v0.5.2+", had never actually executed. Dark-mode
+rehearsal could not have caught it either: it proves everything *up to* the push, and this is the
+registry's own server-side validation of the pushed bundle.
+
+**Fix:** `repository` (with `directory` for the monorepo), `homepage`, and `bugs` added to the
+manifest. The other five languages are unaffected — Maven already hard-fails without SCM metadata,
+and PyPI's attestation path does not check it.
+
+**Consequence — npm has no 0.5.2, by design.** Per the §1 principle (a failed release never
+resumes via re-run; fix, then cut a new tag), TypeScript goes 0.5.1 → **0.5.3**. The
+`typescript/v0.5.2` GitHub release stands as the provenance anchor and fallback channel for that
+version, so 0.5.2 remains installable for TypeScript from the release asset even though the
+registry skips it.
+
 ## Flip to LIVE — runbook (ADR-SDK-031)
 
 The stage-6 registry job ships **dark** on every release tag: full rehearsal in the protected
