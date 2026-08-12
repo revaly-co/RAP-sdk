@@ -16,6 +16,13 @@
     <Company>Revaly Technologies Inc.</Company>
     <Copyright>Copyright 2026 Revaly Technologies Inc.</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <!-- The quickstart README becomes the nuget.org gallery page. Without this the
+         package ships with no documentation at all ("warn : Readme missing" on push),
+         which is exactly the install-instruction gap the docs release set out to fix.
+         The file is packed by the None item below; stage 5 stages the whole
+         languages/dotnet tree via git archive, so ../../README.md resolves both in the
+         repo and in the ephemeral packaging copy. -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/revaly-co/rap-sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -23,6 +30,12 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Packed at the package root to satisfy PackageReadmeFile above. Pack-only: it is
+         not compiled, embedded, or copied to output. -->
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The generated core (ADR-SDK-001: regenerated only, never hand-edited). It ships

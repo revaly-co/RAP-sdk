@@ -201,7 +201,7 @@ Concretely, on the transport: urllib3's default connect retries and redirect-fol
 switched off per request, so a `307` on `POST /payments` arrives as a response and
 classifies `RapOutcomeUnknown` rather than being silently re-sent.
 
-Normative form: [`docs/failover-contract.md`](../../docs/failover-contract.md) §5 and
+Normative form: [`docs/failover-contract.md`](https://github.com/revaly-co/RAP-sdk/blob/main/docs/failover-contract.md) §5 and
 Appendix A.
 
 ## Beyond payments
@@ -222,9 +222,9 @@ runtime errors (values-free by design) instead.
 
 ## Where to go next
 
-- [Failover cookbook](../../docs/failover-cookbook.md) — recipes for each outcome, choosing a
+- [Failover cookbook](https://github.com/revaly-co/RAP-sdk/blob/main/docs/failover-cookbook.md) — recipes for each outcome, choosing a
   reconcile policy, testing offline, debugging with correlation ids.
-- [Failover contract](../../docs/failover-contract.md) — the normative specification, with
+- [Failover contract](https://github.com/revaly-co/RAP-sdk/blob/main/docs/failover-contract.md) — the normative specification, with
   sequence diagrams and the verbatim prohibitions in Appendix A.
-- [AGENTS.md](../../AGENTS.md) — the whole contract on one page, for AI coding agents.
-- [Support](../../SUPPORT.md) · [Contributing](../../CONTRIBUTING.md) · [Security](../../SECURITY.md)
+- [AGENTS.md](https://github.com/revaly-co/RAP-sdk/blob/main/AGENTS.md) — the whole contract on one page, for AI coding agents.
+- [Support](https://github.com/revaly-co/RAP-sdk/blob/main/SUPPORT.md) · [Contributing](https://github.com/revaly-co/RAP-sdk/blob/main/CONTRIBUTING.md) · [Security](https://github.com/revaly-co/RAP-sdk/blob/main/SECURITY.md)
