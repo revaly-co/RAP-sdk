@@ -186,7 +186,7 @@ Cancellation is idiomatic Go: every operation takes a `context.Context`, and
 - **Recovery beyond this boundary belongs to RAP-core** — resubmission and
   `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
 
-Normative form: [`docs/failover-contract.md`](../../docs/failover-contract.md) §5 and
+Normative form: [`docs/failover-contract.md`](https://github.com/revaly-co/RAP-sdk/blob/main/docs/failover-contract.md) §5 and
 Appendix A.
 
 ## Testing your failover handler (no network)
@@ -256,9 +256,9 @@ the module root, outside the internal fence).
 
 ## Where to go next
 
-- [Failover cookbook](../../docs/failover-cookbook.md) — recipes for each outcome, choosing a
+- [Failover cookbook](https://github.com/revaly-co/RAP-sdk/blob/main/docs/failover-cookbook.md) — recipes for each outcome, choosing a
   reconcile policy, testing offline, debugging with correlation ids.
-- [Failover contract](../../docs/failover-contract.md) — the normative specification, with
+- [Failover contract](https://github.com/revaly-co/RAP-sdk/blob/main/docs/failover-contract.md) — the normative specification, with
   sequence diagrams and the verbatim prohibitions in Appendix A.
-- [AGENTS.md](../../AGENTS.md) — the whole contract on one page, for AI coding agents.
-- [Support](../../SUPPORT.md) · [Contributing](../../CONTRIBUTING.md) · [Security](../../SECURITY.md)
+- [AGENTS.md](https://github.com/revaly-co/RAP-sdk/blob/main/AGENTS.md) — the whole contract on one page, for AI coding agents.
+- [Support](https://github.com/revaly-co/RAP-sdk/blob/main/SUPPORT.md) · [Contributing](https://github.com/revaly-co/RAP-sdk/blob/main/CONTRIBUTING.md) · [Security](https://github.com/revaly-co/RAP-sdk/blob/main/SECURITY.md)
