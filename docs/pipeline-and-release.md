@@ -32,6 +32,34 @@ blocks the release for all six), on the nightly schedule (advisory), and on manu
 never on plain PRs (network and secrets stay out of the PR path; ADR-SDK-024). Stages 5–6 run
 only from a release tag on `main` (machine gates below).
 
+### 2.1 Coverage measurement (stage 3)
+
+Stage 3 measures test coverage in all six languages and prints a per-language figure to the job
+log and the run summary.
+
+**Scope is the hand-written runtime, never the generated core.** This is the load-bearing
+decision. The core is generator output (ADR-SDK-001) and is proven by the stage-2 regeneration
+diff and the stage-4 contract smoke — unit coverage is the wrong instrument for it, and its sheer
+size buries the number that matters: measured unscoped, .NET reports ~11% against ~92% for the
+runtime it actually ships. Every language therefore scopes explicitly:
+
+| Language | Mechanism | Scope control |
+| --- | --- | --- |
+| dotnet | coverlet (already referenced by the test project) | `languages/dotnet/coverlet.runsettings` — `Include [Revaly.Sdk]*`, excludes core + tests assemblies |
+| java | jacoco `prepare-agent` + `report-aggregate`, phase-bound to `test` in `tests/pom.xml` | `<exclude>co/revaly/sdk/core/**</exclude>`; aggregate reports across reactor deps, which is how runtime classes get measured from tests in the tests module |
+| php | PHPUnit + pcov (stage 3 only; smoke and package jobs keep `coverage: none`) | `phpunit.xml` `<source><include>runtime/src` |
+| typescript | vitest v8 provider | `vitest.config.ts` `coverage.include: runtime/src/**` |
+| python | `coverage` (dev extra) | `--source=revaly_sdk` |
+| go | `go test -coverprofile` | `-coverpkg=./,./internal/runtime,./raptest` (ADR-SDK-028 layout) |
+
+**Report-only: no threshold gates the build.** Coverage is reported so it is visible and so
+regressions are noticeable in review; it does not block a release. Setting a floor is worth doing
+once there is a run of history for all six — picking a number before that would be guessing, and a
+threshold chosen badly either blocks releases or ratifies whatever today's number happens to be.
+
+The coverage steps themselves *do* fail the job if their tooling breaks, deliberately: a
+measurement that silently stops measuring is worse than none.
+
 ## 3. Publish mechanics (ADR-SDK-013 machine gates)
 
 - **One human act: cutting the release tag.** Environment deployment policy restricts the publish

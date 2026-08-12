@@ -35,3 +35,10 @@ languages/typescript/dist/
 # Go build output from running the smoke suite locally (`go build ./smoke`).
 # Committing it once already cost a 10 MB blob — keep it ignored.
 *.exe
+
+# Coverage output from stage-3 measurement run locally
+# (docs/pipeline-and-release.md §2.1). Java's jacoco report lands under the
+# already-ignored */target/ dirs above.
+languages/typescript/coverage/
+languages/python/.coverage
+languages/dotnet/**/TestResults/

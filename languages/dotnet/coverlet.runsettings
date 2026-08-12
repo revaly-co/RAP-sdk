@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Coverage scope for the .NET SDK (stage 3). Hand-written runtime only: the generated
+  core is generator output (ADR-SDK-001), proven by the stage-2 regeneration diff and the
+  stage-4 contract smoke rather than by unit coverage. Without the Exclude below, the
+  core's sheer size drags the reported figure to ~11% and hides the runtime's real number.
+
+  coverlet.collector is already referenced by Revaly.Sdk.Tests; this file only points it
+  at the right assemblies. Filter syntax is [assembly]type.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[Revaly.Sdk]*</Include>
+          <Exclude>[Revaly.Sdk.Core]*,[Revaly.Sdk.Tests]*</Exclude>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>true</DeterministicReport>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

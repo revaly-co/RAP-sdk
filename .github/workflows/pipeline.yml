@@ -309,7 +309,24 @@ jobs:
       # (values-free default, scrubbed debug) and the failover-contract §2
       # classification table.
       - name: Test Runtime
-        run: dotnet test languages/dotnet/Revaly.Sdk.slnx -c Release --no-build
+        run: |
+          set -euo pipefail
+          dotnet test languages/dotnet/Revaly.Sdk.slnx -c Release --no-build \
+            --collect:"XPlat Code Coverage" \
+            --settings languages/dotnet/coverlet.runsettings \
+            --results-directory "${RUNNER_TEMP}/coverage-dotnet"
+
+      # Report-only: no threshold gates the build (see docs/pipeline-and-release.md
+      # §2.1). Scope is the hand-written runtime — coverlet.runsettings excludes the
+      # generated core, which unit coverage is the wrong instrument for.
+      - name: Coverage Summary (runtime)
+        run: |
+          set -euo pipefail
+          report=$(find "${RUNNER_TEMP}/coverage-dotnet" -name 'coverage.cobertura.xml' | head -1)
+          [[ -n "$report" ]] || { echo "::error::No cobertura report produced."; exit 1; }
+          pct=$(python3 -c "import sys,xml.etree.ElementTree as ET; print(f\"{float(ET.parse(sys.argv[1]).getroot().get('line-rate'))*100:.1f}\")" "$report")
+          echo "dotnet runtime line coverage: ${pct}%"
+          echo "| dotnet | ${pct}% |" >> "$GITHUB_STEP_SUMMARY"
 
       # DX contract §a: ecosystem-standard lint, scoped to the hand-written projects —
       # the generated core is never formatted (ADR-SDK-001).
@@ -348,6 +365,18 @@ jobs:
       - name: Build + Test Runtime
         run: mvn -B -ntp -f languages/java/pom.xml test
 
+      # jacoco's report-aggregate is phase-bound to `test` in tests/pom.xml, so the
+      # command above already produced this. Report-only; scope excludes the generated
+      # core (docs/pipeline-and-release.md §2.1).
+      - name: Coverage Summary (runtime)
+        run: |
+          set -euo pipefail
+          csv=languages/java/tests/target/site/jacoco-aggregate/jacoco.csv
+          [[ -f "$csv" ]] || { echo "::error::No jacoco aggregate report at $csv."; exit 1; }
+          pct=$(awk -F, 'NR>1 {miss+=$4; cov+=$5} END {if (miss+cov==0) exit 1; printf "%.1f", cov*100/(miss+cov)}' "$csv")
+          echo "java runtime instruction coverage: ${pct}%"
+          echo "| java | ${pct}% |" >> "$GITHUB_STEP_SUMMARY"
+
       # DX contract §a: ecosystem-standard lint, scoped to the hand-written modules via
       # -pl (NEVER the generated core — ADR-SDK-001; formatting core would trip the
       # stage-2 regen diff). Decided per ADR-SDK-028: spotless/google-java-format is the
@@ -370,7 +399,10 @@ jobs:
         with:
           php-version: ${{ env.PHP_VERSION }}
           extensions: curl, mbstring
-          coverage: none
+          # pcov, not xdebug: coverage-only driver, an order of magnitude cheaper. Stage 3
+          # is the one job that measures coverage — the smoke and package jobs keep
+          # `coverage: none`, since a coverage driver there would only cost time.
+          coverage: pcov
 
       # PHP has no compile step — the equivalent bar: manifest valid, dependency ranges
       # resolvable, every file parses, and the PSR-4 map is strict-consistent (optimized
@@ -422,6 +454,17 @@ jobs:
         working-directory: languages/php
         run: vendor/bin/phpunit --no-progress
 
+      # phpunit.xml's <source><include> already scopes coverage to runtime/src, so the
+      # generated core is out of frame. Report-only.
+      - name: Coverage Summary (runtime)
+        working-directory: languages/php
+        run: |
+          set -euo pipefail
+          vendor/bin/phpunit --no-progress --coverage-clover "${RUNNER_TEMP}/clover.xml" > /dev/null
+          pct=$(python3 -c "import sys,xml.etree.ElementTree as ET; m=ET.parse(sys.argv[1]).getroot().find('project/metrics'); s=int(m.get('statements')); print(f\"{int(m.get('coveredstatements'))*100/s:.1f}\" if s else 'n/a')" "${RUNNER_TEMP}/clover.xml")
+          echo "php runtime statement coverage: ${pct}%"
+          echo "| php | ${pct}% |" >> "$GITHUB_STEP_SUMMARY"
+
   build-typescript:
     name: Stage 3 - Build + Test (typescript)
     runs-on: ubuntu-latest
@@ -463,6 +506,15 @@ jobs:
 
       - name: Runtime Tests (vitest)
         run: npm test --prefix languages/typescript
+
+      # vitest.config.ts scopes coverage to runtime/src. Report-only.
+      - name: Coverage Summary (runtime)
+        run: |
+          set -euo pipefail
+          npm run test:coverage --prefix languages/typescript
+          pct=$(python3 -c "import json; d=json.load(open('languages/typescript/coverage/coverage-summary.json'))['total']; print(f\"{d['statements']['pct']:.1f}\")")
+          echo "typescript runtime statement coverage: ${pct}%"
+          echo "| typescript | ${pct}% |" >> "$GITHUB_STEP_SUMMARY"
 
       # DX contract §a linter (ADR-SDK-028): eslint + typescript-eslint (typed rules incl.
       # no-floating-promises), hand-written surfaces only — core/ is globally ignored in
@@ -515,6 +567,18 @@ jobs:
       - name: Runtime Tests (pytest)
         run: python -m pytest languages/python/tests -q
 
+      # --source scopes to the runtime package; the generated core (revaly_sdk_core) is
+      # deliberately out of frame. Report-only.
+      - name: Coverage Summary (runtime)
+        working-directory: languages/python
+        run: |
+          set -euo pipefail
+          python -m coverage run --source=revaly_sdk -m pytest tests -q > /dev/null
+          python -m coverage report
+          pct=$(python -m coverage report --format=total)
+          echo "python runtime statement coverage: ${pct}%"
+          echo "| python | ${pct}% |" >> "$GITHUB_STEP_SUMMARY"
+
       # DX contract §a linter (ADR-SDK-028): ruff check + format gate, pinned, over the
       # hand-written trees only — NEVER languages/python/core/ (ADR-SDK-001; reformatting
       # the core would trip the stage-2 regen diff). [tool.ruff] config lives in
@@ -551,6 +615,19 @@ jobs:
       - name: Module Tests (go test)
         working-directory: languages/go
         run: go test ./...
+
+      # -coverpkg names the hand-written surface explicitly (ADR-SDK-028 layout): the
+      # root package, internal/runtime, and raptest. The generated core is out of frame.
+      # Report-only.
+      - name: Coverage Summary (runtime)
+        working-directory: languages/go
+        run: |
+          set -euo pipefail
+          go test ./tests/... -coverpkg=./,./internal/runtime,./raptest \
+            -coverprofile="${RUNNER_TEMP}/go-cover.out" > /dev/null
+          pct=$(go tool cover -func="${RUNNER_TEMP}/go-cover.out" | awk '/^total:/ {gsub("%","",$3); printf "%.1f", $3}')
+          echo "go runtime statement coverage: ${pct}%"
+          echo "| go | ${pct}% |" >> "$GITHUB_STEP_SUMMARY"
 
       # dx-contract §a for Go (ADR-SDK-028): gofmt + go vet + pinned staticcheck.
       # Hand-written surfaces only — the generated core ships as the generator emits it
