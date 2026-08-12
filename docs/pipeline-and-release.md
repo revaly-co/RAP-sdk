@@ -153,22 +153,27 @@ release notes.
 
 Design points, adapted from `revaly-co/RTN-horizon-relay`'s workflow of the same name:
 
-- **It fires on `release: published` only** (plus `workflow_dispatch` to backfill). This diverges
-  from the RTN workflow, which also triggers on `push: tags` because its prod deploy does, and a
-  human choosing `git push --tags` over `gh release create` would deploy and announce nothing.
-  That failure mode cannot occur here: `registry-publish` declares `needs: github-release`, so the
-  release is minted by stage 6 itself and every registry publish is strictly downstream of it. The
-  release event therefore always fires, always before anything reaches a registry, and no human
-  choice can skip it. Adding a tag trigger would instead *create* a defect — it would run minutes
-  ahead of stage 5, find no release, and post a false "shipped without a release" alarm before the
-  real card on every release. Concurrency-cancel does not cover that gap, which is a full blocking
-  contract-smoke run rather than the quick succession RTN's design assumes.
-- **A missing release is an error, not a fallback.** If a dispatched tag has no release, the run
-  fails and points at the pipeline run instead of announcing something unverified.
+- **It fires on `workflow_run` (Pipeline, completed)** — plus `workflow_dispatch` to backfill.
+  Both obvious alternatives are wrong here, and both were tried and reverted, so the choice is
+  recorded rather than left to be rediscovered:
+  - `release: published` **never fires.** Stage 6 creates the release with `GITHUB_TOKEN`, and
+    GitHub does not start workflow runs from events created by that token. This shipped once and
+    the notifier was silent for all six v0.5.2 releases.
+  - `push: tags` fires, but minutes too early — stages 1–5 have not run, so there is no release
+    and nothing published to announce, and it posts a false "shipped without a release" alarm
+    ahead of the real notice. (`revaly-co/RTN-horizon-relay` uses this trigger correctly, because
+    there the tag push *is* the deploy. Here it is five stages earlier.)
+
+  `workflow_run` fires reliably — the event comes from the workflow finishing, not from a
+  token-authored action — runs after stage 6 has created the release and published, and stays in a
+  separate workflow run, so a webhook outage still cannot colour a release's status either way.
+- **Non-release refs skip quietly; release-shaped unknown tags fail closed.** A pipeline run on
+  `main`, a PR branch, or a branch that merely contains `/v` produces no notice and no error.
+  A `<something>/vX.Y.Z` tag naming no language we publish goes red, matching the pipeline's own
+  tag parse.
 - **One card per language tag.** Release tags are per-language and each publishes an independent
   package, so a six-language release posts six cards — which is what actually shipped. The Go
-  module-form tag `languages/go/vX.Y.Z` never reaches the release event (stage 5 skips it, so
-  stage 6 mints nothing), and is guarded anyway; `go/vX.Y.Z` carries that announcement
+  module-form tag `languages/go/vX.Y.Z` is skipped: `go/vX.Y.Z` carries that announcement
   (ADR-SDK-026).
 - **It is a separate workflow, never a step in `pipeline.yml`.** Stage 6 publishes from the
   protected `publish` environment under the ADR-SDK-013 single human gate; a chat webhook does not
