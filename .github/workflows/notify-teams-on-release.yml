@@ -1,44 +1,41 @@
 # Announce a per-language release to the engineering notices channel.
 #
-# Modelled on revaly-co/RTN-horizon-relay's notify-teams-on-release, with one deliberate
-# divergence — the trigger set. That workflow also fires on `push: tags`, because its prod deploy
-# fires on tag push and a human choosing `git push --tags` over `gh release create` would deploy
-# and announce nothing (that happened there with v1.2.0 on 2026-08-06: prod changed, channel
-# silent ~20 hours).
+# TRIGGER — read this before changing it. Two obvious choices are both wrong here, and each was
+# tried and reverted:
 #
-# That failure mode cannot occur here, because of this repository's job graph:
+#   `release: published`  — never fires. Stage 6 creates the release with GITHUB_TOKEN, and
+#                           GitHub does not start workflow runs from events created by that
+#                           token (loop prevention). Shipped once; the notifier was silent for
+#                           all six 0.5.2 releases.
+#   `push: tags`          — fires, but minutes too early. Stages 1-5 have not run yet, so there
+#                           is no release and no published package to announce; it posts a false
+#                           "shipped without a release" alarm ahead of the real notice.
+#                           (This is what revaly-co/RTN-horizon-relay uses, correctly, because
+#                           its prod deploy IS the tag push. Ours is five stages later.)
 #
-#   package → github-release → registry-publish   (pipeline.yml; registry-publish `needs:` it)
+# `workflow_run` on Pipeline completion is the trigger that fits: it fires reliably (the event
+# comes from the workflow finishing, not from a token-authored action), it runs after stage 6 has
+# created the release and published to the registry, and it stays in a separate workflow run — so
+# a webhook outage still cannot colour a release's status in either direction.
 #
-# The GitHub Release is created by stage 6 itself, and every registry publish is strictly
-# downstream of it. So `release: published` always fires, always before anything reaches a
-# registry, and no human choice can skip it. Adding `push: tags` here would not close a gap; it
-# would open one — the notification would run minutes before stage 5 finishes, find no release,
-# and post a false "shipped without a release" alarm ahead of the real card on every single
-# release. Concurrency-cancel does not rescue that: the gap is a full blocking contract-smoke
-# run, not the quick succession RTN's comment assumes.
+# Deliberately still NOT a step in pipeline.yml: stage 6 publishes from the protected `publish`
+# environment under a single human gate (ADR-SDK-013), and a chat webhook has no business inside
+# that gate.
 #
-# The backfill path is `workflow_dispatch`, for the case this workflow itself failed or was
-# added after a release.
-#
-# Deliberately a separate workflow, not a step in pipeline.yml: stage 6 publishes from the
-# protected `publish` environment under a single human gate (ADR-SDK-013), and a chat webhook has
-# no business inside that gate. A failed notification must never mark a good release red, nor a
-# failed release green.
-#
-# TAG SHAPES (ADR-SDK-016/026): release tags are per-language `<lang>/vX.Y.Z`, and each one
-# publishes an independent package to its own registry, so a six-language release posts six cards
-# — matching what actually shipped, since any language can be released alone.
+# TAG SHAPES (ADR-SDK-016/026): release tags are per-language `<lang>/vX.Y.Z`, and each publishes
+# an independent package to its own registry, so a six-language release posts six cards — matching
+# what actually shipped, since any language can be released alone.
 #
 # SETUP: repository secret TEAMS_WEBHOOK_URL, pointing at the engineering notices channel. An
 # unset secret fails the run loudly rather than skipping — a silent notifier is the failure this
-# workflow exists to prevent.
+# workflow exists to prevent, and it has already happened once.
 
 name: Notify Teams on Release
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Pipeline"]
+    types: [completed]
 
   workflow_dispatch:
     inputs:
@@ -53,12 +50,21 @@ permissions:
 # Keyed per tag, so the six per-language releases of one version never cancel each other. A
 # re-dispatch for the same tag supersedes an in-flight run.
 concurrency:
-  group: notify-teams-${{ github.event.release.tag_name || inputs.tag }}
+  group: notify-teams-${{ github.event.workflow_run.head_branch || inputs.tag }}
   cancel-in-progress: true
 
 jobs:
   notify_teams:
     runs-on: ubuntu-latest
+    # Only successful tag-push pipeline runs. `contains('/v')` cheaply excludes main pushes, PR
+    # runs and dispatches; anything that slips through is sorted out by the parse step below,
+    # which skips non-release refs quietly and fails closed only on a release-shaped tag naming
+    # no known language.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       contains(github.event.workflow_run.head_branch, '/v'))
     steps:
       # No checkout: everything comes from the Releases API. Nothing here reads the work tree.
       - name: Parse Release Tag
@@ -66,14 +72,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            tag="${{ github.event.release.tag_name }}"
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            tag="${{ github.event.workflow_run.head_branch }}"
           else
             tag="${{ inputs.tag }}"
           fi
 
           lang="${tag%/v*}"
           version="${tag##*/v}"
+
+          # Not a release tag at all (a branch that merely contains "/v", an empty head_branch):
+          # nothing to announce, and not an error.
+          if [[ -z "$tag" || ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::notice::${tag:-<empty>} is not a release tag — nothing to announce."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           # Mirrors pipeline.yml's Parse Release Tag, including the module-tag carve-out.
           case "$lang" in
@@ -92,16 +106,11 @@ jobs:
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0 ;;
             *)
-              # Fail closed, as the pipeline's own tag parse does: an unannounceable tag means a
-              # typo or a new tag convention, and both deserve a red run.
+              # Release-shaped (`<something>/vX.Y.Z`) but naming no language we publish: a typo
+              # or a new tag convention. Fail closed, as the pipeline's own tag parse does.
               echo "::error::Tag ${tag} does not name a releasable language (expected <dotnet|java|php|typescript|python|go>/vX.Y.Z — ADR-SDK-026)."
               exit 1 ;;
           esac
-
-          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Version '${version}' is not plain X.Y.Z (ADR-SDK-026)."
-            exit 1
-          fi
 
           {
             echo "skip=false"
