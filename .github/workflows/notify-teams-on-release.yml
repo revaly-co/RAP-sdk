@@ -1,0 +1,244 @@
+# Announce a per-language release to the engineering notices channel.
+#
+# Modelled on revaly-co/RTN-horizon-relay's notify-teams-on-release, with one deliberate
+# divergence — the trigger set. That workflow also fires on `push: tags`, because its prod deploy
+# fires on tag push and a human choosing `git push --tags` over `gh release create` would deploy
+# and announce nothing (that happened there with v1.2.0 on 2026-08-06: prod changed, channel
+# silent ~20 hours).
+#
+# That failure mode cannot occur here, because of this repository's job graph:
+#
+#   package → github-release → registry-publish   (pipeline.yml; registry-publish `needs:` it)
+#
+# The GitHub Release is created by stage 6 itself, and every registry publish is strictly
+# downstream of it. So `release: published` always fires, always before anything reaches a
+# registry, and no human choice can skip it. Adding `push: tags` here would not close a gap; it
+# would open one — the notification would run minutes before stage 5 finishes, find no release,
+# and post a false "shipped without a release" alarm ahead of the real card on every single
+# release. Concurrency-cancel does not rescue that: the gap is a full blocking contract-smoke
+# run, not the quick succession RTN's comment assumes.
+#
+# The backfill path is `workflow_dispatch`, for the case this workflow itself failed or was
+# added after a release.
+#
+# Deliberately a separate workflow, not a step in pipeline.yml: stage 6 publishes from the
+# protected `publish` environment under a single human gate (ADR-SDK-013), and a chat webhook has
+# no business inside that gate. A failed notification must never mark a good release red, nor a
+# failed release green.
+#
+# TAG SHAPES (ADR-SDK-016/026): release tags are per-language `<lang>/vX.Y.Z`, and each one
+# publishes an independent package to its own registry, so a six-language release posts six cards
+# — matching what actually shipped, since any language can be released alone.
+#
+# SETUP: repository secret TEAMS_WEBHOOK_URL, pointing at the engineering notices channel. An
+# unset secret fails the run loudly rather than skipping — a silent notifier is the failure this
+# workflow exists to prevent.
+
+name: Notify Teams on Release
+
+on:
+  release:
+    types: [published]
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to backfill a notification for (e.g. python/v0.5.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Keyed per tag, so the six per-language releases of one version never cancel each other. A
+# re-dispatch for the same tag supersedes an in-flight run.
+concurrency:
+  group: notify-teams-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: true
+
+jobs:
+  notify_teams:
+    runs-on: ubuntu-latest
+    steps:
+      # No checkout: everything comes from the Releases API. Nothing here reads the work tree.
+      - name: Parse Release Tag
+        id: tag
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            tag="${{ github.event.release.tag_name }}"
+          else
+            tag="${{ inputs.tag }}"
+          fi
+
+          lang="${tag%/v*}"
+          version="${tag##*/v}"
+
+          # Mirrors pipeline.yml's Parse Release Tag, including the module-tag carve-out.
+          case "$lang" in
+            dotnet)     package="Revaly.Sdk";              registry="NuGet";         url="https://www.nuget.org/packages/Revaly.Sdk/${version}" ;;
+            java)       package="co.revaly:revaly-sdk";    registry="Maven Central"; url="https://central.sonatype.com/artifact/co.revaly/revaly-sdk/${version}" ;;
+            php)        package="revaly/sdk";              registry="Packagist";     url="https://packagist.org/packages/revaly/sdk" ;;
+            typescript) package="@revaly/sdk";             registry="npm";           url="https://www.npmjs.com/package/@revaly/sdk/v/${version}" ;;
+            python)     package="revaly-sdk";              registry="PyPI";          url="https://pypi.org/project/revaly-sdk/${version}/" ;;
+            go)         package="github.com/revaly-co/rap-sdk/languages/go"; registry="Go module proxy"; url="https://pkg.go.dev/github.com/revaly-co/rap-sdk/languages/go@v${version}" ;;
+            languages/go)
+              # The Go MODULE tag. Stage 5 skips it, so stage 6 mints no release for it and this
+              # branch is unreachable via the release event — kept for a hand-created release or
+              # a mistaken dispatch. Its sibling `go/vX.Y.Z` carries the announcement
+              # (ADR-SDK-026).
+              echo "::notice::${tag} is the Go module-form tag — the go/v${version} release tag carries the announcement. Nothing to post."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0 ;;
+            *)
+              # Fail closed, as the pipeline's own tag parse does: an unannounceable tag means a
+              # typo or a new tag convention, and both deserve a red run.
+              echo "::error::Tag ${tag} does not name a releasable language (expected <dotnet|java|php|typescript|python|go>/vX.Y.Z — ADR-SDK-026)."
+              exit 1 ;;
+          esac
+
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version '${version}' is not plain X.Y.Z (ADR-SDK-026)."
+            exit 1
+          fi
+
+          {
+            echo "skip=false"
+            echo "tag=${tag}"
+            echo "lang=${lang}"
+            echo "version=${version}"
+            echo "package=${package}"
+            echo "registry=${registry}"
+            echo "registry_url=${url}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Announcing ${tag} → ${lang} ${version} on ${registry}"
+
+      - name: Resolve Release Metadata
+        id: meta
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # Every announceable tag has a release: stage 6 creates it before any registry publish.
+          # A missing one means a dispatch for a tag that never completed a release run — say so
+          # rather than inventing a card.
+          if ! release_json=$(gh api "repos/${{ github.repository }}/releases/tags/${TAG}" 2>/dev/null); then
+            echo "::error::No GitHub Release exists for ${TAG}. Stage 6 creates the release before any registry publish, so either the release run has not finished, or it failed before stage 6 — check the pipeline run for this tag rather than announcing it."
+            exit 1
+          fi
+
+          {
+            echo "title=$(jq -r '.name // .tag_name' <<<"$release_json")"
+            echo "commit=$(jq -r '.target_commitish'  <<<"$release_json")"
+            echo "author=$(jq -r '.author.login'      <<<"$release_json")"
+          } >> "$GITHUB_OUTPUT"
+
+          jq -r '.body // ""' <<<"$release_json" > release_body.md
+
+      - name: Build Teams Adaptive Card Payload
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          LANG_ID: ${{ steps.tag.outputs.lang }}
+          VERSION: ${{ steps.tag.outputs.version }}
+          PACKAGE: ${{ steps.tag.outputs.package }}
+          REGISTRY: ${{ steps.tag.outputs.registry }}
+          REGISTRY_URL: ${{ steps.tag.outputs.registry_url }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          COMMIT: ${{ steps.meta.outputs.commit }}
+          AUTHOR: ${{ steps.meta.outputs.author }}
+        run: |
+          set -euo pipefail
+
+          repo="${{ github.repository }}"
+          repo_url="https://github.com/${repo}"
+          release_url="${repo_url}/releases/tag/${TAG}"
+          commit_url="${repo_url}/commit/${COMMIT}"
+          author_url="https://github.com/${AUTHOR}"
+
+          # Flatten markdown headings to bold; linkify PR references. Adaptive Cards render a
+          # restricted markdown subset, so headings would otherwise arrive as literal '##'.
+          body=$(sed -E 's|^#{1,6}[[:space:]]+(.+)$|**\1**|' release_body.md \
+                 | sed -E 's|(https://github\.com/[^/]+/[^/]+/pull/([0-9]+))|[#\2](\1)|g')
+
+          jq -n \
+            --arg lang "$LANG_ID" --arg version "$VERSION" \
+            --arg title "$TITLE" --arg release_url "$release_url" \
+            --arg repo "$repo" --arg repo_url "$repo_url" \
+            --arg tag "$TAG" \
+            --arg package "$PACKAGE" --arg registry "$REGISTRY" --arg registry_url "$REGISTRY_URL" \
+            --arg commit "$COMMIT" --arg commit_url "$commit_url" \
+            --arg author "$AUTHOR" --arg author_url "$author_url" \
+            --arg body "$body" \
+            '{
+              type: "message",
+              attachments: [{
+                contentType: "application/vnd.microsoft.card.adaptive",
+                contentUrl: null,
+                content: {
+                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  type: "AdaptiveCard",
+                  version: "1.4",
+                  msteams: { width: "Full" },
+                  body: [
+                    {
+                      type: "TextBlock",
+                      text: ("RAP-sdk " + $lang + " [" + $title + "](" + $release_url + ") 🚀"),
+                      weight: "Bolder",
+                      wrap: true
+                    },
+                    {
+                      type: "TextBlock",
+                      text: ("**Published:** [" + $package + "](" + $registry_url + ") "
+                             + $version + " on " + $registry),
+                      wrap: true
+                    },
+                    {
+                      type: "TextBlock",
+                      text: ("**Repository:** [" + $repo + "](" + $repo_url + ")"
+                             + " · **Tag:** [" + $tag + "](" + $release_url + ")"
+                             + " · **Commit:** [" + $commit + "](" + $commit_url + ")"
+                             + " · **Released By:** [" + $author + "](" + $author_url + ")"),
+                      wrap: true
+                    },
+                    {
+                      type: "TextBlock",
+                      text: $body,
+                      wrap: true
+                    }
+                  ]
+                }
+              }]
+            }' > payload.json
+
+      - name: Post to Teams
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${TEAMS_WEBHOOK_URL:-}" ]]; then
+            echo "::error::TEAMS_WEBHOOK_URL secret is not set or empty — the release shipped but nothing was announced."
+            exit 1
+          fi
+
+          RESP_FILE=$(mktemp)
+          HTTP_CODE=$(curl --silent --show-error --max-time 30 \
+            -o "$RESP_FILE" -w '%{http_code}' \
+            -X POST "${TEAMS_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            --data-binary @payload.json)
+
+          echo "Teams responded HTTP ${HTTP_CODE}"
+          cat "$RESP_FILE"
+
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "::error::Teams notification failed (HTTP ${HTTP_CODE})."
+            exit 1
+          fi
