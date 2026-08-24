@@ -45,9 +45,21 @@ public final class ContractSmoke {
      */
     private static final String FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject";
 
-    // The fault-injected charge must not present as a first attempt — the route it takes
-    // depends on it. See charge-not-processed-503.
-    private static final int FAULT_RETRY_COUNT = 1;
+    // Stamped on EVERY smoke charge so it declares itself a retry, which keeps it on the
+    // existing TransactionApi dispatch route: Backbone admits only FIRST attempts to the
+    // direct path (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is
+    // not > 0"), and both smoke targets need that route.
+    //   Step 1 (prod sandbox): the smoke account IS the direct-path pilot (Backbone
+    //     migration 26, enrolled 2026-08-11). A first-attempt charge takes the direct fork,
+    //     where gateway route resolve declines it with 50130 "No gateways are configured to
+    //     process the submitted card type" and NO fallback. Probed live 2026-08-24 on this
+    //     key-scope: first attempt = status 2 / 50130; the identical charge with
+    //     retryCount=1 = status 1 / 10000 approved, and the expired-card row declines 30026
+    //     (a real gateway decline) instead of the 50130 sink.
+    //   Step 2 (Backbone staging): the pre-dispatch fault injector exists only on the
+    //     dispatch path, so a first-attempt fault charge never reaches the seam and approves
+    //     (nightly 30983100997: red 6/6, 2026-08-05).
+    private static final int SKIP_DIRECT_PATH_RETRY_COUNT = 1;
 
     // One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
     // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
@@ -257,18 +269,11 @@ public final class ContractSmoke {
                         throw new SmokeSkip(
                                 "RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)");
                     }
-                    // retryCount > 0 keeps this charge on the route that carries the seam.
-                    // Backbone admits only FIRST attempts to the direct path
-                    // (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is
-                    // not > 0"), and the pre-dispatch injector exists only on the TransactionApi
-                    // dispatch path — so on a direct-path-enrolled account a first-attempt charge
-                    // takes the direct-send fork, never reaches the injector, and approves
-                    // (nightly 30983100997: red 6/6, 2026-08-05).
-                    PaymentRequest faultCharge =
-                            buildCharge(freshId("fault"), TEST_PAN, "2027", routingId, true);
-                    faultCharge.recovery(new Recovery().retryCount(FAULT_RETRY_COUNT));
+                    // The retryCount buildCharge stamps is what keeps this charge on the route
+                    // that carries the seam — see SKIP_DIRECT_PATH_RETRY_COUNT.
                     try {
-                        faultClient.charge(faultCharge);
+                        faultClient.charge(
+                                buildCharge(freshId("fault"), TEST_PAN, "2027", routingId, true));
                     } catch (TransientFailureException transientFailure) {
                         Integer status = transientFailure.getStatusCode();
                         if (status == null || status != 503) {
@@ -418,6 +423,9 @@ public final class ContractSmoke {
      * explicitly here to keep the wire shape deterministic across the six languages. orderId +
      * email are additionally required by the staging simulator for an approval. Synthetic test
      * cards only.
+     *
+     * <p>recovery.retryCount is stamped on EVERY charge — see {@code SKIP_DIRECT_PATH_RETRY_COUNT}
+     * for why the smoke must stay off the direct path on both targets.
      */
     private static PaymentRequest buildCharge(
             String merchantTransactionId,
@@ -432,6 +440,7 @@ public final class ContractSmoke {
                         .paymentMethodType(PaymentRequest.PaymentMethodTypeEnum.CREDIT_CARD)
                         .currency("USD")
                         .orderId(merchantTransactionId)
+                        .recovery(new Recovery().retryCount(SKIP_DIRECT_PATH_RETRY_COUNT))
                         .paymentMethod(
                                 new PaymentMethod()
                                         .fullName(withName ? "Smoke Test" : null)

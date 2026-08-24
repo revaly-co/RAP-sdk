@@ -88,6 +88,34 @@ card BIN-routing coverage" checklist leg on the prod sandbox scope: the routing 
 test PAN, selects the gateway. Any retargeted smoke job must carry the token as a third
 environment secret alongside URL + key.
 
+> **Update 2026-08-24 — 50130 on this scope now has a SECOND cause, and the token no longer
+> rules it out.** Backbone enrolled this same sandbox account
+> (`08fd0caa-…`) on the **direct path** in production on 2026-08-11 (`Migration_2026081100_`
+> `EnrolDirectPathPilotAccount`, commit `33d172ed`). A charge that presents as a **first
+> attempt** — `recovery.retryCount` absent or `0` — is admitted to the direct fork, where the
+> gateway route resolver declines it `50130` **with no fallback to the existing route**. The
+> routing token is set and valid; it is simply not consulted on that fork. Probed live
+> 2026-08-24 with the token present: first attempt = `transactionStatus 2` / `50130`; the
+> byte-identical charge carrying `recovery.retryCount: 1` = `transactionStatus 1` / `10000`
+> approved, and the 12/2020 row = `transactionStatus 2` / `30026` "Expired card" (a real gateway
+> decline rather than the sink).
+>
+> **Timeline, verified vs inferred.** Verified: the enrolment migration landed 2026-08-11; the
+> 2026-08-12 nightly failed stage-4 across all six languages with exactly this `50130` signature;
+> nightly runs from 2026-08-13 through 2026-08-24 06:09 UTC were green; a live probe on
+> 2026-08-24 at 18:49 UTC reproduced the first-attempt decline. Inferred, not confirmed from any
+> repo artefact: the direct path was evidently not active for this account during the green
+> window and was (re-)enabled on 2026-08-24 — that is operational/DB state
+> (`direct_path_enrollments.is_active`, the store execution kill switch), which git does not
+> record. Do not read the green window as evidence the fork was absent by design.
+>
+> This is why the `languages/*/smoke/` harnesses stamp `recovery.retryCount` on **every** charge:
+> Backbone's
+> `DirectPathAttemptEligibility.IsFirstAttempt` short-circuits a retry back onto the existing
+> TransactionApi dispatch route before the enrollment read, the treatment pipeline and the
+> resolver. Reading a bare `50130` as "the routing token is missing" is no longer sound on this
+> scope — check the attempt shape first.
+
 ### 3. `ErrorResponse.code` was absent on the observed 4xx bodies
 
 The invalid-request scenario returned HTTP 400 with no `code` (`class=PERMANENT_REJECTION

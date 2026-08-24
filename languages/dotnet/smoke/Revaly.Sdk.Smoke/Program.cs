@@ -32,9 +32,22 @@ namespace Revaly.Sdk.Smoke;
 internal static class Program
 {
     private const string FaultInjectHeader = "X-Backbone-Fault-Inject";
-    // The fault-injected charge must not present as a first attempt — the route
-    // it takes depends on it. See charge-not-processed-503.
-    private const int FaultRetryCount = 1;
+    // EVERY smoke charge declares itself a retry, which keeps it on the existing
+    // TransactionApi dispatch route: Backbone admits only FIRST attempts to the
+    // direct path (DirectPathAttemptEligibility.IsFirstAttempt ==
+    // "recovery.retryCount is not > 0"), and both smoke targets need that route.
+    //   Step 1 (prod sandbox): the smoke account IS the direct-path pilot
+    //     (Backbone migration 26, enrolled 2026-08-11). A first-attempt charge
+    //     takes the direct fork, where gateway route resolve declines it with
+    //     50130 "No gateways are configured to process the submitted card type"
+    //     and NO fallback. Probed live 2026-08-24 on this key-scope: first
+    //     attempt = status 2 / 50130; the identical charge with retryCount=1 =
+    //     status 1 / 10000 approved, and the expired-card row declines 30026
+    //     (a real gateway decline) instead of the 50130 sink.
+    //   Step 2 (Backbone staging): the pre-dispatch fault injector exists only
+    //     on the dispatch path, so a first-attempt fault charge never reaches
+    //     the seam and approves (nightly 30983100997: red 6/6, 2026-08-05).
+    private const int SkipDirectPathRetryCount = 1;
     // One synthetic test PAN; the EXPIRY drives the outcome
     // (staging-verified matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
     private const string TestPan = "4111111111111111";
@@ -211,19 +224,11 @@ internal static class Program
                 {
                     throw new SmokeSkip("RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)");
                 }
-                // retryCount > 0 keeps this charge on the route that carries the
-                // seam. Backbone admits only FIRST attempts to the direct path
-                // (DirectPathAttemptEligibility.IsFirstAttempt ==
-                // "recovery.retryCount is not > 0"), and the pre-dispatch
-                // injector exists only on the TransactionApi dispatch path — so
-                // on a direct-path-enrolled account a first-attempt charge takes
-                // the direct-send fork, never reaches the injector, and approves
-                // (nightly 30983100997: red 6/6, 2026-08-05).
-                var faultCharge = BuildCharge(FreshId("fault"), TestPan, "2027", routingId);
-                faultCharge.Recovery = new Recovery(retryCount: new Option<int?>(FaultRetryCount));
+                // The retryCount BuildCharge stamps is what keeps this charge on
+                // the route that carries the seam — see SkipDirectPathRetryCount.
                 try
                 {
-                    await faultClient.Payments.ChargePaymentAsync(faultCharge);
+                    await faultClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("fault"), TestPan, "2027", routingId));
                 }
                 catch (TransientFailureException ex)
                 {
@@ -374,11 +379,17 @@ internal static class Program
     /// wire shape deterministic across the six languages. orderId + email are
     /// additionally required by the staging simulator for an approval.
     /// Synthetic test cards only.
+    /// <para>
+    /// recovery.retryCount is stamped on EVERY charge — see
+    /// <see cref="SkipDirectPathRetryCount"/> for why the smoke must stay off
+    /// the direct path on both targets.
+    /// </para>
     /// </summary>
     private static PaymentRequest BuildCharge(string merchantTransactionId, string pan, string expiryYear, string? routingId, bool withName = true)
         => new(
             amount: 1999,
             merchantTransactionId: merchantTransactionId,
+            recovery: new Option<Recovery?>(new Recovery(retryCount: new Option<int?>(SkipDirectPathRetryCount))),
             paymentMethodType: new Option<PaymentRequest.PaymentMethodTypeEnum?>(PaymentRequest.PaymentMethodTypeEnum.CreditCard),
             currency: new Option<string?>("USD"),
             orderId: new Option<string?>(merchantTransactionId),

@@ -49,9 +49,25 @@ import (
 // the 503 + code=not_processed fast-failover row.
 const faultInjectHeader = "X-Backbone-Fault-Inject"
 
-// faultRetryCount keeps the fault-injected charge from presenting as a first
-// attempt — the route it takes depends on it. See charge-not-processed-503.
-const faultRetryCount = 1
+// skipDirectPathRetryCount is stamped on EVERY smoke charge so it declares
+// itself a retry, which keeps it on the existing TransactionApi dispatch route:
+// Backbone admits only FIRST attempts to the direct path
+// (DirectPathAttemptEligibility.IsFirstAttempt == "recovery.retryCount is not
+// > 0"), and both smoke targets need that route.
+//
+//	Step 1 (prod sandbox): the smoke account IS the direct-path pilot (Backbone
+//	migration 26, enrolled 2026-08-11). A first-attempt charge takes the direct
+//	fork, where gateway route resolve declines it with 50130 "No gateways are
+//	configured to process the submitted card type" and NO fallback. Probed live
+//	2026-08-24 on this key-scope: first attempt = status 2 / 50130; the
+//	identical charge with retryCount=1 = status 1 / 10000 approved, and the
+//	expired-card row declines 30026 (a real gateway decline) instead of the
+//	50130 sink.
+//
+//	Step 2 (Backbone staging): the pre-dispatch fault injector exists only on
+//	the dispatch path, so a first-attempt fault charge never reaches the seam
+//	and approves (nightly 30983100997: red 6/6, 2026-08-05).
+const skipDirectPathRetryCount = 1
 
 // errSkip marks a scenario that cannot run in this environment (reported as
 // SKIP, never silently dropped, never a failure).
@@ -125,11 +141,17 @@ func main() {
 	// across the six languages. orderId + email are additionally required by
 	// the staging simulator for an approval. One synthetic test PAN; the
 	// EXPIRY drives the outcome (12/2027 approves, 12/2020 declines).
+	// recovery.retryCount is stamped on every charge — see
+	// skipDirectPathRetryCount for why the smoke must stay off the direct path
+	// on both targets.
 	buildCharge := func(mtid, number, year string, withName bool) *revaly.PaymentRequest {
 		request := revaly.NewPaymentRequest(1999, mtid)
 		request.SetPaymentMethodType("creditCard")
 		request.SetCurrency("USD")
 		request.SetOrderId(mtid)
+		recovery := core.NewRecovery()
+		recovery.SetRetryCount(skipDirectPathRetryCount)
+		request.SetRecovery(*recovery)
 		if routingID != "" {
 			request.SetGatewayRoutingId(routingID)
 		}
@@ -247,19 +269,9 @@ func main() {
 			if faultClient == nil {
 				return "", errSkip{"RAP_SMOKE_FAULT_INJECT not set (injector is staging-only)"}
 			}
-			// retryCount > 0 keeps this charge on the route that carries the
-			// seam. Backbone admits only FIRST attempts to the direct path
-			// (DirectPathAttemptEligibility.IsFirstAttempt ==
-			// "recovery.retryCount is not > 0"), and the pre-dispatch injector
-			// exists only on the TransactionApi dispatch path — so on a
-			// direct-path-enrolled account a first-attempt charge takes the
-			// direct-send fork, never reaches the injector, and approves
-			// (nightly 30983100997: red 6/6, 2026-08-05).
-			faultCharge := buildCharge(freshID("fault"), "4111111111111111", "2027", true)
-			recovery := core.NewRecovery()
-			recovery.SetRetryCount(faultRetryCount)
-			faultCharge.SetRecovery(*recovery)
-			_, err := faultClient.Charge(ctx, faultCharge)
+			// The retryCount buildCharge stamps is what keeps this charge on the
+			// route that carries the seam — see skipDirectPathRetryCount.
+			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "2027", true))
 			if err == nil {
 				return "", errors.New("fault-injected charge succeeded — expected TransientFailure")
 			}
