@@ -12,6 +12,11 @@
 # <quiet>true</quiet> so stage 5 can ship the javadoc jar Maven Central requires
 # (registry-provisioning.md flip act 6) without doclinting hundreds of undocumented
 # generated members into warnings; the attach-javadocs skip came out of package.sh with it.
+# pom.mustache re-forked 2026-08-27 (SC-478 Dependabot batch): jackson-version
+# 2.21.5 → 2.22.2, jackson-annotations-version 2.21 → 2.22 (jackson2 block only),
+# maven-surefire-plugin 3.2.5 → 3.5.6, maven-jar-plugin 3.3.0 → 3.5.1,
+# maven-source-plugin 3.2.1 → 3.4.0 (Dependabot #22–#25/#27 core halves; the runtime and
+# tests poms carry the same bumps directly).
 # templates/libraries/native/api_doc.mustache + README.mustache — forked 2026-07-15
 # solely to fix auth guidance: the stock java api_doc emits okhttp-gson-style
 # `ApiKeyAuth`/`setApiKeyPrefix` snippets that DO NOT COMPILE against the `native`

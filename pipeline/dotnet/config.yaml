@@ -16,6 +16,13 @@
 # CreditCard without cardType, threw InvalidOperationException client-side before the
 # request reached the wire — found by the stage-3 runtime test suite). Required-property
 # output is byte-identical to stock; only the {{^required}} inner-enum legs changed.
+# templates/netcore_project.mustache — forked 2026-08-27 (SC-478 Dependabot batch)
+# solely to bump the net10.0 Microsoft.Extensions.Http / Hosting / Http.Polly and
+# Microsoft.Net.Http.Headers pins 10.0.1 → 10.0.11 (Dependabot #35/#39/#42). Dependency
+# floors in generated manifests move HERE, never by editing core/ (rule 1) — the java
+# pom.mustache jackson precedent; Dependabot #33/#41 core halves (adding direct
+# DependencyInjection / Logging.Abstractions references to the generated csproj) are
+# rejected on the same rule, the runtime csproj carries those bumps directly.
 generatorName: csharp
 library: generichost # csharp default, kept explicit — `httpclient` library is officially Experimental
 
