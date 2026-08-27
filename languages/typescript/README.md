@@ -71,6 +71,9 @@ try {
         },
     });
     console.log('approved', transaction.transactionId);
+    // transaction.paymentMethod?.vaultToken (spec >= 2.4.0) ties this charge back to the
+    // stored credential it ran against — set only when a vault credential was used, and it
+    // may reflect an Account Updater roll. Treat it as optional; absence proves nothing.
 } catch (failure) {
     if (failure instanceof RapPermanentRejection) {
         // Fix or decline — failing over reproduces the same rejection anywhere.

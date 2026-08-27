@@ -81,6 +81,10 @@ $request->setPaymentMethod($method);           // paymentMethodType is omitted �
 try {
     $transaction = $client->charge($request);
     echo "approved: {$transaction->getTransactionId()}\n";
+    // $transaction->getPaymentMethod()?->getVaultToken() (spec >= 2.4.0) ties this charge
+    // back to the stored credential it ran against — set only when a vault credential was
+    // used, and it may reflect an Account Updater roll. Treat it as optional; absence
+    // proves nothing.
 } catch (PermanentRejectionException $e) {
     // Fix or decline — failing over reproduces the same rejection anywhere.
     echo "rejected [{$e->getStatusCode()}]: {$e->getApiError()} (ref {$e->getCorrelationId()})\n";

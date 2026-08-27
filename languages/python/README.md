@@ -74,6 +74,9 @@ request = PaymentRequest(
 try:
     transaction = client.charge(request)
     print("approved", transaction.transaction_id)
+    # transaction.payment_method.vault_token (spec >= 2.4.0) ties this charge back to the
+    # stored credential it ran against — set only when a vault credential was used, and it
+    # may reflect an Account Updater roll. Treat it as optional; absence proves nothing.
 except RapPermanentRejection as failure:
     # Fix or decline — failing over reproduces the same rejection anywhere.
     print("rejected", failure.status, failure.api_error, failure.correlation_id)
