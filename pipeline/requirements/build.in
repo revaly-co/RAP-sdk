@@ -1,0 +1,2 @@
+# Input for the hash-pinned CI lockfile (uv pip compile). PEP 517 build frontend for stage 5.
+build

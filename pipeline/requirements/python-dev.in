@@ -1,0 +1,5 @@
+# Input for the hash-pinned CI lockfile (uv pip compile — see header of python-dev.txt).
+# Runtime deps + the [dev] extra of languages/python/pyproject.toml — keep in sync by hand.
+-r python-runtime.in
+pytest>=8.0
+coverage>=7.6
