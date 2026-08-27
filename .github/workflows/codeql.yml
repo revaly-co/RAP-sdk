@@ -7,8 +7,9 @@
 # hand-editing the core (ADR-SDK-001). Third-party/build trees are excluded below.
 #
 # Every action is SHA-pinned, per repo convention and Scorecard's Pinned-Dependencies check.
-# build-mode: none extracts without invoking the build — no language here needs a real
-# build for analysis, and it keeps this workflow independent of the stage-3 toolchains.
+# build-mode: none extracts without invoking the build, keeping this workflow independent
+# of the stage-3 toolchains. Go's extractor has no none mode — it autobuilds the module
+# with the runner's preinstalled toolchain.
 
 name: CodeQL
 
@@ -34,13 +35,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language:
-          - actions
-          - csharp
-          - go
-          - java-kotlin
-          - javascript-typescript
-          - python
+        include:
+          - language: actions
+            build-mode: none
+          - language: csharp
+            build-mode: none
+          - language: go
+            build-mode: autobuild
+          - language: java-kotlin
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
 
     steps:
       - name: Checkout
@@ -52,7 +59,7 @@ jobs:
         uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           languages: ${{ matrix.language }}
-          build-mode: none
+          build-mode: ${{ matrix.build-mode }}
           config: |
             paths-ignore:
               - languages/php/vendor
