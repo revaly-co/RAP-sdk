@@ -69,13 +69,20 @@ jobs:
       # No checkout: everything comes from the Releases API. Nothing here reads the work tree.
       - name: Parse Release Tag
         id: tag
+        # Event payload values reach the script only through env (never inline ${{ }} in
+        # run: text) — a workflow_run head_branch is repo-external text as far as the
+        # shell is concerned, and inline interpolation would let a crafted ref inject
+        # shell (CodeQL actions/code-injection).
+        env:
+          WORKFLOW_RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          DISPATCH_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
 
           if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            tag="${{ github.event.workflow_run.head_branch }}"
+            tag="$WORKFLOW_RUN_HEAD_BRANCH"
           else
-            tag="${{ inputs.tag }}"
+            tag="$DISPATCH_TAG"
           fi
 
           lang="${tag%/v*}"
