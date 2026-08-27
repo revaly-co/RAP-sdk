@@ -64,7 +64,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                <version>3.5.6</version>
                 <configuration>
                     <systemPropertyVariables>
                         <loggerPath>conf/log4j.properties</loggerPath>
@@ -94,7 +94,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.5.1</version>
                 <executions>
                     <execution>
                         <goals>
@@ -131,7 +131,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -347,8 +347,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         {{/useJackson3}}
         {{^useJackson3}}
-        <jackson-version>2.21.5</jackson-version>
-        <jackson-annotations-version>2.21</jackson-annotations-version>
+        <jackson-version>2.22.2</jackson-version>
+        <jackson-annotations-version>2.22</jackson-annotations-version>
         <jackson-databind-nullable-version>0.2.10</jackson-databind-nullable-version>
         {{/useJackson3}}
         {{#useJackson3}}
