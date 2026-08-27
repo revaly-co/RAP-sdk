@@ -1,0 +1,3 @@
+# Input for the hash-pinned CI lockfile (uv pip compile). Single source of the CI ruff
+# version (was the RUFF_VERSION workflow env var); ADR-SDK-028 lint gate.
+ruff==0.15.22

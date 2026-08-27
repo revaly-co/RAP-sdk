@@ -1,0 +1,63 @@
+# Dependabot — dependency-update automation (Scorecard Dependency-Update-Tool check; SC-478).
+#
+# Scope rule: generated cores (languages/*/core/ — ADR-SDK-001) change only by regeneration,
+# so every entry below points at a hand-written manifest. A Dependabot PR that edited a core
+# manifest would fail the stage-2 regen-diff check; scoping keeps that noise from existing.
+#
+# pipeline/requirements/*.txt are pip-compile-style hash-pinned lockfiles (uv-generated,
+# paired .in inputs) for the CI pip-install sites; Dependabot updates pins and hashes there.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: npm
+    directories:
+      - /languages/typescript
+      - /languages/typescript/lint
+      - /pipeline/typescript/compile-check
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: pip
+    directories:
+      - /languages/python
+      - /pipeline
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: maven
+    directories:
+      - /languages/java
+      - /languages/java/runtime
+      - /languages/java/tests
+      - /languages/java/smoke
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: nuget
+    directories:
+      - /languages/dotnet/runtime/Revaly.Sdk
+      - /languages/dotnet/tests/Revaly.Sdk.Tests
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: composer
+    directory: /languages/php
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: gomod
+    directory: /languages/go
+    schedule:
+      interval: weekly
+      day: monday

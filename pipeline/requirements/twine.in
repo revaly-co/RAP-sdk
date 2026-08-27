@@ -1,0 +1,2 @@
+# Input for the hash-pinned CI lockfile (uv pip compile). PyPI metadata check in stage 6.
+twine
