@@ -47,7 +47,7 @@
   <ItemGroup>
     <!-- Versions aligned with the core's Microsoft.Extensions.* 10.0.1 set. -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>
