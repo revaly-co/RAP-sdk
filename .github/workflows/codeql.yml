@@ -1,0 +1,65 @@
+# CodeQL — static analysis (SAST) over the five CodeQL-supported SDK languages plus the
+# workflow files themselves (Scorecard SAST check; SC-478). PHP has no CodeQL extractor —
+# its static gate remains the stage-3 lint/tests in pipeline.yml.
+#
+# Generated cores (languages/*/core/) are scanned deliberately: they are shipped product
+# code. A finding there is remediated in the generator templates (ADR-SDK-023), never by
+# hand-editing the core (ADR-SDK-001). Third-party/build trees are excluded below.
+#
+# Every action is SHA-pinned, per repo convention and Scorecard's Pinned-Dependencies check.
+# build-mode: none extracts without invoking the build — no language here needs a real
+# build for analysis, and it keeps this workflow independent of the stage-3 toolchains.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, Mondays 07:30 UTC — catches new queries shipped with CodeQL releases.
+    - cron: '30 7 * * 1'
+
+permissions: read-all
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - actions
+          - csharp
+          - go
+          - java-kotlin
+          - javascript-typescript
+          - python
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config: |
+            paths-ignore:
+              - languages/php/vendor
+              - "**/node_modules"
+              - "**/dist"
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:${{ matrix.language }}
