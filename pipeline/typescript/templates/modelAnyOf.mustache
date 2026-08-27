@@ -1,0 +1,55 @@
+{{! RAP fork-owned partial - ADR-SDK-023 maintained surface, documented in pipeline/typescript/config.yaml (routed from the forked models.mustache; no stock counterpart is overridden). Generates anyOf composed models as a union type with ordered instanceOf discrimination - the same shape the stock oneOf route produces - instead of the stock merged-properties interface. anyOf branches are checked in declaration order (the spec orders them most-specific first) and each instanceOf guard tests the branch's required member NAMES only, never values. Covers $ref model branches only, which is every anyOf in the pinned spec; primitive or array branches would need the stock oneOf template's extra legs. This comment stays free of braces by rule. }}
+{{#anyOf}}
+import type { {{{.}}} } from './{{.}}{{importFileExtension}}';
+import {
+    instanceOf{{{.}}},
+    {{{.}}}FromJSON,
+    {{{.}}}FromJSONTyped,
+    {{{.}}}ToJSON,
+} from './{{.}}{{importFileExtension}}';
+{{/anyOf}}
+
+{{>modelAnyOfInterfaces}}
+
+
+export function {{classname}}FromJSON(json: any): {{classname}} {
+    return {{classname}}FromJSONTyped(json, false);
+}
+
+export function {{classname}}FromJSONTyped(json: any, ignoreDiscriminator: boolean): {{classname}} {
+    if (json == null) {
+        return json;
+    }
+    {{#anyOf}}
+    {{#-first}}
+    if (typeof json !== 'object') {
+        return json;
+    }
+    {{/-first}}
+    if (instanceOf{{{.}}}(json)) {
+        return {{{.}}}FromJSONTyped(json, true);
+    }
+    {{/anyOf}}
+    return {} as any;
+}
+
+export function {{classname}}ToJSON(json: any): any {
+    return {{classname}}ToJSONTyped(json, false);
+}
+
+export function {{classname}}ToJSONTyped(value?: {{classname}} | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
+    }
+    {{#anyOf}}
+    {{#-first}}
+    if (typeof value !== 'object') {
+        return value;
+    }
+    {{/-first}}
+    if (instanceOf{{{.}}}(value)) {
+        return {{{.}}}ToJSON(value as {{{.}}});
+    }
+    {{/anyOf}}
+    return {};
+}

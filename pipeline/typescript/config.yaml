@@ -27,4 +27,17 @@
 # required properties and zero-property models are unchanged). Pinned by
 # languages/typescript/tests/model-serialization.test.ts. Upstream report due at the next
 # ADR-SDK-023 revision, alongside the dotnet enum and java oneOf forks.
+#
+# templates/models.mustache (forked) + modelAnyOf.mustache + modelAnyOfInterfaces.mustache
+# (fork-owned, no stock counterpart) — 2026-08-27 (SC-478 spec v2.4.0 re-pin; SC-408 B4
+# switched the transaction-lookup unions oneOf -> anyOf): the stock router sends anyOf
+# models through modelGeneric, which merges every branch's properties into one interface
+# and emits an unguarded accessor for a branch's REQUIRED member — decoding any body
+# without it threw (single TransactionResponse bodies crashed on the group envelope's
+# required transactions array). The fork routes anyOf through modelAnyOf: the same
+# union-type + ordered instanceOf discrimination shape the oneOf route produces
+# (declaration order = most-specific first; required-member NAMES only, composing with
+# the modelGeneric all-optional instanceOf fork above). Covers $ref model branches only —
+# every anyOf in the pinned spec. Pinned by model-serialization.test.ts. Raise upstream
+# at the next ADR-SDK-023 revision.
 generatorName: typescript-fetch

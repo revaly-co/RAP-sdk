@@ -1,11 +1,12 @@
 # Stage-2 generation config — Go core (normative flag set: ADR-SDK-023 table;
 # evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
 # digest-pinned generator container; spec/output/template paths are supplied by the script.
-# NOTE: the bake-off's "stdlib-only" observation does not hold on this spec — the two
-# oneOf response wrappers (GetTransactionBy*200Response) import gopkg.in/validator.v2,
-# pinned in the hand-written languages/go/go.mod + go.sum. Since the 2026-07-18
-# model_oneof fork (below) the import is generator-forced but never invoked: the fork
-# emits a `var _ = validator.Validate` reference solely to keep the files compiling.
+# NOTE: the bake-off's "stdlib-only" observation HOLDS again since 2026-08-27 — SC-408
+# B4 (spec v2.4.0) switched the lookup unions oneOf -> anyOf, the generator force-imports
+# gopkg.in/validator.v2 only into oneOf models, and the v2.4.0 spec carries none, so the
+# dependency is dropped from languages/go/go.mod + go.sum. (History: 2026-07-18 through
+# v0.5.x the two oneOf wrappers carried the import, never invoked — the model_oneof fork
+# below referenced it solely to keep the files compiling.)
 # Maintained template surface (re-diff against the embedded originals on any generator
 # upgrade — upgrades are ADR-SDK-023 revisions):
 #   * templates/partial_header.mustache (generated-code banner);
@@ -27,7 +28,21 @@
 #     uniquely highest coverage wins; bind from the payload filtered to known keys,
 #     lenient so nested additive fields survive). Additive platform fields from minor
 #     releases therefore keep binding; ambiguous payloads still return the stock errors
-#     verbatim. Pinned by languages/go/tests/oneof_discrimination_test.go.
+#     verbatim. Dormant since the 2026-08-27 v2.4.0 re-pin (no oneOf left in the spec);
+#     retained for any future oneOf. Its regression pin (oneof_discrimination_test.go)
+#     is superseded by anyof_discrimination_test.go;
+#   * templates/model_anyof.mustache — forked 2026-08-27 (SC-478 spec v2.4.0 re-pin;
+#     SC-408 B4 switched the lookup unions oneOf -> anyOf, branches most-specific
+#     first): the stock anyOf leg lenient-decodes first-match-wins, but branch models
+#     with required members strict-reject unknown fields (DisallowUnknownFields in
+#     their generated UnmarshalJSON), so one additive platform field re-bound a pending
+#     body as a terminal transaction and hard-failed a group envelope. anyOf variant of
+#     the model_oneof fork: the strict pass binds the FIRST match in declaration order;
+#     on zero strict matches the lenient coverage pass (required keys present by name,
+#     uniquely highest recognized coverage wins) binds through a methodless alias of
+#     the branch type, so additive fields survive at every nesting level. Also restores
+#     the convenience constructors, GetActualInstance, and fail-loud null handling the
+#     stock anyOf leg lacks. Pinned by languages/go/tests/anyof_discrimination_test.go.
 generatorName: go
 
 additionalProperties:
