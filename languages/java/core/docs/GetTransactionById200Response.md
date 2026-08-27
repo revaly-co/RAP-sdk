@@ -2,7 +2,7 @@
 
 # GetTransactionById200Response
 
-## oneOf schemas
+## anyOf schemas
 * [TransactionGroupResponse](TransactionGroupResponse.md)
 * [TransactionResponse](TransactionResponse.md)
 

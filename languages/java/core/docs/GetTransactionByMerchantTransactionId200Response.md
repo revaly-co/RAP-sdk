@@ -2,7 +2,7 @@
 
 # GetTransactionByMerchantTransactionId200Response
 
-## oneOf schemas
+## anyOf schemas
 * [PendingTransactionResponse](PendingTransactionResponse.md)
 * [TransactionGroupResponse](TransactionGroupResponse.md)
 * [TransactionResponse](TransactionResponse.md)

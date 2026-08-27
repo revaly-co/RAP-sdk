@@ -6,6 +6,8 @@
 
 Name | Type
 ------------ | -------------
+`transaction` | [TransactionResponse](TransactionResponse.md)
+`transactions` | [Array&lt;TransactionResponse&gt;](TransactionResponse.md)
 `transactionId` | string
 `transactionDate` | Date
 `transactionStatus` | number
@@ -37,8 +39,6 @@ Name | Type
 `recovery` | [Recovery](Recovery.md)
 `response` | [TransactionResponseDetails](TransactionResponseDetails.md)
 `paymentMethod` | [PaymentMethodResponse](PaymentMethodResponse.md)
-`transaction` | [TransactionResponse](TransactionResponse.md)
-`transactions` | [Array&lt;TransactionResponse&gt;](TransactionResponse.md)
 
 ## Example
 
@@ -47,6 +47,8 @@ import type { GetTransactionById200Response } from ''
 
 // TODO: Update the object below with actual values
 const example = {
+  "transaction": null,
+  "transactions": null,
   "transactionId": 06CQR5TMB800000G0011NCFRVY37A,
   "transactionDate": 2024-01-15T10:30Z,
   "transactionStatus": 1,
@@ -78,8 +80,6 @@ const example = {
   "recovery": null,
   "response": null,
   "paymentMethod": null,
-  "transaction": null,
-  "transactions": null,
 } satisfies GetTransactionById200Response
 
 console.log(example)

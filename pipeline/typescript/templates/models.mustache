@@ -1,0 +1,33 @@
+{{! RAP template fork - ADR-SDK-023 maintained surface, documented in pipeline/typescript/config.yaml. Upstream defect (2026-08-27, spec v2.4.0 re-pin): the stock router sends anyOf composed models through modelGeneric, which merges every branch's properties into one interface and treats a branch's required members as unconditionally present, so decoding any body that lacks them throws (e.g. a single TransactionResponse body crashing on the group envelope's required transactions array). This fork adds an anyOf route to modelAnyOf, which generates the same union-type + ordered instanceOf discrimination shape the oneOf route produces. Raise upstream at the next generator-pin revision. This comment stays free of braces by rule. }}
+/* tslint:disable */
+/* eslint-disable */
+{{>licenseInfo}}
+
+{{#models}}
+{{#model}}
+{{#isEnum}}
+{{>modelEnum}}
+
+{{/isEnum}}
+{{^isEnum}}
+{{#oneOf}}
+{{#-first}}
+{{>modelOneOf}}
+
+{{/-first}}
+{{/oneOf}}
+{{^oneOf}}
+{{#anyOf}}
+{{#-first}}
+{{>modelAnyOf}}
+
+{{/-first}}
+{{/anyOf}}
+{{^anyOf}}
+{{>modelGeneric}}
+
+{{/anyOf}}
+{{/oneOf}}
+{{/isEnum}}
+{{/model}}
+{{/models}}

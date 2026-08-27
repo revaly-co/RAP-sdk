@@ -25,6 +25,7 @@ Name | Type | Description | Notes
 **DateCreated** | Pointer to **NullableTime** | Date when the payment method was created | [optional] 
 **StorageState** | Pointer to **NullableString** | Storage state of the payment method | [optional] 
 **Bin** | Pointer to **NullableString** | Bank Identification Number. Must contain exactly 6 or 8 digits. | [optional] 
+**VaultToken** | Pointer to **NullableString** | Opaque reference to the stored card this payment method used, returned so a transaction can be tied back to its credential without a second lookup.  Present only on the payment method nested inside a **charge or authorize** response, and only when that transaction ran against a vault credential — either one you presented, or one this API created for you when it vaulted the card you sent. Always omitted on the stored payment method endpoints (&#x60;/paymentmethods&#x60; show, list): a stored payment method cannot be created from a vault token, so it never has one to report. Also omitted on every transaction read endpoint — the token is not persisted and is never replayed on a read.  Where the token can be resolved live, this is the token **currently live** for the credential, which is not always the token submitted — if the card was replaced by the Account Updater, the value is the new head of the lineage. Otherwise it is the token the transaction was dispatched with, and does not reflect a roll. Which of the two you get depends on how the transaction was processed, so treat it as optional throughout and do **not** treat a missing or unchanged value as proof the card was not rolled. This is the only place the token is reported — there is deliberately no copy at the transaction level. | [optional] 
 
 ## Methods
 
@@ -760,6 +761,41 @@ HasBin returns a boolean if a field has been set.
 `func (o *PaymentMethodResponse) UnsetBin()`
 
 UnsetBin ensures that no value is present for Bin, not even an explicit nil
+### GetVaultToken
+
+`func (o *PaymentMethodResponse) GetVaultToken() string`
+
+GetVaultToken returns the VaultToken field if non-nil, zero value otherwise.
+
+### GetVaultTokenOk
+
+`func (o *PaymentMethodResponse) GetVaultTokenOk() (*string, bool)`
+
+GetVaultTokenOk returns a tuple with the VaultToken field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetVaultToken
+
+`func (o *PaymentMethodResponse) SetVaultToken(v string)`
+
+SetVaultToken sets VaultToken field to given value.
+
+### HasVaultToken
+
+`func (o *PaymentMethodResponse) HasVaultToken() bool`
+
+HasVaultToken returns a boolean if a field has been set.
+
+### SetVaultTokenNil
+
+`func (o *PaymentMethodResponse) SetVaultTokenNil(b bool)`
+
+ SetVaultTokenNil sets the value for VaultToken to be an explicit nil
+
+### UnsetVaultToken
+`func (o *PaymentMethodResponse) UnsetVaultToken()`
+
+UnsetVaultToken ensures that no value is present for VaultToken, not even an explicit nil
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

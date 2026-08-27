@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.3.0
+API version: 2.4.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -17,7 +17,6 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/validator.v2"
 )
 
 // RAP fork imports (fork note in UnmarshalJSON below; record: pipeline/go/config.yaml).
@@ -25,12 +24,6 @@ import (
 	"reflect"
 	"strings"
 )
-
-// The generator force-imports gopkg.in/validator.v2 into every oneOf model. The RAP
-// fork discriminates by field names only — never values (failover-contract §2 forbids
-// content heuristics) — so the import is referenced here solely to keep the file
-// compiling; it is never invoked.
-var _ = validator.Validate
 
 // GetTransactionByMerchantTransactionId200Response - struct for GetTransactionByMerchantTransactionId200Response
 type GetTransactionByMerchantTransactionId200Response struct {
@@ -61,40 +54,41 @@ func TransactionResponseAsGetTransactionByMerchantTransactionId200Response(v *Tr
 }
 
 
-// Unmarshal JSON data into one of the pointers in the struct
+// Unmarshal JSON data into any of the pointers in the struct
 //
-// RAP fork (ADR-SDK-023; recorded in pipeline/go/config.yaml): two-pass,
-// names-only discrimination replacing the stock strict-decode + validator.v2
-// value-validation pass. On this spec the stock pass eliminated valid branches
-// unconditionally — gopkg.in/validator.v2 reports "unsupported type" for regexp
-// tags on Nullable* struct fields and splits {m,n} regexp quantifiers on the
-// tag comma ("unknown tag") — so every terminal-transaction payload matched
-// zero schemas. The fork discriminates by field NAMES only, never values
-// (failover-contract §2 prohibits value/content heuristics):
+// RAP fork (ADR-SDK-023; recorded in pipeline/go/config.yaml) — anyOf variant
+// of the model_oneof fork (2026-08-27, spec v2.4.0 re-pin). The stock anyOf leg
+// lenient-decodes branches first-match-wins, which is names-correct only until
+// the server evolves: branch models with required members strict-reject unknown
+// fields (their generated UnmarshalJSON uses DisallowUnknownFields), so one
+// additive platform field re-binds a pending body as a terminal transaction and
+// hard-fails a group envelope. Discrimination here is by field NAMES only,
+// never values (failover-contract §2 prohibits value/content heuristics):
 //
-//   Pass 1 (strict, stock semantics minus validator): DisallowUnknownFields
-//   decode per branch, empty-struct binds discarded; exactly one match wins,
-//   more than one is the stock ambiguity error.
+//   Pass 1 (strict): DisallowUnknownFields decode per branch in declaration
+//   order (the spec orders anyOf branches most-specific first); empty or
+//   absent binds discarded; the FIRST strict match wins (anyOf semantics).
 //
 //   Pass 2 (lenient, only when pass 1 matched nothing — additive platform
 //   fields from minor releases land here): per branch, all required top-level
 //   keys (json tags without omitempty) must be present, then the branch with
 //   the uniquely highest count of recognized top-level keys wins and is bound
-//   from the payload filtered to its known keys (lenient decode, so nested
-//   additive fields bind too). No unique winner keeps the stock error.
+//   through a methodless alias of the branch type, so plain field-based
+//   decoding ignores additive fields at every nesting level. No unique winner
+//   keeps the stock error.
 func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data []byte) error {
 	var err error
 	// Pass 1 — strict: unknown top-level fields disqualify a branch; the models'
 	// own UnmarshalJSON methods additionally enforce their required properties.
-	match := 0
+	// Branches are tried in declaration order; the first strict match binds.
 	// try to unmarshal data into PendingTransactionResponse
 	err = newStrictDecoder(data).Decode(&dst.PendingTransactionResponse)
 	if err == nil {
 		jsonPendingTransactionResponse, _ := json.Marshal(dst.PendingTransactionResponse)
-		if string(jsonPendingTransactionResponse) == "{}" { // empty struct
+		if string(jsonPendingTransactionResponse) == "{}" || string(jsonPendingTransactionResponse) == "null" { // empty or absent struct
 			dst.PendingTransactionResponse = nil
 		} else {
-			match++
+			return nil // data stored in dst.PendingTransactionResponse, first strict match wins
 		}
 	} else {
 		dst.PendingTransactionResponse = nil
@@ -104,10 +98,10 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 	err = newStrictDecoder(data).Decode(&dst.TransactionGroupResponse)
 	if err == nil {
 		jsonTransactionGroupResponse, _ := json.Marshal(dst.TransactionGroupResponse)
-		if string(jsonTransactionGroupResponse) == "{}" { // empty struct
+		if string(jsonTransactionGroupResponse) == "{}" || string(jsonTransactionGroupResponse) == "null" { // empty or absent struct
 			dst.TransactionGroupResponse = nil
 		} else {
-			match++
+			return nil // data stored in dst.TransactionGroupResponse, first strict match wins
 		}
 	} else {
 		dst.TransactionGroupResponse = nil
@@ -117,30 +111,19 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 	err = newStrictDecoder(data).Decode(&dst.TransactionResponse)
 	if err == nil {
 		jsonTransactionResponse, _ := json.Marshal(dst.TransactionResponse)
-		if string(jsonTransactionResponse) == "{}" { // empty struct
+		if string(jsonTransactionResponse) == "{}" || string(jsonTransactionResponse) == "null" { // empty or absent struct
 			dst.TransactionResponse = nil
 		} else {
-			match++
+			return nil // data stored in dst.TransactionResponse, first strict match wins
 		}
 	} else {
 		dst.TransactionResponse = nil
 	}
 
-	if match > 1 { // more than 1 match
-		// reset to nil
-		dst.PendingTransactionResponse = nil
-		dst.TransactionGroupResponse = nil
-		dst.TransactionResponse = nil
-
-		return fmt.Errorf("data matches more than one schema in oneOf(GetTransactionByMerchantTransactionId200Response)")
-	} else if match == 1 {
-		return nil // exactly one match
-	}
-
 	// Pass 2 — lenient, names-only coverage (zero strict matches).
 	var payload map[string]json.RawMessage
 	if err = json.Unmarshal(data, &payload); err != nil || payload == nil {
-		return fmt.Errorf("data failed to match schemas in oneOf(GetTransactionByMerchantTransactionId200Response)")
+		return fmt.Errorf("data failed to match schemas in anyOf(GetTransactionByMerchantTransactionId200Response)")
 	}
 	// knownAndRequiredKeys reflects a branch struct's exported top-level json tags;
 	// required mirrors the generated required-property sets (tags without omitempty).
@@ -191,28 +174,37 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 		reflect.TypeOf(TransactionGroupResponse{}),
 		reflect.TypeOf(TransactionResponse{}),
 	}
-	// bind decodes the payload filtered to the branch's known keys — leniently,
-	// so additive fields nested inside known keys cannot disqualify the branch.
+	// bind decodes the FULL payload through a methodless alias of the branch
+	// type: plain field-based decoding ignores unknown keys at every nesting
+	// level, so additive fields — top-level or nested — cannot disqualify the
+	// branch the coverage pass chose. Required-member presence was already
+	// enforced above, by name.
+	type plainPendingTransactionResponse PendingTransactionResponse
+	type plainTransactionGroupResponse TransactionGroupResponse
+	type plainTransactionResponse TransactionResponse
 	branchBinders := []func([]byte) error{
-		func(filtered []byte) error {
-			if bindErr := json.Unmarshal(filtered, &dst.PendingTransactionResponse); bindErr != nil {
-				dst.PendingTransactionResponse = nil
+		func(raw []byte) error {
+			var v plainPendingTransactionResponse
+			if bindErr := json.Unmarshal(raw, &v); bindErr != nil {
 				return bindErr
 			}
+			dst.PendingTransactionResponse = (*PendingTransactionResponse)(&v)
 			return nil
 		},
-		func(filtered []byte) error {
-			if bindErr := json.Unmarshal(filtered, &dst.TransactionGroupResponse); bindErr != nil {
-				dst.TransactionGroupResponse = nil
+		func(raw []byte) error {
+			var v plainTransactionGroupResponse
+			if bindErr := json.Unmarshal(raw, &v); bindErr != nil {
 				return bindErr
 			}
+			dst.TransactionGroupResponse = (*TransactionGroupResponse)(&v)
 			return nil
 		},
-		func(filtered []byte) error {
-			if bindErr := json.Unmarshal(filtered, &dst.TransactionResponse); bindErr != nil {
-				dst.TransactionResponse = nil
+		func(raw []byte) error {
+			var v plainTransactionResponse
+			if bindErr := json.Unmarshal(raw, &v); bindErr != nil {
 				return bindErr
 			}
+			dst.TransactionResponse = (*TransactionResponse)(&v)
 			return nil
 		},
 	}
@@ -229,20 +221,12 @@ func (dst *GetTransactionByMerchantTransactionId200Response) UnmarshalJSON(data 
 		}
 	}
 	if bestIdx >= 0 && bestCount == 1 {
-		known, _ := knownAndRequiredKeys(branchTypes[bestIdx])
-		filtered := make(map[string]json.RawMessage, len(payload))
-		for k, v := range payload {
-			if known[k] {
-				filtered[k] = v
-			}
-		}
-		filteredJSON, marshalErr := json.Marshal(filtered)
-		if marshalErr == nil && branchBinders[bestIdx](filteredJSON) == nil {
+		if branchBinders[bestIdx](data) == nil {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("data failed to match schemas in oneOf(GetTransactionByMerchantTransactionId200Response)")
+	return fmt.Errorf("data failed to match schemas in anyOf(GetTransactionByMerchantTransactionId200Response)")
 }
 
 // Marshal data from the first non-nil pointers in the struct to JSON
@@ -259,7 +243,7 @@ func (src GetTransactionByMerchantTransactionId200Response) MarshalJSON() ([]byt
 		return json.Marshal(&src.TransactionResponse)
 	}
 
-	return nil, nil // no data in oneOf schemas
+	return nil, nil // no data in anyOf schemas
 }
 
 // Get the actual instance

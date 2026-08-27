@@ -52,6 +52,27 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-08-27)
+
+- **Spec re-pinned v2.3.0 → v2.4.0+4ce73e2 (sixth pin, SC-478)** — the skipped intermediate
+  v2.3.1 is superseded. Additive delta: `vaultToken` on charge/authorize response payment
+  methods (SC-461), the transaction-lookup unions switched **oneOf → anyOf** with documented
+  most-specific-first discriminators and `TransactionGroupResponse` now requiring
+  `transactions` (SC-408 B4), and a documented 404 on charge/authorize from the
+  fallback-processor path (SC-408 B5). The anyOf switch retired every oneOf in the spec:
+  the six oneOf template forks are dormant (retained), stock anyOf output proved
+  names-correct and additive-evolution-safe in dotnet/php/python, and **three languages
+  needed anyOf-side forks** recorded in their `pipeline/<lang>/config.yaml` — java
+  (`anyof_model.mustache`: stock bound the first lenient Jackson match, mis-binding every
+  terminal body as pending), typescript (`models.mustache` routing + `modelAnyOf.mustache`:
+  stock merged anyOf branches into one interface and threw on bodies without the group's
+  required member), and go (`model_anyof.mustache`: stock first-match decode plus
+  DisallowUnknownFields in required-member branch models broke additive evolution). Go is
+  stdlib-only again (validator.v2 dropped — no oneOf models import it). Quickstart READMEs
+  ×6 gained the `vaultToken` note. Scorecard remediation landed the same day (PR #21:
+  nanoid ≥ 3.3.18, Dependabot, CodeQL, hash-pinned pip sites; stale-review dismissal
+  enabled; non-remediable alerts dismissed with justification on SC-478).
+
 ## Status snapshot (2026-08-07)
 
 - **REGISTRY PUBLISH IS LIVE — the ADR-SDK-031 flip runbook executed 2026-08-07 in one

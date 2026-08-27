@@ -28,6 +28,7 @@ Name | Type
 `dateCreated` | Date
 `storageState` | string
 `bin` | string
+`vaultToken` | string
 
 ## Example
 
@@ -57,6 +58,7 @@ const example = {
   "dateCreated": 2024-01-15T10:30Z,
   "storageState": stored,
   "bin": 424242,
+  "vaultToken": 5454541rYN4c5454,
 } satisfies PaymentMethodResponse
 
 console.log(example)

@@ -5,13 +5,17 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**state** | **str** | Always &#x60;pending&#x60; — discriminates this shape from a completed transaction. | 
+**merchant_transaction_id** | **str** | Merchant-provided transaction identifier | 
+**transaction_type** | **str** | Type of transaction performed. Passthrough of the processing platform&#39;s transaction type — not a closed set. Payment operations return \&quot;Charge\&quot;, \&quot;Authorize\&quot;, \&quot;Capture\&quot;, \&quot;Void\&quot; or \&quot;Refund\&quot; (refund cancellation returns \&quot;Refund\&quot;). Transaction lookups can additionally return types created by other platform flows, e.g. \&quot;Verify\&quot;, \&quot;SuccessfulPayment\&quot;, \&quot;RefundedPayment\&quot;, \&quot;CreateCreditCard\&quot;, \&quot;UpdatePaymentMethod\&quot;, \&quot;RedactPaymentMethod\&quot;, \&quot;RecachePaymentMethod\&quot;, \&quot;CreateGatewayPaymentMethod\&quot;. Treat unrecognized values as informational. | [optional] 
+**received_at** | **datetime** | When the platform recorded the payment intent (ISO 8601) | [optional] 
+**transaction** | [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
+**transactions** | [**List[TransactionResponse]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | 
 **transaction_id** | **str** | Unique identifier for the transaction | [optional] 
 **transaction_date** | **datetime** | Date and time when the transaction was processed (ISO 8601) | [optional] 
 **transaction_status** | **int** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional] 
 **message** | **str** | Human-readable message about the transaction result | [optional] 
 **response_code** | **str** | Gateway-specific response code | [optional] 
-**transaction_type** | **str** | Operation the intent was recorded for — \&quot;Charge\&quot; or \&quot;Authorize\&quot; (same vocabulary as TransactionResponse.transactionType). | [optional] 
-**merchant_transaction_id** | **str** | Merchant-provided transaction identifier the intent was recorded under | 
 **customer_id** | **str** | Customer identifier associated with the transaction | [optional] 
 **gateway_routing_id** | **str** | Gateway-specific token for the transaction | [optional] 
 **currency** | **str** | Transaction currency code (ISO 4217) | [optional] 
@@ -36,10 +40,6 @@ Name | Type | Description | Notes
 **recovery** | [**Recovery**](Recovery.md) |  | [optional] 
 **response** | [**TransactionResponseDetails**](TransactionResponseDetails.md) |  | [optional] 
 **payment_method** | [**PaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional] 
-**state** | **str** | Always &#x60;pending&#x60; — discriminates this shape from a completed transaction. | 
-**received_at** | **datetime** | When the platform recorded the payment intent (ISO 8601) | [optional] 
-**transaction** | [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
-**transactions** | [**List[TransactionResponse]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | [optional] 
 
 ## Example
 

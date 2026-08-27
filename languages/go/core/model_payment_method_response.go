@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.3.0
+API version: 2.4.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -64,6 +64,8 @@ type PaymentMethodResponse struct {
 	StorageState NullableString `json:"storageState,omitempty"`
 	// Bank Identification Number. Must contain exactly 6 or 8 digits.
 	Bin NullableString `json:"bin,omitempty" validate:"regexp=^(?:[0-9]{6}|[0-9]{8})$"`
+	// Opaque reference to the stored card this payment method used, returned so a transaction can be tied back to its credential without a second lookup.  Present only on the payment method nested inside a **charge or authorize** response, and only when that transaction ran against a vault credential — either one you presented, or one this API created for you when it vaulted the card you sent. Always omitted on the stored payment method endpoints (`/paymentmethods` show, list): a stored payment method cannot be created from a vault token, so it never has one to report. Also omitted on every transaction read endpoint — the token is not persisted and is never replayed on a read.  Where the token can be resolved live, this is the token **currently live** for the credential, which is not always the token submitted — if the card was replaced by the Account Updater, the value is the new head of the lineage. Otherwise it is the token the transaction was dispatched with, and does not reflect a roll. Which of the two you get depends on how the transaction was processed, so treat it as optional throughout and do **not** treat a missing or unchanged value as proof the card was not rolled. This is the only place the token is reported — there is deliberately no copy at the transaction level.
+	VaultToken NullableString `json:"vaultToken,omitempty"`
 }
 
 // NewPaymentMethodResponse instantiates a new PaymentMethodResponse object
@@ -945,6 +947,48 @@ func (o *PaymentMethodResponse) UnsetBin() {
 	o.Bin.Unset()
 }
 
+// GetVaultToken returns the VaultToken field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *PaymentMethodResponse) GetVaultToken() string {
+	if o == nil || IsNil(o.VaultToken.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.VaultToken.Get()
+}
+
+// GetVaultTokenOk returns a tuple with the VaultToken field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PaymentMethodResponse) GetVaultTokenOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.VaultToken.Get(), o.VaultToken.IsSet()
+}
+
+// HasVaultToken returns a boolean if a field has been set.
+func (o *PaymentMethodResponse) HasVaultToken() bool {
+	if o != nil && o.VaultToken.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetVaultToken gets a reference to the given NullableString and assigns it to the VaultToken field.
+func (o *PaymentMethodResponse) SetVaultToken(v string) {
+	o.VaultToken.Set(&v)
+}
+// SetVaultTokenNil sets the value for VaultToken to be an explicit nil
+func (o *PaymentMethodResponse) SetVaultTokenNil() {
+	o.VaultToken.Set(nil)
+}
+
+// UnsetVaultToken ensures that no value is present for VaultToken, not even an explicit nil
+func (o *PaymentMethodResponse) UnsetVaultToken() {
+	o.VaultToken.Unset()
+}
+
 func (o PaymentMethodResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -1017,6 +1061,9 @@ func (o PaymentMethodResponse) ToMap() (map[string]interface{}, error) {
 	}
 	if o.Bin.IsSet() {
 		toSerialize["bin"] = o.Bin.Get()
+	}
+	if o.VaultToken.IsSet() {
+		toSerialize["vaultToken"] = o.VaultToken.Get()
 	}
 	return toSerialize, nil
 }

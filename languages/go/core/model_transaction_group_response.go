@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.3.0
+API version: 2.4.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -16,25 +16,30 @@ package core
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the TransactionGroupResponse type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &TransactionGroupResponse{}
 
-// TransactionGroupResponse Envelope returned by the V2 transaction-details lookups when `includeAllTransactions=true`. Contains the matched transaction plus every transaction belonging to the same payment — all attempts and lifecycle operations (capture, refund, void) that share the same initial transaction id. If the matched transaction has no initial transaction id, `transactions` contains only the matched record. 
+// TransactionGroupResponse Envelope returned by the V2 transaction-details lookups when `includeAllTransactions=true`. Contains the matched transaction plus every transaction belonging to the same payment — all attempts and lifecycle operations (capture, refund, void) that share the same initial transaction id. If the matched transaction has no initial transaction id, `transactions` contains only the matched record.  The required `transactions` member is always present and discriminates this envelope from a single `TransactionResponse`, which never carries a `transactions` member. 
 type TransactionGroupResponse struct {
 	// The transaction matching the supplied id (the record the non-expanded lookup returns).
 	Transaction *TransactionResponse `json:"transaction,omitempty"`
 	// Every transaction in the payment, ordered by transaction date ascending. Capped at 100.
-	Transactions []TransactionResponse `json:"transactions,omitempty"`
+	Transactions []TransactionResponse `json:"transactions"`
 }
+
+type _TransactionGroupResponse TransactionGroupResponse
 
 // NewTransactionGroupResponse instantiates a new TransactionGroupResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewTransactionGroupResponse() *TransactionGroupResponse {
+func NewTransactionGroupResponse(transactions []TransactionResponse) *TransactionGroupResponse {
 	this := TransactionGroupResponse{}
+	this.Transactions = transactions
 	return &this
 }
 
@@ -78,34 +83,26 @@ func (o *TransactionGroupResponse) SetTransaction(v TransactionResponse) {
 	o.Transaction = &v
 }
 
-// GetTransactions returns the Transactions field value if set, zero value otherwise.
+// GetTransactions returns the Transactions field value
 func (o *TransactionGroupResponse) GetTransactions() []TransactionResponse {
-	if o == nil || IsNil(o.Transactions) {
+	if o == nil {
 		var ret []TransactionResponse
 		return ret
 	}
+
 	return o.Transactions
 }
 
-// GetTransactionsOk returns a tuple with the Transactions field value if set, nil otherwise
+// GetTransactionsOk returns a tuple with the Transactions field value
 // and a boolean to check if the value has been set.
 func (o *TransactionGroupResponse) GetTransactionsOk() ([]TransactionResponse, bool) {
-	if o == nil || IsNil(o.Transactions) {
+	if o == nil {
 		return nil, false
 	}
 	return o.Transactions, true
 }
 
-// HasTransactions returns a boolean if a field has been set.
-func (o *TransactionGroupResponse) HasTransactions() bool {
-	if o != nil && !IsNil(o.Transactions) {
-		return true
-	}
-
-	return false
-}
-
-// SetTransactions gets a reference to the given []TransactionResponse and assigns it to the Transactions field.
+// SetTransactions sets field value
 func (o *TransactionGroupResponse) SetTransactions(v []TransactionResponse) {
 	o.Transactions = v
 }
@@ -123,10 +120,45 @@ func (o TransactionGroupResponse) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Transaction) {
 		toSerialize["transaction"] = o.Transaction
 	}
-	if !IsNil(o.Transactions) {
-		toSerialize["transactions"] = o.Transactions
-	}
+	toSerialize["transactions"] = o.Transactions
 	return toSerialize, nil
+}
+
+func (o *TransactionGroupResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"transactions",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varTransactionGroupResponse := _TransactionGroupResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varTransactionGroupResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = TransactionGroupResponse(varTransactionGroupResponse)
+
+	return err
 }
 
 type NullableTransactionGroupResponse struct {

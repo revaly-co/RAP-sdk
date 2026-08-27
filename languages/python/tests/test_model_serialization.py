@@ -1,12 +1,14 @@
 """Empirical pins on generated-core behavior the runtime depends on.
 
-oneOf wrappers: discrimination comes from the forked
-``pipeline/python/templates/model_oneof.mustache`` (java PR #18 / typescript
-PR #25 pattern) — a strict top-level-key pass binds spec-aligned bodies
-uniquely, a recognized-field coverage tiebreak keeps additive server-side
-schema evolution binding, and genuinely ambiguous payloads still raise the
-stock error. The runtime keeps reading raw bodies everywhere (repo rule 5) —
-the fork serves merchants calling the generated lookups directly.
+anyOf wrappers (spec v2.4.0, SC-408 B4: the lookup unions switched
+oneOf -> anyOf with branches ordered most-specific first): discrimination is
+the STOCK anyOf template — ``from_json`` tries branches in declaration order
+and pydantic enforces each branch's required members while ignoring unknown
+fields, so binding is names-only and additive server-side schema evolution
+keeps binding. No python template fork is needed for anyOf (the forked
+``model_oneof.mustache`` stays for any future oneOf; the v2.4.0 spec has
+none). The runtime keeps reading raw bodies everywhere (repo rule 5) — these
+pins serve merchants calling the generated lookups directly.
 """
 
 from __future__ import annotations
@@ -35,7 +37,7 @@ GROUP_BODY = synthetic_data.transaction_group()
 PENDING_BODY = synthetic_data.pending()
 
 
-# ---- oneOf wrapper discrimination (forked model_oneof.mustache) --------------
+# ---- anyOf wrapper discrimination (stock template, ordered branches) ---------
 
 
 def test_by_id_wrapper_binds_terminal():
@@ -71,10 +73,10 @@ def test_by_merchant_wrapper_binds_pending():
     [GetTransactionById200Response, GetTransactionByMerchantTransactionId200Response],
     ids=["by_id", "by_merchant"],
 )
-def test_wrappers_bind_additive_terminal_via_coverage_tiebreak(wrapper_cls):
-    # A server newer than the pinned spec (additive top-level field) fails the
-    # strict pass for every branch; the recognized-field coverage tiebreak keeps
-    # the terminal shape binding (java fork precedent).
+def test_wrappers_bind_additive_terminal(wrapper_cls):
+    # A server newer than the pinned spec (additive top-level field) must keep
+    # binding: pydantic ignores unknown fields, and the narrower branches still
+    # reject the body by their missing required members (names only).
     body = json.dumps(
         {**synthetic_data.transaction_dict(1), "settlementBatchId": "batch_synthetic_01"}
     )
@@ -82,29 +84,54 @@ def test_wrappers_bind_additive_terminal_via_coverage_tiebreak(wrapper_cls):
     assert isinstance(wrapper.actual_instance, TransactionResponse)
 
 
+def test_additive_field_still_binds_pending():
+    # The additive-evolution hazard on the pending branch (one new platform
+    # field re-binding a pending body as a terminal transaction) cannot occur:
+    # pydantic ignores the unknown field and pending still matches first.
+    body = json.dumps({**json.loads(PENDING_BODY), "reservationExpiresAt": "2026-08-01T00:00:00Z"})
+    wrapper = GetTransactionByMerchantTransactionId200Response.from_json(body)
+    assert isinstance(wrapper.actual_instance, PendingTransactionResponse)
+
+
+def test_nested_additive_field_still_binds_group():
+    body = json.loads(GROUP_BODY)
+    body["transactions"][0]["settlementBatchId"] = "batch_synthetic_01"
+    wrapper = GetTransactionByMerchantTransactionId200Response.from_json(json.dumps(body))
+    assert isinstance(wrapper.actual_instance, TransactionGroupResponse)
+
+
 @pytest.mark.parametrize(
     "wrapper_cls",
     [GetTransactionById200Response, GetTransactionByMerchantTransactionId200Response],
     ids=["by_id", "by_merchant"],
 )
-def test_wrappers_still_raise_on_genuinely_ambiguous_body(wrapper_cls):
-    # An empty object matches every all-optional branch with zero coverage — the
-    # fork resolves nothing and the stock error is preserved.
-    with pytest.raises(ValueError, match="Multiple matches found"):
-        wrapper_cls.from_json("{}")
+def test_empty_object_binds_terminal_branch(wrapper_cls):
+    # Pinned stock-anyOf behavior (changed from the oneOf-fork era, which
+    # raised): an empty object carries neither `transactions` nor `state`, so
+    # per the documented discriminators it IS a single TransactionResponse —
+    # the all-optional terminal branch binds. Does not occur on the wire.
+    wrapper = wrapper_cls.from_json("{}")
+    assert isinstance(wrapper.actual_instance, TransactionResponse)
 
 
-def test_wrapper_validator_discriminates_raw_dict():
-    # Fork site 2: assigning a raw dict binds the right branch instead of
-    # silently union-coercing into the first all-optional branch.
-    terminal = GetTransactionById200Response(actual_instance=json.loads(TERMINAL_BODY))
+def test_wrapper_discriminates_raw_dict_via_from_dict():
+    # The wire path (from_json / from_dict) discriminates raw payloads; direct
+    # actual_instance assignment accepts constructed model instances only
+    # (pinned below) — that is the stock anyOf construction surface.
+    terminal = GetTransactionById200Response.from_dict(json.loads(TERMINAL_BODY))
     assert isinstance(terminal.actual_instance, TransactionResponse)
-    group = GetTransactionById200Response(actual_instance=json.loads(GROUP_BODY))
+    group = GetTransactionById200Response.from_dict(json.loads(GROUP_BODY))
     assert isinstance(group.actual_instance, TransactionGroupResponse)
-    pending = GetTransactionByMerchantTransactionId200Response(
-        actual_instance=json.loads(PENDING_BODY)
-    )
+    pending = GetTransactionByMerchantTransactionId200Response.from_dict(json.loads(PENDING_BODY))
     assert isinstance(pending.actual_instance, PendingTransactionResponse)
+
+
+def test_wrapper_rejects_raw_dict_on_direct_assignment():
+    # Pinned stock-anyOf behavior (changed from the oneOf-fork era, which
+    # discriminated dicts on assignment): actual_instance takes model
+    # instances; a raw dict raises instead of silently union-coercing.
+    with pytest.raises(ValidationError):
+        GetTransactionById200Response(actual_instance=json.loads(TERMINAL_BODY))
 
 
 def test_wrapper_validator_instance_passthrough():

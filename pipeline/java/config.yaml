@@ -33,6 +33,17 @@
 # than the pinned spec (additive fields, e.g. the statementDescriptor precedent) still
 # binds instead of throwing. Regression-pinned in the runtime test suite
 # (ModelSerializationTests). Raise upstream at the next ADR-SDK-023 revision.
+# templates/libraries/native/anyof_model.mustache — forked 2026-08-27 (SC-478 spec
+# v2.4.0 re-pin; SC-408 B4 switched the transaction-lookup unions oneOf -> anyOf with
+# branches ordered most-specific first): the stock anyOf deserializer binds the FIRST
+# branch that LENIENTLY Jackson-decodes — no unknown-property rejection, no required
+# enforcement — so every terminal body bound PendingTransactionResponse and every
+# single-transaction body bound TransactionGroupResponse. Port of the oneof_model fork
+# legs with anyOf resolution (jackson2 legs only): a strict fail-on-unknown-properties
+# pass takes the FIRST match in declaration order, then the stock lenient pass, then
+# the recognized-top-level-field coverage tiebreak so additive server evolution keeps
+# binding. Field names only, never values. Regression-pinned in
+# ModelSerializationTests. Raise upstream at the next ADR-SDK-023 revision.
 generatorName: java
 library: native # JDK 11+ HttpClient + Jackson — leaner than the okhttp-gson default
 

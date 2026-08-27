@@ -4,32 +4,32 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.3.0+80cc897
-specVersion: 2.3.0
-sourceCommit: 80cc8976bb7ea4f2ea58fa0c4c8ffb0e9b2f0023
+releaseTag: spec/v2.4.0+4ce73e2
+specVersion: 2.4.0
+sourceCommit: 4ce73e2ba8c8061573f16a82aef94c1c5b5d6550
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: 1407f5ca396354d0975f3c63ecb9c7299f9bcdbd8e67c4a56f36df20b07142c0
-pinnedAt: "2026-07-20"
+  openapi.bundled.yaml: e982e1df10ea2a5f9768751bf83e11eb6e7160feb4c2cf3e141a5db768040f61
+pinnedAt: "2026-08-27"
 notes: >-
-  Fifth pin (was spec/v2.2.1+c4000e9). Backbone PR #251 (platform ADR 020 — validation reality
-  matches the published contract) closes the spec-vs-reality gaps stage-4 smoke surfaced
-  (rap-sdk ADR-SDK-024 / issue #32). Documentation-only spec delta: paymentMethodType is now
-  explicitly omittable on charge/authorize (the server infers it when exactly one payment-method
-  object is supplied; two-plus without an explicit type = 400; stored-method and recommendation
-  flows carry no type), per-type required fields spelled out on PaymentMethod and both enum
-  descriptions (creditCard needs a cardholder name; vaultToken needs the request-level
-  customerId, with merchantAccountReferenceId dropped from its requirements — vault tokens are
-  gateway-agnostic), the shared 400 response documents that business-rule rejections may carry
-  `error` alone (details/code optional — the body ADR-SDK-024 mis-read as a third shape), and
-  merchantTransactionId carries the <=48-character gateway-compatibility guidance. Server wire
-  behaviour moved TOWARD the spec in the same PR (inference at the API boundary, ErrorResponse
-  on every 400/500 producer, vaultToken customerId enforced on every path); minor bump because
-  previously-rejected inputs are now accepted. All four platform gates pass; provenance ciRunId
-  29754021001. Prior pin history: v2.1.2+9af661b (first pin, int64 maximum fix) ->
-  v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) -> v2.2.0+1e59620 (additive
+  Sixth pin (was spec/v2.3.0+80cc897; the intermediate spec/v2.3.1+40d659b of 2026-08-10 was
+  never consumed and is superseded by this pin — SC-478). Additive delta, three changes
+  (62 diff lines): (1) optional nullable vaultToken string on the PaymentMethod nested inside
+  charge/authorize responses only — present only when the transaction ran against a vault
+  credential (presented or auto-vaulted); may reflect an Account Updater roll (the currently
+  live token) or the token as dispatched, so consumers treat it as optional and never infer
+  "card not rolled" from absence (SC-461). (2) Transaction-lookup response unions switch
+  oneOf -> anyOf with documented discriminators (a `transactions` member means the
+  TransactionGroupResponse envelope; `state: "pending"` means PendingTransactionResponse;
+  otherwise a single TransactionResponse), branches ordered most-specific first for
+  match-in-order deserializers; TransactionGroupResponse now requires `transactions`
+  (SC-408 B4). (3) 404 NotFound documented on charge and authorize — originates from the
+  fallback-processor path (bypassPlatform: true or platform failover dispatch) (SC-408 B5).
+  No new error codes, transaction types, or reconcile verdicts. All four platform gates pass;
+  provenance ciRunId 33009334665. Prior pin history: v2.1.2+9af661b (first pin, int64 maximum
+  fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) -> v2.2.0+1e59620 (additive
   statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID response header
-  documented).
+  documented) -> v2.3.0+80cc897 (validation reality matches the published contract).

@@ -85,6 +85,10 @@ public class Quickstart {
         try {
             TransactionResponse response = client.charge(request);
             System.out.println("charged, status=" + response.getTransactionStatus());
+            // response.getPaymentMethod().getVaultToken() (spec >= 2.4.0) ties this charge
+            // back to the stored credential it ran against — set only when a vault credential
+            // was used, and it may reflect an Account Updater roll. Treat it as optional;
+            // absence proves nothing.
 
         } catch (PermanentRejectionException e) {
             // Received and rejected — fix the request or decline the order.

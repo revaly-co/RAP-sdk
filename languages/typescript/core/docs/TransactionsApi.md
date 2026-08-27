@@ -84,7 +84,7 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;.  |  * X-Correlation-ID -  <br>  |
+| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;.  Discriminate by the required &#x60;transactions&#x60; member: present means the &#x60;TransactionGroupResponse&#x60; envelope, absent means a single &#x60;TransactionResponse&#x60;. Branches are ordered most-specific first for match-in-order deserializers.  |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 | **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
@@ -170,7 +170,7 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;. Returns a &#x60;PendingTransactionResponse&#x60; (&#x60;state: pending&#x60;) when the payment intent was accepted but no transaction record is visible yet.  |  * X-Correlation-ID -  <br>  |
+| **200** | Successfully retrieved transaction details. Returns a single &#x60;TransactionResponse&#x60; by default, or a &#x60;TransactionGroupResponse&#x60; envelope when &#x60;includeAllTransactions&#x3D;true&#x60;. Returns a &#x60;PendingTransactionResponse&#x60; (&#x60;state: pending&#x60;) when the payment intent was accepted but no transaction record is visible yet.  Discriminate by required members: a body with &#x60;state: \&quot;pending\&quot;&#x60; is a &#x60;PendingTransactionResponse&#x60;; a body with &#x60;transactions&#x60; is a &#x60;TransactionGroupResponse&#x60; envelope; otherwise it is a single &#x60;TransactionResponse&#x60;. Branches are ordered most-specific first for match-in-order deserializers.  |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
 | **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |

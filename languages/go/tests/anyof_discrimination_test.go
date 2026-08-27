@@ -1,13 +1,17 @@
-// oneOf wrapper discrimination — pins the forked model_oneof.mustache behavior
-// (pipeline/go/templates/, recorded in pipeline/go/config.yaml).
+// anyOf wrapper discrimination — pins the forked model_anyof.mustache behavior
+// (pipeline/go/templates/, recorded in pipeline/go/config.yaml) on the two
+// transaction-lookup response wrappers (spec v2.4.0, SC-408 B4: the unions
+// switched oneOf -> anyOf with branches ordered most-specific first).
 //
-// The stock template's per-branch validator.v2 pass eliminated valid branches
-// unconditionally on this spec (regexp validators on Nullable* struct fields are
-// "unsupported type"; {m,n} regexp quantifiers split on the tag comma), so every
-// terminal-transaction payload failed to match any schema on both response
-// wrappers. The fork discriminates by field names only — strict unknown-fields
-// pass first, then a lenient recognized-field-coverage pass so additive platform
-// fields (minor releases) keep binding. These tests pin all of that.
+// The stock anyOf leg lenient-decodes branches first-match-wins, which stays
+// names-correct only until the server evolves: branch models with required
+// members strict-reject unknown fields, so one additive platform field would
+// re-bind a pending body as a terminal transaction and hard-fail a group
+// envelope. The fork (anyOf variant of the model_oneof fork) discriminates by
+// field names only — strict unknown-fields pass first (first match in
+// declaration order wins), then a lenient recognized-field-coverage pass so
+// additive platform fields (minor releases) keep binding. These tests pin all
+// of that.
 package tests
 
 import (
@@ -90,11 +94,19 @@ func TestAdditiveFieldStillBindsPending(t *testing.T) {
 	}
 }
 
+// A group envelope always carries the required `transactions` member (v2.4.0
+// made it required — it IS the documented discriminator); additive fields
+// nested inside its transactions must not break the group bind. The lenient
+// pass binds through a methodless alias precisely so nested unknowns pass.
 func TestNestedAdditiveFieldStillBindsGroup(t *testing.T) {
-	payload := `{"transaction":` + withAdditive(trPayload, "settlementBatchId", `"sb-1"`) + `}`
+	inner := withAdditive(trPayload, "settlementBatchId", `"sb-1"`)
+	payload := `{"transaction":` + inner + `,"transactions":[` + inner + `]}`
 	w := boundByMerchant(t, payload)
 	if w.TransactionGroupResponse == nil {
 		t.Fatal("expected TransactionGroupResponse branch despite nested additive field")
+	}
+	if n := len(w.TransactionGroupResponse.GetTransactions()); n != 1 {
+		t.Fatalf("transactions len = %d, want 1", n)
 	}
 }
 
@@ -108,8 +120,8 @@ func TestValuesNeverDiscriminate(t *testing.T) {
 	}
 }
 
-// Pinned stock behavior: payloads that fit no branch by names stay errors.
-func TestAmbiguousAndUnrecognizedPayloadsError(t *testing.T) {
+// Pinned fork behavior: payloads that fit no branch by names stay errors.
+func TestUnrecognizedPayloadsError(t *testing.T) {
 	for name, payload := range map[string]string{
 		"empty object":      `{}`,
 		"unrecognized keys": `{"whatever":1}`,

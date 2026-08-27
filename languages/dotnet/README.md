@@ -81,6 +81,9 @@ try
     var response = await rap.Payments.ChargePaymentAsync(request);
     response.TryOk(out var transaction);
     Console.WriteLine($"approved: {transaction!.TransactionId}");
+    // transaction.PaymentMethod?.VaultToken (spec >= 2.4.0) ties this charge back to the
+    // stored credential it ran against — set only when a vault credential was used, and it
+    // may reflect an Account Updater roll. Treat it as optional; absence proves nothing.
 }
 catch (PermanentRejectionException ex)
 {

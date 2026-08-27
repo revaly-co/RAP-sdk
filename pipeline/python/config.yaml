@@ -32,6 +32,13 @@
 #     discriminated instead of silently union-coerced into the first all-optional
 #     branch; genuinely ambiguous payloads still raise the stock error. Raise
 #     upstream at the next generator-pin revision (ADR-SDK-023).
+#     2026-08-27 (SC-478 spec v2.4.0 re-pin): SC-408 B4 switched the lookup unions
+#     oneOf -> anyOf, so this fork is dormant (the v2.4.0 spec carries no oneOf).
+#     anyOf deliberately uses the STOCK template: from_json tries branches in
+#     declaration order (most-specific first) and pydantic enforces each branch's
+#     required members while ignoring unknown fields, so discrimination is names-only
+#     and additive-evolution-safe with no fork. Pinned in
+#     languages/python/tests/test_model_serialization.py.
 generatorName: python # default urllib3 library
 
 additionalProperties:

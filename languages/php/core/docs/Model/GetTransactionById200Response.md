@@ -4,6 +4,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**transaction** | [**\Revaly\Sdk\Core\Model\TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional]
+**transactions** | [**\Revaly\Sdk\Core\Model\TransactionResponse[]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. |
 **transaction_id** | **string** | Unique identifier for the transaction | [optional]
 **transaction_date** | **\DateTime** | Date and time when the transaction was processed (ISO 8601) | [optional]
 **transaction_status** | **int** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional]
@@ -35,7 +37,5 @@ Name | Type | Description | Notes
 **recovery** | [**\Revaly\Sdk\Core\Model\Recovery**](Recovery.md) |  | [optional]
 **response** | [**\Revaly\Sdk\Core\Model\TransactionResponseDetails**](TransactionResponseDetails.md) |  | [optional]
 **payment_method** | [**\Revaly\Sdk\Core\Model\PaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional]
-**transaction** | [**\Revaly\Sdk\Core\Model\TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional]
-**transactions** | [**\Revaly\Sdk\Core\Model\TransactionResponse[]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | [optional]
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

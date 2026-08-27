@@ -91,6 +91,10 @@ func main() {
 	transaction, err := client.Charge(context.Background(), request)
 	if err == nil {
 		fmt.Println("approved:", transaction.GetTransactionId())
+		// transaction.GetPaymentMethod().GetVaultToken() (spec >= 2.4.0) ties this charge
+		// back to the stored credential it ran against — set only when a vault credential
+		// was used, and it may reflect an Account Updater roll. Treat it as optional;
+		// absence proves nothing.
 		return
 	}
 

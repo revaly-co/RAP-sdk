@@ -1,0 +1,7 @@
+{{! RAP fork-owned partial - see modelAnyOf.mustache header. Union type alias over the anyOf branches, mirroring the stock modelOneOfInterfaces shape. }}
+/**
+ * @type {{classname}}
+ * {{#lambda.indented_star_1}}{{{unescapedDescription}}}{{/lambda.indented_star_1}}
+ * @export
+ */
+export type {{classname}} = {{#anyOf}}{{{.}}}{{^-last}} | {{/-last}}{{/anyOf}};
