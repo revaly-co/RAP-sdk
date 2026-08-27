@@ -6,13 +6,17 @@
 
 Name | Type
 ------------ | -------------
+`state` | string
+`merchantTransactionId` | string
+`transactionType` | string
+`receivedAt` | Date
+`transaction` | [TransactionResponse](TransactionResponse.md)
+`transactions` | [Array&lt;TransactionResponse&gt;](TransactionResponse.md)
 `transactionId` | string
 `transactionDate` | Date
 `transactionStatus` | number
 `message` | string
 `responseCode` | string
-`transactionType` | string
-`merchantTransactionId` | string
 `customerId` | string
 `gatewayRoutingId` | string
 `currency` | string
@@ -37,10 +41,6 @@ Name | Type
 `recovery` | [Recovery](Recovery.md)
 `response` | [TransactionResponseDetails](TransactionResponseDetails.md)
 `paymentMethod` | [PaymentMethodResponse](PaymentMethodResponse.md)
-`state` | string
-`receivedAt` | Date
-`transaction` | [TransactionResponse](TransactionResponse.md)
-`transactions` | [Array&lt;TransactionResponse&gt;](TransactionResponse.md)
 
 ## Example
 
@@ -49,13 +49,17 @@ import type { GetTransactionByMerchantTransactionId200Response } from ''
 
 // TODO: Update the object below with actual values
 const example = {
+  "state": pending,
+  "merchantTransactionId": order_12345,
+  "transactionType": Charge,
+  "receivedAt": 2026-07-13T18:30Z,
+  "transaction": null,
+  "transactions": null,
   "transactionId": 06CQR5TMB800000G0011NCFRVY37A,
   "transactionDate": 2024-01-15T10:30Z,
   "transactionStatus": 1,
   "message": Transaction approved successfully,
   "responseCode": 00,
-  "transactionType": Charge,
-  "merchantTransactionId": charge_order_12345,
   "customerId": cust_9876543210fedcba,
   "gatewayRoutingId": gateway_routing_id_abc123,
   "currency": USD,
@@ -80,10 +84,6 @@ const example = {
   "recovery": null,
   "response": null,
   "paymentMethod": null,
-  "state": pending,
-  "receivedAt": 2026-07-13T18:30Z,
-  "transaction": null,
-  "transactions": null,
 } satisfies GetTransactionByMerchantTransactionId200Response
 
 console.log(example)

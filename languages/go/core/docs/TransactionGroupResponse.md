@@ -5,13 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Transaction** | Pointer to [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
-**Transactions** | Pointer to [**[]TransactionResponse**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | [optional] 
+**Transactions** | [**[]TransactionResponse**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | 
 
 ## Methods
 
 ### NewTransactionGroupResponse
 
-`func NewTransactionGroupResponse() *TransactionGroupResponse`
+`func NewTransactionGroupResponse(transactions []TransactionResponse, ) *TransactionGroupResponse`
 
 NewTransactionGroupResponse instantiates a new TransactionGroupResponse object
 This constructor will assign default values to properties that have it defined,
@@ -70,11 +70,6 @@ and a boolean to check if the value has been set.
 
 SetTransactions sets Transactions field to given value.
 
-### HasTransactions
-
-`func (o *TransactionGroupResponse) HasTransactions() bool`
-
-HasTransactions returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -4,13 +4,17 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**state** | **string** | Always &#x60;pending&#x60; — discriminates this shape from a completed transaction. |
+**merchant_transaction_id** | **string** | Merchant-provided transaction identifier |
+**transaction_type** | **string** | Type of transaction performed. Passthrough of the processing platform&#39;s transaction type — not a closed set. Payment operations return \&quot;Charge\&quot;, \&quot;Authorize\&quot;, \&quot;Capture\&quot;, \&quot;Void\&quot; or \&quot;Refund\&quot; (refund cancellation returns \&quot;Refund\&quot;). Transaction lookups can additionally return types created by other platform flows, e.g. \&quot;Verify\&quot;, \&quot;SuccessfulPayment\&quot;, \&quot;RefundedPayment\&quot;, \&quot;CreateCreditCard\&quot;, \&quot;UpdatePaymentMethod\&quot;, \&quot;RedactPaymentMethod\&quot;, \&quot;RecachePaymentMethod\&quot;, \&quot;CreateGatewayPaymentMethod\&quot;. Treat unrecognized values as informational. | [optional]
+**received_at** | **\DateTime** | When the platform recorded the payment intent (ISO 8601) | [optional]
+**transaction** | [**\Revaly\Sdk\Core\Model\TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional]
+**transactions** | [**\Revaly\Sdk\Core\Model\TransactionResponse[]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. |
 **transaction_id** | **string** | Unique identifier for the transaction | [optional]
 **transaction_date** | **\DateTime** | Date and time when the transaction was processed (ISO 8601) | [optional]
 **transaction_status** | **int** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional]
 **message** | **string** | Human-readable message about the transaction result | [optional]
 **response_code** | **string** | Gateway-specific response code | [optional]
-**transaction_type** | **string** | Operation the intent was recorded for — \&quot;Charge\&quot; or \&quot;Authorize\&quot; (same vocabulary as TransactionResponse.transactionType). | [optional]
-**merchant_transaction_id** | **string** | Merchant-provided transaction identifier the intent was recorded under |
 **customer_id** | **string** | Customer identifier associated with the transaction | [optional]
 **gateway_routing_id** | **string** | Gateway-specific token for the transaction | [optional]
 **currency** | **string** | Transaction currency code (ISO 4217) | [optional]
@@ -35,9 +39,5 @@ Name | Type | Description | Notes
 **recovery** | [**\Revaly\Sdk\Core\Model\Recovery**](Recovery.md) |  | [optional]
 **response** | [**\Revaly\Sdk\Core\Model\TransactionResponseDetails**](TransactionResponseDetails.md) |  | [optional]
 **payment_method** | [**\Revaly\Sdk\Core\Model\PaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional]
-**state** | **string** | Always &#x60;pending&#x60; — discriminates this shape from a completed transaction. |
-**received_at** | **\DateTime** | When the platform recorded the payment intent (ISO 8601) | [optional]
-**transaction** | [**\Revaly\Sdk\Core\Model\TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional]
-**transactions** | [**\Revaly\Sdk\Core\Model\TransactionResponse[]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | [optional]
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

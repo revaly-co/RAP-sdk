@@ -5,6 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**transaction** | [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
+**transactions** | [**List[TransactionResponse]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | 
 **transaction_id** | **str** | Unique identifier for the transaction | [optional] 
 **transaction_date** | **datetime** | Date and time when the transaction was processed (ISO 8601) | [optional] 
 **transaction_status** | **int** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional] 
@@ -36,8 +38,6 @@ Name | Type | Description | Notes
 **recovery** | [**Recovery**](Recovery.md) |  | [optional] 
 **response** | [**TransactionResponseDetails**](TransactionResponseDetails.md) |  | [optional] 
 **payment_method** | [**PaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional] 
-**transaction** | [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
-**transactions** | [**List[TransactionResponse]**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | [optional] 
 
 ## Example
 

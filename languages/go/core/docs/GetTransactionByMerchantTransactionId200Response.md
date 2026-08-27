@@ -4,13 +4,17 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**State** | **string** | Always &#x60;pending&#x60; — discriminates this shape from a completed transaction. | 
+**MerchantTransactionId** | **NullableString** | Merchant-provided transaction identifier | 
+**TransactionType** | Pointer to **NullableString** | Type of transaction performed. Passthrough of the processing platform&#39;s transaction type — not a closed set. Payment operations return \&quot;Charge\&quot;, \&quot;Authorize\&quot;, \&quot;Capture\&quot;, \&quot;Void\&quot; or \&quot;Refund\&quot; (refund cancellation returns \&quot;Refund\&quot;). Transaction lookups can additionally return types created by other platform flows, e.g. \&quot;Verify\&quot;, \&quot;SuccessfulPayment\&quot;, \&quot;RefundedPayment\&quot;, \&quot;CreateCreditCard\&quot;, \&quot;UpdatePaymentMethod\&quot;, \&quot;RedactPaymentMethod\&quot;, \&quot;RecachePaymentMethod\&quot;, \&quot;CreateGatewayPaymentMethod\&quot;. Treat unrecognized values as informational. | [optional] 
+**ReceivedAt** | Pointer to **NullableTime** | When the platform recorded the payment intent (ISO 8601) | [optional] 
+**Transaction** | Pointer to [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
+**Transactions** | [**[]TransactionResponse**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | 
 **TransactionId** | Pointer to **NullableString** | Unique identifier for the transaction | [optional] 
 **TransactionDate** | Pointer to **NullableTime** | Date and time when the transaction was processed (ISO 8601) | [optional] 
 **TransactionStatus** | Pointer to **NullableInt32** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional] 
 **Message** | Pointer to **NullableString** | Human-readable message about the transaction result | [optional] 
 **ResponseCode** | Pointer to **NullableString** | Gateway-specific response code | [optional] 
-**TransactionType** | Pointer to **NullableString** | Operation the intent was recorded for — \&quot;Charge\&quot; or \&quot;Authorize\&quot; (same vocabulary as TransactionResponse.transactionType). | [optional] 
-**MerchantTransactionId** | **string** | Merchant-provided transaction identifier the intent was recorded under | 
 **CustomerId** | Pointer to **NullableString** | Customer identifier associated with the transaction | [optional] 
 **GatewayRoutingId** | Pointer to **NullableString** | Gateway-specific token for the transaction | [optional] 
 **Currency** | Pointer to **NullableString** | Transaction currency code (ISO 4217) | [optional] 
@@ -35,16 +39,12 @@ Name | Type | Description | Notes
 **Recovery** | Pointer to [**NullableRecovery**](Recovery.md) |  | [optional] 
 **Response** | Pointer to [**NullableTransactionResponseDetails**](TransactionResponseDetails.md) |  | [optional] 
 **PaymentMethod** | Pointer to [**NullablePaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional] 
-**State** | **string** | Always &#x60;pending&#x60; — discriminates this shape from a completed transaction. | 
-**ReceivedAt** | Pointer to **NullableTime** | When the platform recorded the payment intent (ISO 8601) | [optional] 
-**Transaction** | Pointer to [**TransactionResponse**](TransactionResponse.md) | The transaction matching the supplied id (the record the non-expanded lookup returns). | [optional] 
-**Transactions** | Pointer to [**[]TransactionResponse**](TransactionResponse.md) | Every transaction in the payment, ordered by transaction date ascending. Capped at 100. | [optional] 
 
 ## Methods
 
 ### NewGetTransactionByMerchantTransactionId200Response
 
-`func NewGetTransactionByMerchantTransactionId200Response(merchantTransactionId string, state string, ) *GetTransactionByMerchantTransactionId200Response`
+`func NewGetTransactionByMerchantTransactionId200Response(state string, merchantTransactionId NullableString, transactions []TransactionResponse, ) *GetTransactionByMerchantTransactionId200Response`
 
 NewGetTransactionByMerchantTransactionId200Response instantiates a new GetTransactionByMerchantTransactionId200Response object
 This constructor will assign default values to properties that have it defined,
@@ -58,6 +58,171 @@ will change when the set of required properties is changed
 NewGetTransactionByMerchantTransactionId200ResponseWithDefaults instantiates a new GetTransactionByMerchantTransactionId200Response object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetState
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetState() string`
+
+GetState returns the State field if non-nil, zero value otherwise.
+
+### GetStateOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetStateOk() (*string, bool)`
+
+GetStateOk returns a tuple with the State field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetState
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetState(v string)`
+
+SetState sets State field to given value.
+
+
+### GetMerchantTransactionId
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetMerchantTransactionId() string`
+
+GetMerchantTransactionId returns the MerchantTransactionId field if non-nil, zero value otherwise.
+
+### GetMerchantTransactionIdOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetMerchantTransactionIdOk() (*string, bool)`
+
+GetMerchantTransactionIdOk returns a tuple with the MerchantTransactionId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetMerchantTransactionId
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetMerchantTransactionId(v string)`
+
+SetMerchantTransactionId sets MerchantTransactionId field to given value.
+
+
+### SetMerchantTransactionIdNil
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetMerchantTransactionIdNil(b bool)`
+
+ SetMerchantTransactionIdNil sets the value for MerchantTransactionId to be an explicit nil
+
+### UnsetMerchantTransactionId
+`func (o *GetTransactionByMerchantTransactionId200Response) UnsetMerchantTransactionId()`
+
+UnsetMerchantTransactionId ensures that no value is present for MerchantTransactionId, not even an explicit nil
+### GetTransactionType
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionType() string`
+
+GetTransactionType returns the TransactionType field if non-nil, zero value otherwise.
+
+### GetTransactionTypeOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionTypeOk() (*string, bool)`
+
+GetTransactionTypeOk returns a tuple with the TransactionType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTransactionType
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetTransactionType(v string)`
+
+SetTransactionType sets TransactionType field to given value.
+
+### HasTransactionType
+
+`func (o *GetTransactionByMerchantTransactionId200Response) HasTransactionType() bool`
+
+HasTransactionType returns a boolean if a field has been set.
+
+### SetTransactionTypeNil
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetTransactionTypeNil(b bool)`
+
+ SetTransactionTypeNil sets the value for TransactionType to be an explicit nil
+
+### UnsetTransactionType
+`func (o *GetTransactionByMerchantTransactionId200Response) UnsetTransactionType()`
+
+UnsetTransactionType ensures that no value is present for TransactionType, not even an explicit nil
+### GetReceivedAt
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetReceivedAt() time.Time`
+
+GetReceivedAt returns the ReceivedAt field if non-nil, zero value otherwise.
+
+### GetReceivedAtOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetReceivedAtOk() (*time.Time, bool)`
+
+GetReceivedAtOk returns a tuple with the ReceivedAt field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetReceivedAt
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetReceivedAt(v time.Time)`
+
+SetReceivedAt sets ReceivedAt field to given value.
+
+### HasReceivedAt
+
+`func (o *GetTransactionByMerchantTransactionId200Response) HasReceivedAt() bool`
+
+HasReceivedAt returns a boolean if a field has been set.
+
+### SetReceivedAtNil
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetReceivedAtNil(b bool)`
+
+ SetReceivedAtNil sets the value for ReceivedAt to be an explicit nil
+
+### UnsetReceivedAt
+`func (o *GetTransactionByMerchantTransactionId200Response) UnsetReceivedAt()`
+
+UnsetReceivedAt ensures that no value is present for ReceivedAt, not even an explicit nil
+### GetTransaction
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetTransaction() TransactionResponse`
+
+GetTransaction returns the Transaction field if non-nil, zero value otherwise.
+
+### GetTransactionOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionOk() (*TransactionResponse, bool)`
+
+GetTransactionOk returns a tuple with the Transaction field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTransaction
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetTransaction(v TransactionResponse)`
+
+SetTransaction sets Transaction field to given value.
+
+### HasTransaction
+
+`func (o *GetTransactionByMerchantTransactionId200Response) HasTransaction() bool`
+
+HasTransaction returns a boolean if a field has been set.
+
+### GetTransactions
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactions() []TransactionResponse`
+
+GetTransactions returns the Transactions field if non-nil, zero value otherwise.
+
+### GetTransactionsOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionsOk() (*[]TransactionResponse, bool)`
+
+GetTransactionsOk returns a tuple with the Transactions field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTransactions
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetTransactions(v []TransactionResponse)`
+
+SetTransactions sets Transactions field to given value.
+
 
 ### GetTransactionId
 
@@ -234,61 +399,6 @@ HasResponseCode returns a boolean if a field has been set.
 `func (o *GetTransactionByMerchantTransactionId200Response) UnsetResponseCode()`
 
 UnsetResponseCode ensures that no value is present for ResponseCode, not even an explicit nil
-### GetTransactionType
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionType() string`
-
-GetTransactionType returns the TransactionType field if non-nil, zero value otherwise.
-
-### GetTransactionTypeOk
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionTypeOk() (*string, bool)`
-
-GetTransactionTypeOk returns a tuple with the TransactionType field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTransactionType
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetTransactionType(v string)`
-
-SetTransactionType sets TransactionType field to given value.
-
-### HasTransactionType
-
-`func (o *GetTransactionByMerchantTransactionId200Response) HasTransactionType() bool`
-
-HasTransactionType returns a boolean if a field has been set.
-
-### SetTransactionTypeNil
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetTransactionTypeNil(b bool)`
-
- SetTransactionTypeNil sets the value for TransactionType to be an explicit nil
-
-### UnsetTransactionType
-`func (o *GetTransactionByMerchantTransactionId200Response) UnsetTransactionType()`
-
-UnsetTransactionType ensures that no value is present for TransactionType, not even an explicit nil
-### GetMerchantTransactionId
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetMerchantTransactionId() string`
-
-GetMerchantTransactionId returns the MerchantTransactionId field if non-nil, zero value otherwise.
-
-### GetMerchantTransactionIdOk
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetMerchantTransactionIdOk() (*string, bool)`
-
-GetMerchantTransactionIdOk returns a tuple with the MerchantTransactionId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMerchantTransactionId
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetMerchantTransactionId(v string)`
-
-SetMerchantTransactionId sets MerchantTransactionId field to given value.
-
-
 ### GetCustomerId
 
 `func (o *GetTransactionByMerchantTransactionId200Response) GetCustomerId() string`
@@ -1129,111 +1239,6 @@ HasPaymentMethod returns a boolean if a field has been set.
 `func (o *GetTransactionByMerchantTransactionId200Response) UnsetPaymentMethod()`
 
 UnsetPaymentMethod ensures that no value is present for PaymentMethod, not even an explicit nil
-### GetState
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetState() string`
-
-GetState returns the State field if non-nil, zero value otherwise.
-
-### GetStateOk
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetStateOk() (*string, bool)`
-
-GetStateOk returns a tuple with the State field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetState
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetState(v string)`
-
-SetState sets State field to given value.
-
-
-### GetReceivedAt
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetReceivedAt() time.Time`
-
-GetReceivedAt returns the ReceivedAt field if non-nil, zero value otherwise.
-
-### GetReceivedAtOk
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetReceivedAtOk() (*time.Time, bool)`
-
-GetReceivedAtOk returns a tuple with the ReceivedAt field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetReceivedAt
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetReceivedAt(v time.Time)`
-
-SetReceivedAt sets ReceivedAt field to given value.
-
-### HasReceivedAt
-
-`func (o *GetTransactionByMerchantTransactionId200Response) HasReceivedAt() bool`
-
-HasReceivedAt returns a boolean if a field has been set.
-
-### SetReceivedAtNil
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetReceivedAtNil(b bool)`
-
- SetReceivedAtNil sets the value for ReceivedAt to be an explicit nil
-
-### UnsetReceivedAt
-`func (o *GetTransactionByMerchantTransactionId200Response) UnsetReceivedAt()`
-
-UnsetReceivedAt ensures that no value is present for ReceivedAt, not even an explicit nil
-### GetTransaction
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetTransaction() TransactionResponse`
-
-GetTransaction returns the Transaction field if non-nil, zero value otherwise.
-
-### GetTransactionOk
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionOk() (*TransactionResponse, bool)`
-
-GetTransactionOk returns a tuple with the Transaction field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTransaction
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetTransaction(v TransactionResponse)`
-
-SetTransaction sets Transaction field to given value.
-
-### HasTransaction
-
-`func (o *GetTransactionByMerchantTransactionId200Response) HasTransaction() bool`
-
-HasTransaction returns a boolean if a field has been set.
-
-### GetTransactions
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactions() []TransactionResponse`
-
-GetTransactions returns the Transactions field if non-nil, zero value otherwise.
-
-### GetTransactionsOk
-
-`func (o *GetTransactionByMerchantTransactionId200Response) GetTransactionsOk() (*[]TransactionResponse, bool)`
-
-GetTransactionsOk returns a tuple with the Transactions field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTransactions
-
-`func (o *GetTransactionByMerchantTransactionId200Response) SetTransactions(v []TransactionResponse)`
-
-SetTransactions sets Transactions field to given value.
-
-### HasTransactions
-
-`func (o *GetTransactionByMerchantTransactionId200Response) HasTransactions() bool`
-
-HasTransactions returns a boolean if a field has been set.
-
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 
