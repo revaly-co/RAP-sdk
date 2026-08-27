@@ -174,7 +174,12 @@ export class RapClient {
         if (config.apiKey === undefined || config.apiKey.trim() === '') {
             throw new TypeError('apiKey is required');
         }
-        const baseUrl = (config.baseUrl ?? 'https://api.revaly.co').replace(/\/+$/, '');
+        // Trailing slashes are trimmed without a regex: /\/+$/ backtracks
+        // polynomially on long all-slash inputs (CodeQL js/polynomial-redos).
+        let baseUrl = config.baseUrl ?? 'https://api.revaly.co';
+        while (baseUrl.endsWith('/')) {
+            baseUrl = baseUrl.slice(0, -1);
+        }
         if (baseUrl === '') {
             throw new TypeError('baseUrl is required');
         }
