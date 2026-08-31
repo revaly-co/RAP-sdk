@@ -58,6 +58,17 @@ updates:
       npm-major:
         patterns: ["*"]
         update-types: [major]
+    ignore:
+      # languages/typescript/lint pins typescript 6.x ON PURPOSE (see that package.json's
+      # description): it is typescript-eslint's type engine, and typescript-eslint 8.x
+      # declares peer `typescript >=4.8.4 <6.1.0`. TS 7 is the native tsc with no JS
+      # compiler API — typescript-eslint hard-refuses it ("typescript-eslint does not
+      # support TS 7.0", verified 2026-08-31 against PR #73), so the lint gate dies on
+      # load. The package ROOT separately pins typescript 7.x for `npm run typecheck`;
+      # the two cannot share an npm root. Lift when typescript-eslint supports >=7.1
+      # (typescript-eslint#10940).
+      - dependency-name: typescript
+        versions: [">=7.0.0"]
 
   - package-ecosystem: pip
     directories:
@@ -106,6 +117,16 @@ updates:
         patterns: ["*"]
         update-types: [major]
     ignore:
+      # The reactor's own modules. languages/java/{runtime,tests,smoke} depend on
+      # co.revaly:revaly-sdk / revaly-sdk-core at the 0.0.0-SNAPSHOT placeholder that
+      # stage 5 stamps at release time; Dependabot resolves that against Maven Central
+      # and "bumps" it to the last published release (it proposed 0.5.2 on 2026-08-31,
+      # PR #72). That silently breaks reactor substitution: Maven matches siblings on
+      # groupId:artifactId:VERSION, so the suite then compiles against the PUBLISHED jar
+      # instead of the working tree — a false green, not a build failure. Demonstrated:
+      # with 0.5.2 in place, sabotaging RapUserAgent.PRODUCT_NAME still passed 83/83
+      # including TransportHeadersTests; at 0.0.0-SNAPSHOT the same edit fails the build.
+      - dependency-name: co.revaly:*
       # junit-jupiter 6.x ships Java 17 bytecode; every module here compiles at
       # maven.compiler.release 11 (floor set by the generated core's enforcer). Raising
       # the baseline is an ADR decision, not a test-dependency bump.

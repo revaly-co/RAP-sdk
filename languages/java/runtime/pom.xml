@@ -82,7 +82,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.15.0</version>
                 <!-- Error Prone (ADR-SDK-028), default ERROR-severity checks only. The
                      compile is FORKED so the JDK-internal add-exports/add-opens flags
                      Error Prone needs on JDK 17+ ride the javac invocation itself (the
