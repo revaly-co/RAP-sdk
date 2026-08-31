@@ -17,13 +17,13 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
-        <junit-version>5.10.2</junit-version>
+        <junit-version>5.14.4</junit-version>
         <!-- logback 1.4.x: java 11 floor, SLF4J 2.x — test-only binding for log capture. -->
-        <logback-version>1.4.14</logback-version>
+        <logback-version>1.6.3</logback-version>
         <spotless-version>3.10.1</spotless-version>
         <google-java-format-version>1.17.0</google-java-format-version>
         <error-prone-version>2.50.0</error-prone-version>
-        <jacoco-version>0.8.12</jacoco-version>
+        <jacoco-version>0.8.15</jacoco-version>
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
@@ -31,7 +31,7 @@
         <dependency>
             <groupId>co.revaly</groupId>
             <artifactId>revaly-sdk</artifactId>
-            <version>0.0.0-SNAPSHOT</version>
+            <version>0.5.2</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -51,7 +51,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.15.0</version>
                 <!-- Error Prone (ADR-SDK-028), default ERROR-severity checks only; forked
                      so the JDK 17+ add-exports/add-opens flags ride javac itself (the
                      "-J" args below) — CI runs maven from the repo root, so .mvn/jvm.config
