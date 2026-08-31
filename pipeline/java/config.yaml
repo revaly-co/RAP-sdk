@@ -17,6 +17,15 @@
 # maven-surefire-plugin 3.2.5 → 3.5.6, maven-jar-plugin 3.3.0 → 3.5.1,
 # maven-source-plugin 3.2.1 → 3.4.0 (Dependabot #22–#25/#27 core halves; the runtime and
 # tests poms carry the same bumps directly).
+# pom.mustache re-forked 2026-08-31 (second Dependabot batch): maven-dependency-plugin
+# 3.3.0 → 3.11.0, maven-javadoc-plugin 3.4.1 → 3.12.0, spotless.version 2.27.2 →
+# 3.10.1 (Dependabot #53/#54/#56 core halves; the runtime, tests and smoke poms carry
+# the same bumps directly). Two core floors deliberately did NOT move with that batch:
+# jakarta-annotation-version stays 1.3.5 because the generated core imports
+# javax.annotation.* in 1806 places and jakarta.annotation-api 2.0+ moved that package
+# to the jakarta.* namespace — a generator-level migration (ADR-SDK-023 revision), not a
+# manifest bump; junit-version stays 5.10.2 because junit-jupiter 6.x ships Java 17
+# bytecode and the enforcer here pins the Java 11 baseline.
 # templates/libraries/native/api_doc.mustache + README.mustache — forked 2026-07-15
 # solely to fix auth guidance: the stock java api_doc emits okhttp-gson-style
 # `ApiKeyAuth`/`setApiKeyPrefix` snippets that DO NOT COMPILE against the `native`
