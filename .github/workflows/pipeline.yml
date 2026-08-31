@@ -1389,7 +1389,7 @@ jobs:
       # flip (ADR-SDK-013: GPG keys live in Key Vault, fetched in-job).
       - name: Azure Login (java live — Key Vault signing material)
         if: steps.tag.outputs.mode == 'live' && steps.tag.outputs.lang == 'java'
-        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
         with:
           client-id: ${{ vars.PUBLISH_AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.PUBLISH_AZURE_TENANT_ID }}
