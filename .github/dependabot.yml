@@ -4,6 +4,22 @@
 # so every entry below points at a hand-written manifest. A Dependabot PR that edited a core
 # manifest would fail the stage-2 regen-diff check; scoping keeps that noise from existing.
 #
+# That rule is why there is NO `/languages/java` entry: languages/java/pom.xml is a reactor
+# aggregator, so Dependabot walks its <modules> and rewrites core/pom.xml along with the
+# hand-written ones — and it then duplicated every child bump as a second PR (the 2026-08-31
+# batch arrived as 20 PRs, 8 of them pure duplicates). The three hand-written modules are
+# listed individually instead. Generated-core dependency floors move only by forking
+# pipeline/java/templates/libraries/native/pom.mustache and regenerating (an ADR-SDK-023
+# revision), never by a manifest bump. Core deps stay covered for SECURITY: Dependabot
+# alerts are driven by the dependency graph, not by this file, and the graph does carry the
+# core-only artifacts (verified 2026-08-31: jsr305, jakarta.annotation-api,
+# jackson-datatype-jsr310 all present in the repo SBOM).
+#
+# Grouping: one PR per ecosystem per week for minor+patch, and a SEPARATE one for majors.
+# Majors are split out on purpose — they need individual evaluation and must not hold a
+# batch of safe patches hostage. The 2026-08-31 batch is the worked example: junit-jupiter
+# 6.x and jakarta.annotation-api 3.x both had to be declined while everything else shipped.
+#
 # pipeline/requirements/*.txt are pip-compile-style hash-pinned lockfiles (uv-generated,
 # paired .in inputs) for the CI pip-install sites; Dependabot updates pins and hashes there.
 
@@ -14,6 +30,15 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(ci)
+    groups:
+      actions-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      actions-major:
+        patterns: ["*"]
+        update-types: [major]
 
   - package-ecosystem: npm
     directories:
@@ -23,6 +48,16 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      npm-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      npm-major:
+        patterns: ["*"]
+        update-types: [major]
 
   - package-ecosystem: pip
     directories:
@@ -31,16 +66,51 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      pip-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      pip-major:
+        patterns: ["*"]
+        update-types: [major]
+    ignore:
+      # ruff 0.16 rewrote the pyupgrade gate: with `from __future__ import annotations`
+      # present (20 of 23 hand-written modules), UP006/UP007/UP035/UP045 now fire under
+      # target-version = py39, and BLE001 flags the deliberate broad excepts in
+      # client.py / reconcile.py / _scrub.py that failover-contract §2 REQUIRES (an
+      # unclassifiable failure is OutcomeUnknown — never guess toward "safe"). 158
+      # findings on a tree that is clean under 0.15.22. Moving the lint surface is an
+      # ADR-SDK-028 revision, not a dependency bump; lift this when that lands.
+      - dependency-name: ruff
+        versions: [">=0.16.0"]
 
   - package-ecosystem: maven
     directories:
-      - /languages/java
       - /languages/java/runtime
       - /languages/java/tests
       - /languages/java/smoke
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      maven-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      maven-major:
+        patterns: ["*"]
+        update-types: [major]
+    ignore:
+      # junit-jupiter 6.x ships Java 17 bytecode; every module here compiles at
+      # maven.compiler.release 11 (floor set by the generated core's enforcer). Raising
+      # the baseline is an ADR decision, not a test-dependency bump.
+      - dependency-name: org.junit.jupiter:junit-jupiter
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: nuget
     directories:
@@ -49,15 +119,44 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      nuget-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      nuget-major:
+        patterns: ["*"]
+        update-types: [major]
 
   - package-ecosystem: composer
     directory: /languages/php
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      composer-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      composer-major:
+        patterns: ["*"]
+        update-types: [major]
 
   - package-ecosystem: gomod
     directory: /languages/go
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      gomod-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      gomod-major:
+        patterns: ["*"]
+        update-types: [major]
