@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.4.0
+API version: 2.6.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -78,6 +78,8 @@ type TransactionListItem struct {
 	PaymentMethodType NullableString `json:"paymentMethodType,omitempty"`
 	// Merchant account reference ID associated with the payment method
 	PaymentMethodMerchantAccountReferenceId NullableString `json:"paymentMethodMerchantAccountReferenceId,omitempty"`
+	// Vault token for the credential this transaction ran against, reported flat on the row alongside the other `paymentMethod*` fields. Present only on rows that ran against a vault credential — omitted, not null or empty, on every other row. In practice this means the detailed response type: simplified rows carry no payment-method data to report a token from.
+	VaultToken NullableString `json:"vaultToken,omitempty"`
 	// Error code from the gateway response
 	ErrorCode NullableString `json:"errorCode,omitempty"`
 	// Detailed error message from the gateway response
@@ -1201,6 +1203,48 @@ func (o *TransactionListItem) UnsetPaymentMethodMerchantAccountReferenceId() {
 	o.PaymentMethodMerchantAccountReferenceId.Unset()
 }
 
+// GetVaultToken returns the VaultToken field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *TransactionListItem) GetVaultToken() string {
+	if o == nil || IsNil(o.VaultToken.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.VaultToken.Get()
+}
+
+// GetVaultTokenOk returns a tuple with the VaultToken field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *TransactionListItem) GetVaultTokenOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.VaultToken.Get(), o.VaultToken.IsSet()
+}
+
+// HasVaultToken returns a boolean if a field has been set.
+func (o *TransactionListItem) HasVaultToken() bool {
+	if o != nil && o.VaultToken.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetVaultToken gets a reference to the given NullableString and assigns it to the VaultToken field.
+func (o *TransactionListItem) SetVaultToken(v string) {
+	o.VaultToken.Set(&v)
+}
+// SetVaultTokenNil sets the value for VaultToken to be an explicit nil
+func (o *TransactionListItem) SetVaultTokenNil() {
+	o.VaultToken.Set(nil)
+}
+
+// UnsetVaultToken ensures that no value is present for VaultToken, not even an explicit nil
+func (o *TransactionListItem) UnsetVaultToken() {
+	o.VaultToken.Unset()
+}
+
 // GetErrorCode returns the ErrorCode field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *TransactionListItem) GetErrorCode() string {
 	if o == nil || IsNil(o.ErrorCode.Get()) {
@@ -1501,6 +1545,9 @@ func (o TransactionListItem) ToMap() (map[string]interface{}, error) {
 	}
 	if o.PaymentMethodMerchantAccountReferenceId.IsSet() {
 		toSerialize["paymentMethodMerchantAccountReferenceId"] = o.PaymentMethodMerchantAccountReferenceId.Get()
+	}
+	if o.VaultToken.IsSet() {
+		toSerialize["vaultToken"] = o.VaultToken.Get()
 	}
 	if o.ErrorCode.IsSet() {
 		toSerialize["errorCode"] = o.ErrorCode.Get()

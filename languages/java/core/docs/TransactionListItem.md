@@ -35,6 +35,7 @@ Transaction item returned from the list transactions endpoint. In simplified mod
 |**paymentMethodStorageState** | **String** | Storage state of the payment method |  [optional] |
 |**paymentMethodType** | **String** | Type of payment method used |  [optional] |
 |**paymentMethodMerchantAccountReferenceId** | **String** | Merchant account reference ID associated with the payment method |  [optional] |
+|**vaultToken** | **String** | Vault token for the credential this transaction ran against, reported flat on the row alongside the other &#x60;paymentMethod*&#x60; fields. Present only on rows that ran against a vault credential — omitted, not null or empty, on every other row. In practice this means the detailed response type: simplified rows carry no payment-method data to report a token from. |  [optional] |
 |**errorCode** | **String** | Error code from the gateway response |  [optional] |
 |**errorDetail** | **String** | Detailed error message from the gateway response |  [optional] |
 |**avsCode** | **String** | Address Verification System result code from the gateway |  [optional] |

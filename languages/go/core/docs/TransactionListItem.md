@@ -31,6 +31,7 @@ Name | Type | Description | Notes
 **PaymentMethodStorageState** | Pointer to **NullableString** | Storage state of the payment method | [optional] 
 **PaymentMethodType** | Pointer to **NullableString** | Type of payment method used | [optional] 
 **PaymentMethodMerchantAccountReferenceId** | Pointer to **NullableString** | Merchant account reference ID associated with the payment method | [optional] 
+**VaultToken** | Pointer to **NullableString** | Vault token for the credential this transaction ran against, reported flat on the row alongside the other &#x60;paymentMethod*&#x60; fields. Present only on rows that ran against a vault credential — omitted, not null or empty, on every other row. In practice this means the detailed response type: simplified rows carry no payment-method data to report a token from. | [optional] 
 **ErrorCode** | Pointer to **NullableString** | Error code from the gateway response | [optional] 
 **ErrorDetail** | Pointer to **NullableString** | Detailed error message from the gateway response | [optional] 
 **AvsCode** | Pointer to **NullableString** | Address Verification System result code from the gateway | [optional] 
@@ -981,6 +982,41 @@ HasPaymentMethodMerchantAccountReferenceId returns a boolean if a field has been
 `func (o *TransactionListItem) UnsetPaymentMethodMerchantAccountReferenceId()`
 
 UnsetPaymentMethodMerchantAccountReferenceId ensures that no value is present for PaymentMethodMerchantAccountReferenceId, not even an explicit nil
+### GetVaultToken
+
+`func (o *TransactionListItem) GetVaultToken() string`
+
+GetVaultToken returns the VaultToken field if non-nil, zero value otherwise.
+
+### GetVaultTokenOk
+
+`func (o *TransactionListItem) GetVaultTokenOk() (*string, bool)`
+
+GetVaultTokenOk returns a tuple with the VaultToken field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetVaultToken
+
+`func (o *TransactionListItem) SetVaultToken(v string)`
+
+SetVaultToken sets VaultToken field to given value.
+
+### HasVaultToken
+
+`func (o *TransactionListItem) HasVaultToken() bool`
+
+HasVaultToken returns a boolean if a field has been set.
+
+### SetVaultTokenNil
+
+`func (o *TransactionListItem) SetVaultTokenNil(b bool)`
+
+ SetVaultTokenNil sets the value for VaultToken to be an explicit nil
+
+### UnsetVaultToken
+`func (o *TransactionListItem) UnsetVaultToken()`
+
+UnsetVaultToken ensures that no value is present for VaultToken, not even an explicit nil
 ### GetErrorCode
 
 `func (o *TransactionListItem) GetErrorCode() string`
