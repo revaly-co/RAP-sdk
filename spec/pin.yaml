@@ -4,32 +4,38 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.4.0+4ce73e2
-specVersion: 2.4.0
-sourceCommit: 4ce73e2ba8c8061573f16a82aef94c1c5b5d6550
+releaseTag: spec/v2.6.0+abf71b6
+specVersion: 2.6.0
+sourceCommit: abf71b63d19336a0fa10643908215bea6c3161b4
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: e982e1df10ea2a5f9768751bf83e11eb6e7160feb4c2cf3e141a5db768040f61
-pinnedAt: "2026-08-27"
+  openapi.bundled.yaml: 24845f01e4b5b6ec97a762039f0c63b783f6cf6438d47fa0e38bd9be038dd8c8
+pinnedAt: "2026-09-01"
 notes: >-
-  Sixth pin (was spec/v2.3.0+80cc897; the intermediate spec/v2.3.1+40d659b of 2026-08-10 was
-  never consumed and is superseded by this pin — SC-478). Additive delta, three changes
-  (62 diff lines): (1) optional nullable vaultToken string on the PaymentMethod nested inside
-  charge/authorize responses only — present only when the transaction ran against a vault
-  credential (presented or auto-vaulted); may reflect an Account Updater roll (the currently
-  live token) or the token as dispatched, so consumers treat it as optional and never infer
-  "card not rolled" from absence (SC-461). (2) Transaction-lookup response unions switch
-  oneOf -> anyOf with documented discriminators (a `transactions` member means the
-  TransactionGroupResponse envelope; `state: "pending"` means PendingTransactionResponse;
-  otherwise a single TransactionResponse), branches ordered most-specific first for
-  match-in-order deserializers; TransactionGroupResponse now requires `transactions`
-  (SC-408 B4). (3) 404 NotFound documented on charge and authorize — originates from the
-  fallback-processor path (bypassPlatform: true or platform failover dispatch) (SC-408 B5).
-  No new error codes, transaction types, or reconcile verdicts. All four platform gates pass;
-  provenance ciRunId 33009334665. Prior pin history: v2.1.2+9af661b (first pin, int64 maximum
-  fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) -> v2.2.0+1e59620 (additive
-  statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID response header
-  documented) -> v2.3.0+80cc897 (validation reality matches the published contract).
+  Seventh pin (was spec/v2.4.0+4ce73e2; the intermediate spec/v2.5.0+6d41224 of 2026-08-27 was
+  never consumed and is superseded by this pin). Additive delta, one schema change and three
+  documentation clarifications (53 diff lines): (1) new optional nullable vaultToken string on
+  TransactionListItem, reported FLAT on the row alongside the other paymentMethod* fields rather
+  than nested — present only on rows that ran against a vault credential and only on the detailed
+  response type, omitted (not null, not empty) on every other row. (2) The nested PaymentMethod
+  vaultToken widens its reporting surface: it now also appears on the single-transaction reads
+  (GET /transactions/{transactionId}, GET /transactions/merchant/{merchantTransactionId}) and on
+  every transaction of a group read (includeAllTransactions=true); reads are a snapshot recorded
+  at processing time and are never re-resolved, follow-up responses (capture, void, refund,
+  refund-cancel) carry no payment method and so report no token, and recording began with API
+  2.6.0 — earlier transactions report no token and cannot be backfilled. (3) recordRefund is
+  documented for gateway-routed transactions: merchantTransactionId becomes required (at most
+  50 characters, not previously used) and is the recorded refund's own merchant transaction id;
+  an unknown transactionId returns 404 and an already-recorded refund returns 422. Those two
+  statuses are documented in the endpoint example prose only — the events operation's declared
+  `responses` set is unchanged, so no generated response type moves. No new error codes,
+  transaction types, or reconcile verdicts; no enum introduced or narrowed; the failover
+  classification surface is untouched. All four platform gates pass; provenance ciRunId
+  33400925532. Prior pin history: v2.1.2+9af661b (first pin, int64 maximum fix) ->
+  v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) -> v2.2.0+1e59620 (additive
+  statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID response header documented)
+  -> v2.3.0+80cc897 (validation reality matches the published contract) -> v2.4.0+4ce73e2
+  (nested vaultToken on charge/authorize, lookup unions oneOf -> anyOf, 404 on charge/authorize).

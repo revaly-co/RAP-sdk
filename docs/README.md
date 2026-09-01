@@ -52,6 +52,39 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-09-01)
+
+- **Spec re-pinned v2.4.0 → v2.6.0+abf71b6 (seventh pin, issue #77)** — the intermediate
+  v2.5.0+6d41224 was never consumed and is superseded. A small, purely additive delta
+  (53 diff lines): one schema change and three documentation clarifications. The schema
+  change is a new optional nullable `vaultToken` on `TransactionListItem`, reported **flat on
+  the row** alongside the other `paymentMethod*` fields rather than nested, present only on
+  rows that ran against a vault credential and only on the detailed response type — omitted,
+  not null and not empty, on every other row. The nested `PaymentMethod.vaultToken` from the
+  sixth pin widens its documented reporting surface to the single-transaction reads
+  (`GET /transactions/{transactionId}`, `GET /transactions/merchant/{merchantTransactionId}`)
+  and to every transaction of a group read; reads are a snapshot recorded at processing time
+  and are never re-resolved, the follow-up responses (capture, void, refund, refund-cancel)
+  carry no payment method and so report no token, and **recording began at API 2.6.0** —
+  earlier transactions report no token and cannot be backfilled. `recordRefund` is documented
+  for gateway-routed transactions: `merchantTransactionId` becomes required (at most 50
+  characters, not previously used) and becomes the recorded refund's own merchant transaction
+  id; an unknown `transactionId` returns 404 and an already-recorded refund returns 422 —
+  both documented in the endpoint example prose only, with the operation's declared
+  `responses` set unchanged, so no generated response type moved. No new error codes,
+  transaction types, or reconcile verdicts; no enum introduced or narrowed; the failover
+  classification surface is untouched, so `failover-contract.md` needs no revision. The
+  regeneration diff is 428 files, of which 406 are the `2.4.0 → 2.6.0` version banner alone:
+  the substantive changes are the three affected models (`TransactionListItem`,
+  `PaymentMethodResponse`, `NotifyData`) across all six languages, and the new field binds
+  optional in every one (dotnet `Option<string?>`, java/php nullable, typescript
+  `string | null` optional, python `Optional[StrictStr]`, go `NullableString`). No
+  dependency drift — `go.mod`/`go.sum` untouched. The quickstart READMEs were reviewed and
+  deliberately left unchanged: their `vaultToken` note documents the charge/authorize
+  response path and its "spec >= 2.4.0" annotation stays correct, because that response
+  shape did not change in this pin. `spec/README.md`, which had been left at v2.3.0 by the
+  sixth pin, is brought current and its history chain repaired.
+
 ## Status snapshot (2026-08-27)
 
 - **Spec re-pinned v2.3.0 → v2.4.0+4ce73e2 (sixth pin, SC-478)** — the skipped intermediate

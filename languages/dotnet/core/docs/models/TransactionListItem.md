@@ -32,6 +32,7 @@ Name | Type | Description | Notes
 **PaymentMethodStorageState** | **string** | Storage state of the payment method | [optional] 
 **PaymentMethodType** | **string** | Type of payment method used | [optional] 
 **PaymentMethodMerchantAccountReferenceId** | **string** | Merchant account reference ID associated with the payment method | [optional] 
+**VaultToken** | **string** | Vault token for the credential this transaction ran against, reported flat on the row alongside the other &#x60;paymentMethod*&#x60; fields. Present only on rows that ran against a vault credential — omitted, not null or empty, on every other row. In practice this means the detailed response type: simplified rows carry no payment-method data to report a token from. | [optional] 
 **ErrorCode** | **string** | Error code from the gateway response | [optional] 
 **ErrorDetail** | **string** | Detailed error message from the gateway response | [optional] 
 **AvsCode** | **string** | Address Verification System result code from the gateway | [optional] 

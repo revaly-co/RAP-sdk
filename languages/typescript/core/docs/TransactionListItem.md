@@ -34,6 +34,7 @@ Name | Type
 `paymentMethodStorageState` | string
 `paymentMethodType` | string
 `paymentMethodMerchantAccountReferenceId` | string
+`vaultToken` | string
 `errorCode` | string
 `errorDetail` | string
 `avsCode` | string
@@ -74,6 +75,7 @@ const example = {
   "paymentMethodStorageState": Cached,
   "paymentMethodType": GatewayPaymentMethodId,
   "paymentMethodMerchantAccountReferenceId": 0417560,
+  "vaultToken": 5454541rYN4c5454,
   "errorCode": 00,
   "errorDetail": Approved,
   "avsCode": Y,
