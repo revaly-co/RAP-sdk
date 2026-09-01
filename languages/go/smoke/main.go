@@ -69,6 +69,23 @@ const faultInjectHeader = "X-Backbone-Fault-Inject"
 //	and approves (nightly 30983100997: red 6/6, 2026-08-05).
 const skipDirectPathRetryCount = 1
 
+// The vault rows present an EXISTING token rather than auto-vaulting a card.
+// Presenting is non-mutating (it mints no new vault record on every CI run),
+// deterministic (the reported token must equal the one presented), and the one
+// shape that works identically on both smoke targets.
+//
+// Amount 2500, matching the platform's own vault E2E body — but the vault rows
+// deliberately DO NOT assert approval. The approval outcome on a vault route is
+// amount- and gateway-specific per target (staging's Chase sandbox approves
+// 2500 and declines 1999 "Do not honor"), while the thing spec 2.6.0 changed —
+// that the token is REPORTED — holds on approved and declined transactions
+// alike. Gating on status here would buy nothing and break on the other target.
+const vaultAmount = 2500
+
+// Returned when a presented token is rejected as bad; not-this-code is the
+// assertion that the token was accepted as a real credential.
+const vaultBadTokenResponseCode = "50167"
+
 // errSkip marks a scenario that cannot run in this environment (reported as
 // SKIP, never silently dropped, never a failure).
 type errSkip struct{ reason string }
@@ -94,6 +111,11 @@ func main() {
 	apiKey := os.Getenv("RAP_SMOKE_API_KEY")
 	routingID := os.Getenv("RAP_SMOKE_GATEWAY_ROUTING_ID")
 	faultValue := os.Getenv("RAP_SMOKE_FAULT_INJECT")
+	vaultKey := os.Getenv("RAP_SMOKE_VAULT_API_KEY")
+	vaultCustomer := os.Getenv("RAP_SMOKE_VAULT_CUSTOMER_ID")
+	vaultRouting := os.Getenv("RAP_SMOKE_VAULT_ROUTING_ID")
+	vaultToken := os.Getenv("RAP_SMOKE_VAULT_TOKEN")
+	vaultReady := vaultKey != "" && vaultCustomer != "" && vaultRouting != "" && vaultToken != ""
 	if baseURL == "" || apiKey == "" {
 		fmt.Fprintln(os.Stderr, "smoke: RAP_SMOKE_BASE_URL and RAP_SMOKE_API_KEY must be set (ADR-SDK-024) — refusing to run.")
 		os.Exit(2)
@@ -131,6 +153,52 @@ func main() {
 			OverallDeadline: 15 * time.Second,
 			Transport:       &headerInjectingTransport{name: faultInjectHeader, value: faultValue},
 		})
+	}
+
+	// The vault-enrolled merchant is a DIFFERENT key-scope from the main smoke
+	// account, so the vault rows need their own client.
+	var vaultClient *revaly.Client
+	if vaultReady {
+		vaultClient = mustClient(revaly.Config{
+			APIKey:          vaultKey,
+			BaseURL:         baseURL,
+			ConnectTimeout:  5 * time.Second,
+			OverallDeadline: 15 * time.Second,
+		})
+	}
+	// Shared between the two vault rows: the first charges, the second proves
+	// the token is reported on the surfaces 2.6.0 added.
+	var vaultTxn string
+
+	// buildVaultCharge presents an EXISTING vault token (spec 2.6.0 / SC-477).
+	// bin and last-four are derived from the token: vault tokens are
+	// format-preserving, so "478825NrfD2H8291" carries bin 478825 and
+	// last-four 8291 in the value itself. customerId is part of the
+	// credential, not decoration — a token presented under any other customer
+	// resolves to nothing.
+	buildVaultCharge := func(mtid string) *revaly.PaymentRequest {
+		request := revaly.NewPaymentRequest(vaultAmount, mtid)
+		request.SetCurrency("USD")
+		request.SetOrderId(mtid)
+		request.SetCustomerId(vaultCustomer)
+		request.SetGatewayRoutingId(vaultRouting)
+		request.SetInitiatedBy("MIT")
+		request.SetPaymentMethodType("vaultToken")
+		recovery := core.NewRecovery()
+		recovery.SetRetryCount(skipDirectPathRetryCount)
+		request.SetRecovery(*recovery)
+		vpm := core.NewVaultPaymentMethod()
+		vpm.SetVaultToken(vaultToken)
+		vpm.SetBin(vaultToken[:6])
+		vpm.SetLastFourDigits(vaultToken[len(vaultToken)-4:])
+		vpm.SetExpiryMonth("12")
+		vpm.SetExpiryYear("2029")
+		method := revaly.NewPaymentMethod()
+		method.SetFullName("Smoke Test")
+		method.SetEmail("smoke@example.com")
+		method.SetVaultPaymentMethod(*vpm)
+		request.SetPaymentMethod(*method)
+		return request
 	}
 
 	// buildCharge assembles a charge request with the minimal live-approving
@@ -338,6 +406,72 @@ func main() {
 			default:
 				return "", fmt.Errorf("unrecognized verdict %T", verdict)
 			}
+		}},
+		{"charge-vault-token", func(ctx context.Context) (string, error) {
+			if vaultClient == nil {
+				return "", errSkip{"RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)"}
+			}
+			transaction, err := vaultClient.Charge(ctx, buildVaultCharge(freshID("vault")))
+			if err != nil {
+				return "", classified("vault-token charge errored", err)
+			}
+			if transaction.GetTransactionId() == "" {
+				return "", errors.New("transactionId is empty on the vault-token surface")
+			}
+			// The token was accepted as a real credential, not rejected as a
+			// bad one. Deliberately NOT an approval assertion — see vaultAmount.
+			if transaction.GetResponseCode() == vaultBadTokenResponseCode {
+				return "", fmt.Errorf("presented vault token rejected as bad (responseCode=%s) — the token/customer pair is wrong for this target", transaction.GetResponseCode())
+			}
+			method := transaction.GetPaymentMethod()
+			if method.GetPaymentMethodType() != "VaultToken" {
+				return "", fmt.Errorf("expected paymentMethodType=VaultToken, got %q", method.GetPaymentMethodType())
+			}
+			if method.GetVaultToken() != vaultToken {
+				return "", errors.New("charge response did not report the presented vault token")
+			}
+			vaultTxn = transaction.GetTransactionId()
+			return fmt.Sprintf(" (txn=%s status=%d)", vaultTxn, transaction.GetTransactionStatus()), nil
+		}},
+		{"vault-token-on-reads", func(ctx context.Context) (string, error) {
+			// The spec-2.6.0 delta itself: nested on the single-transaction
+			// read, and FLAT on the detailed list row.
+			if vaultClient == nil {
+				return "", errSkip{"RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)"}
+			}
+			if vaultTxn == "" {
+				return "", errSkip{"charge-vault-token did not produce a transaction"}
+			}
+			api := vaultClient.Core().TransactionsAPI
+			read, _, err := api.GetTransactionById(ctx, vaultTxn).Execute()
+			if err != nil {
+				return "", classified("transaction read errored", err)
+			}
+			// The read returns an anyOf union (spec 2.4.0) — unwrap before
+			// reaching paymentMethod.
+			if read == nil || read.TransactionResponse == nil {
+				return "", errors.New("the transaction read did not bind a TransactionResponse")
+			}
+			readMethod := read.TransactionResponse.GetPaymentMethod()
+			if readMethod.GetVaultToken() != vaultToken {
+				return "", errors.New("GET /transactions/{id} did not report the nested vaultToken (spec 2.6.0)")
+			}
+
+			rows, _, err := api.ListTransactions(ctx).ResponseType("detailed").Order("desc").Count(50).Execute()
+			if err != nil {
+				return "", classified("transaction list errored", err)
+			}
+			for _, row := range rows {
+				if row.GetTransactionId() != vaultTxn {
+					continue
+				}
+				// FLAT on the row, not nested — this is the 2.6.0 schema change.
+				if row.GetVaultToken() != vaultToken {
+					return "", errors.New("the detailed list row did not report the FLAT vaultToken (spec 2.6.0)")
+				}
+				return fmt.Sprintf(" (txn=%s nested+flat)", vaultTxn), nil
+			}
+			return "", errors.New("the vault transaction is absent from the detailed list page")
 		}},
 	}
 

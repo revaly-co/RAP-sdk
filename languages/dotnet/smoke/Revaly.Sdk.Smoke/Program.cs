@@ -52,12 +52,38 @@ internal static class Program
     // (staging-verified matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
     private const string TestPan = "4111111111111111";
 
+    // The vault rows present an EXISTING token rather than auto-vaulting a card.
+    // Presenting is non-mutating (it mints no new vault record on every CI run),
+    // deterministic (the reported token must equal the one presented), and the
+    // one shape that works identically on both smoke targets.
+    //
+    // Amount 2500, matching the platform's own vault E2E body - but the vault
+    // rows deliberately DO NOT assert approval. The approval outcome on a vault
+    // route is amount- and gateway-specific per target (staging's Chase sandbox
+    // approves 2500 and declines 1999 "Do not honor"), while the thing spec
+    // 2.6.0 changed - that the token is REPORTED - holds on approved and
+    // declined transactions alike. Gating on status here would buy nothing and
+    // break on the other target.
+    private const long VaultAmount = 2500L;
+
+    // Returned when a presented token is rejected as bad; not-this-code is the
+    // assertion that the token was accepted as a real credential.
+    private const string VaultBadTokenResponseCode = "50167";
+
     private static async Task<int> Main()
     {
         var baseUrl = Environment.GetEnvironmentVariable("RAP_SMOKE_BASE_URL");
         var apiKey = Environment.GetEnvironmentVariable("RAP_SMOKE_API_KEY");
         var routingId = Environment.GetEnvironmentVariable("RAP_SMOKE_GATEWAY_ROUTING_ID");
         var faultValue = Environment.GetEnvironmentVariable("RAP_SMOKE_FAULT_INJECT");
+        var vaultKey = Environment.GetEnvironmentVariable("RAP_SMOKE_VAULT_API_KEY");
+        var vaultCustomer = Environment.GetEnvironmentVariable("RAP_SMOKE_VAULT_CUSTOMER_ID");
+        var vaultRouting = Environment.GetEnvironmentVariable("RAP_SMOKE_VAULT_ROUTING_ID");
+        var vaultToken = Environment.GetEnvironmentVariable("RAP_SMOKE_VAULT_TOKEN");
+        var vaultReady = !string.IsNullOrEmpty(vaultKey)
+            && !string.IsNullOrEmpty(vaultCustomer)
+            && !string.IsNullOrEmpty(vaultRouting)
+            && !string.IsNullOrEmpty(vaultToken);
         if (string.IsNullOrEmpty(baseUrl) || string.IsNullOrEmpty(apiKey))
         {
             Console.Error.WriteLine("smoke: RAP_SMOKE_BASE_URL and RAP_SMOKE_API_KEY must be set (ADR-SDK-024) — refusing to run.");
@@ -99,6 +125,22 @@ internal static class Program
                 OverallDeadline = TimeSpan.FromSeconds(15),
                 Transport = new HeaderInjectingHandler(FaultInjectHeader, faultValue),
             });
+
+        // The vault-enrolled merchant is a DIFFERENT key-scope from the main
+        // smoke account, so the vault rows need their own client.
+        using var vaultClient = !vaultReady
+            ? null
+            : new RapClient(new RapClientOptions
+            {
+                ApiKey = vaultKey!,
+                BaseUrl = new Uri(baseUrl),
+                ConnectTimeout = TimeSpan.FromSeconds(5),
+                OverallDeadline = TimeSpan.FromSeconds(15),
+            });
+
+        // Shared between the two vault rows: the first charges, the second
+        // proves the token is reported on the surfaces 2.6.0 added.
+        string? vaultTxn = null;
 
         // Charged ids feed the reconcile scenarios: the verdicts — through the
         // runtime's own outcome mapping — are the proof the charge outcomes
@@ -298,6 +340,105 @@ internal static class Program
                 }
             }
             ),
+
+            // --- vault-token rows (spec 2.6.0 / SC-477) ---------------------
+            // Split into two so a failure says WHICH half broke: the charge
+            // path, or the reporting of the token on the surfaces 2.6.0 added.
+            ("charge-vault-token", async () =>
+            {
+                if (vaultClient is null)
+                {
+                    throw new SmokeSkip("RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)");
+                }
+
+                var response = await vaultClient.Payments.ChargePaymentAsync(
+                    BuildVaultCharge(FreshId("vault"), vaultToken!, vaultCustomer!, vaultRouting!));
+                if (!response.TryOk(out var transaction) || transaction is null)
+                {
+                    throw new SmokeFailure("the vault-token charge did not bind the OK surface");
+                }
+                if (string.IsNullOrEmpty(transaction.TransactionId))
+                {
+                    throw new SmokeFailure("transactionId is empty on the vault-token surface");
+                }
+
+                // The token was accepted as a real credential, not rejected as
+                // a bad one. Deliberately NOT an approval assertion - see
+                // VaultAmount.
+                if (transaction.ResponseCode == VaultBadTokenResponseCode)
+                {
+                    throw new SmokeFailure(
+                        $"presented vault token rejected as bad (responseCode={transaction.ResponseCode})"
+                        + " - the token/customer pair is wrong for this target");
+                }
+
+                var method = transaction.PaymentMethod;
+                if (method?.PaymentMethodType != "VaultToken")
+                {
+                    throw new SmokeFailure(
+                        $"expected paymentMethodType=VaultToken, got {method?.PaymentMethodType}");
+                }
+                if (method.VaultToken != vaultToken)
+                {
+                    throw new SmokeFailure("charge response did not report the presented vault token");
+                }
+
+                vaultTxn = transaction.TransactionId;
+                return $" (txn={transaction.TransactionId} status={transaction.TransactionStatus})";
+            }
+            ),
+
+            ("vault-token-on-reads", async () =>
+            {
+                // The spec-2.6.0 delta itself: nested on the single-transaction
+                // read, and FLAT on the detailed list row.
+                if (vaultClient is null)
+                {
+                    throw new SmokeSkip("RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)");
+                }
+                if (string.IsNullOrEmpty(vaultTxn))
+                {
+                    throw new SmokeSkip("charge-vault-token did not produce a transaction");
+                }
+
+                // The read returns an anyOf union (spec 2.4.0) - unwrap before
+                // reaching paymentMethod.
+                var readResponse = await vaultClient.Transactions.GetTransactionByIdAsync(vaultTxn);
+                string? readToken = null;
+                if (readResponse.TryOk(out var readModel))
+                {
+                    readToken = readModel?.TransactionResponse?.PaymentMethod?.VaultToken;
+                }
+                if (readToken != vaultToken)
+                {
+                    throw new SmokeFailure(
+                        "GET /transactions/{id} did not report the nested vaultToken (spec 2.6.0)");
+                }
+
+                var listResponse = await vaultClient.Transactions.ListTransactionsAsync(
+                    responseType: new Option<string?>("detailed"),
+                    order: new Option<string>("desc"),
+                    count: new Option<int>(50));
+                if (!listResponse.TryOk(out var rows) || rows is null)
+                {
+                    throw new SmokeFailure("the detailed transaction list did not bind the OK surface");
+                }
+
+                var row = rows.FirstOrDefault(r => r.TransactionId == vaultTxn);
+                if (row is null)
+                {
+                    throw new SmokeFailure("the vault transaction is absent from the detailed list page");
+                }
+                // FLAT on the row, not nested - this is the 2.6.0 schema change.
+                if (row.VaultToken != vaultToken)
+                {
+                    throw new SmokeFailure(
+                        "the detailed list row did not report the FLAT vaultToken (spec 2.6.0)");
+                }
+
+                return $" (txn={vaultTxn} nested+flat)";
+            }
+            ),
         };
 
         // Advisory preflight: asserts nothing and can never fail the suite. The
@@ -385,6 +526,35 @@ internal static class Program
     /// the direct path on both targets.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// Charge presenting an EXISTING vault token (spec 2.6.0 / SC-477).
+    /// bin and last-four are derived from the token: vault tokens are
+    /// format-preserving, so a token carries its bin and last-four in the value
+    /// itself. customerId is part of the credential, not decoration - a token
+    /// presented under any other customer resolves to nothing.
+    /// </summary>
+    private static PaymentRequest BuildVaultCharge(
+        string merchantTransactionId, string token, string customerId, string routingId)
+        => new(
+            amount: VaultAmount,
+            merchantTransactionId: merchantTransactionId,
+            recovery: new Option<Recovery?>(new Recovery(retryCount: new Option<int?>(SkipDirectPathRetryCount))),
+            paymentMethodType: new Option<PaymentRequest.PaymentMethodTypeEnum?>(PaymentRequest.PaymentMethodTypeEnum.VaultToken),
+            currency: new Option<string?>("USD"),
+            orderId: new Option<string?>(merchantTransactionId),
+            customerId: new Option<string?>(customerId),
+            gatewayRoutingId: new Option<string?>(routingId),
+            initiatedBy: new Option<InitiatedBy?>(InitiatedBy.MIT),
+            paymentMethod: new Option<PaymentMethod?>(new PaymentMethod(
+                fullName: new Option<string?>("Smoke Test"),
+                email: new Option<string?>("smoke@example.com"),
+                vaultPaymentMethod: new Option<VaultPaymentMethod?>(new VaultPaymentMethod(
+                    vaultToken: new Option<string?>(token),
+                    bin: new Option<string?>(token[..6]),
+                    lastFourDigits: new Option<string?>(token[^4..]),
+                    expiryMonth: new Option<string?>("12"),
+                    expiryYear: new Option<string?>("2029"))))));
+
     private static PaymentRequest BuildCharge(string merchantTransactionId, string pan, string expiryYear, string? routingId, bool withName = true)
         => new(
             amount: 1999,

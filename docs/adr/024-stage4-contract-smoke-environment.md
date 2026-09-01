@@ -306,6 +306,65 @@ RAP_SMOKE_GATEWAY_ROUTING_ID    staging routing token for a gateway where expiry
 vars.RAP_SMOKE_FAULT_INJECT     pre-dispatch
 ```
 
+## Vault-token rows on both targets (2026-09-01, spec 2.6.0 / SC-477)
+
+Spec 2.6.0 added a `vaultToken` on the transaction **list row** (flat, alongside the other
+`paymentMethod*` fields) and extended the existing nested token to the two single-transaction
+reads. The eight rows above were written at spec 2.1.x and never exercise a vault credential, so
+that surface shipped with no stage-4 coverage. Two rows close it, and they run on **both** targets:
+
+| Row | Proves |
+| --- | --- |
+| `charge-vault-token` | a presented vault token is accepted as a real credential (`responseCode != 50167`), the request flips to `paymentMethodType: VaultToken`, and the charge response reports the token |
+| `vault-token-on-reads` | the spec-2.6.0 delta itself — the token nested on `GET /transactions/{id}`, and **FLAT** on the `responseType=detailed` list row |
+
+**Presenting an existing token, not auto-vaulting a card.** Backbone will mint a token for a raw
+PAN when a `customerId` is present, but the smoke deliberately presents one instead. Presenting is
+non-mutating (it writes no new vault record on every CI run), deterministic (the reported token
+must equal the one presented, whereas a minted token may roll under the Account Updater), and it
+is the one shape that behaves identically on both targets.
+
+**No approval assertion, on purpose.** The approval outcome on a vault route is amount- and
+gateway-specific per target — staging's Chase sandbox approves 2500 and declines 1999 with
+"Do not honor" — while the thing 2.6.0 changed, that the token is *reported*, holds on approved
+and declined transactions alike. Gating these rows on `transactionStatus` would buy nothing and
+break on the other target.
+
+**The customer is part of the credential.** A vault token is stored against a `(token, customer)`
+PAIR; presenting it under any other customer resolves to nothing and declines 50168, which reads
+like a broken token and is not. That is why `RAP_*_VAULT_CUSTOMER_ID` is required alongside the
+token rather than inferred. (The platform's own prod probe records the same trap —
+`tools/direct-path-prod-pilot/methods.mjs`.)
+
+**Gate posture: partial fails, absent warns.** A *partially* provisioned set is a hard error — a
+half-configured credential degrades the row into a decline that reads like a product defect. A
+*wholly absent* set emits a `::warning::` and the rows SKIP visibly, which is the state until the
+secrets are provisioned. This is deliberately weaker than the injector's fail-closed gate: the
+injector's absence silently loses a row that already had coverage, whereas these rows are new and
+their skip is loud and counted.
+
+**Eight further secrets in the `staging` environment** (four per target):
+
+```
+RAP_SANDBOX_VAULT_API_KEY       vault-enrolled merchant key on the sandbox/production URL
+RAP_SANDBOX_VAULT_CUSTOMER_ID   the customer the token is bound to
+RAP_SANDBOX_VAULT_ROUTING_ID    routing token for the vault-capable gateway
+RAP_SANDBOX_VAULT_TOKEN         a format-preserving vault token minted for that customer
+RAP_SMOKE_VAULT_API_KEY         Backbone staging vault-enrolled key (NOT the main smoke key —
+                                the vault merchant is a different key-scope)
+RAP_SMOKE_VAULT_CUSTOMER_ID     the customer the staging token is bound to
+RAP_SMOKE_VAULT_ROUTING_ID      staging vault gateway routing token
+RAP_SMOKE_VAULT_TOKEN           the staging vault token
+```
+
+`bin` and `lastFourDigits` are **derived from the token**, not configured: vault tokens are
+format-preserving, so the value carries both.
+
+**VALIDATED 2026-09-01 against Backbone staging, green ×6** — every language reports
+`RESULT: PASS (10/10 passed, 0 skipped)` with `PASS charge-vault-token` and
+`PASS vault-token-on-reads`. The skip path was exercised too: with the vault set unset all six
+report `SKIP` on both rows and stay green.
+
 `RAP_SMOKE_*` keeps its original name and now denotes the **step-2 (staging) target** specifically.
 
 **VALIDATED 2026-07-25 — two-target stage 4 is green ×6.**

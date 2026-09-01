@@ -683,6 +683,15 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          SANDBOX_VAULT: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SANDBOX_VAULT_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          SANDBOX_VAULT_CUSTOMER: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          SANDBOX_VAULT_ROUTING: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          SANDBOX_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SMOKE_VAULT_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          SMOKE_VAULT_CUSTOMER: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          SMOKE_VAULT_ROUTING: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
@@ -705,6 +714,25 @@ jobs:
             echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
+          # The vault-token set (spec 2.6.0 / SC-477), per target. A PARTIAL set
+          # is a hard error — a half-configured credential degrades the row into
+          # a decline that reads like a product defect. A wholly ABSENT set is a
+          # warning: the rows SKIP visibly and the run stays green, which is the
+          # state until the secrets are provisioned in the 'staging' environment.
+          for target in SANDBOX SMOKE; do
+            key="${target}_VAULT_KEY"; cust="${target}_VAULT_CUSTOMER"
+            route="${target}_VAULT_ROUTING"; tok="${target}_VAULT_TOKEN"
+            set_count=0
+            for v in "$key" "$cust" "$route" "$tok"; do
+              [ -n "${!v}" ] && set_count=$((set_count + 1))
+            done
+            if [ "$set_count" -eq 0 ]; then
+              echo "::warning::RAP_${target}_VAULT_* is not provisioned in the 'staging' environment — the vault-token rows will SKIP on this target. The spec-2.6.0 vaultToken surfaces are then unproven here (docs/pipeline-and-release.md §2)."
+            elif [ "$set_count" -ne 4 ]; then
+              echo "::error::RAP_${target}_VAULT_* is only partially provisioned ($set_count/4). All four of API_KEY, CUSTOMER_ID, ROUTING_ID and TOKEN are required together: a vault token is stored against a (token, customer) PAIR and a mismatched set declines 50168, which reads like a broken token and is not."
+              exit 1
+            fi
+          done
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
@@ -718,6 +746,12 @@ jobs:
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
           # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
           # the production path, so this step SKIPs the 503+not_processed row.
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the prod-sandbox vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
         run: dotnet run --project languages/dotnet/smoke/Revaly.Sdk.Smoke -c Release
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
@@ -726,6 +760,12 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the Backbone-staging vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: dotnet run --project languages/dotnet/smoke/Revaly.Sdk.Smoke -c Release
 
   smoke-java:
@@ -748,6 +788,15 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          SANDBOX_VAULT: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SANDBOX_VAULT_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          SANDBOX_VAULT_CUSTOMER: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          SANDBOX_VAULT_ROUTING: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          SANDBOX_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SMOKE_VAULT_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          SMOKE_VAULT_CUSTOMER: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          SMOKE_VAULT_ROUTING: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
@@ -770,6 +819,25 @@ jobs:
             echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
+          # The vault-token set (spec 2.6.0 / SC-477), per target. A PARTIAL set
+          # is a hard error — a half-configured credential degrades the row into
+          # a decline that reads like a product defect. A wholly ABSENT set is a
+          # warning: the rows SKIP visibly and the run stays green, which is the
+          # state until the secrets are provisioned in the 'staging' environment.
+          for target in SANDBOX SMOKE; do
+            key="${target}_VAULT_KEY"; cust="${target}_VAULT_CUSTOMER"
+            route="${target}_VAULT_ROUTING"; tok="${target}_VAULT_TOKEN"
+            set_count=0
+            for v in "$key" "$cust" "$route" "$tok"; do
+              [ -n "${!v}" ] && set_count=$((set_count + 1))
+            done
+            if [ "$set_count" -eq 0 ]; then
+              echo "::warning::RAP_${target}_VAULT_* is not provisioned in the 'staging' environment — the vault-token rows will SKIP on this target. The spec-2.6.0 vaultToken surfaces are then unproven here (docs/pipeline-and-release.md §2)."
+            elif [ "$set_count" -ne 4 ]; then
+              echo "::error::RAP_${target}_VAULT_* is only partially provisioned ($set_count/4). All four of API_KEY, CUSTOMER_ID, ROUTING_ID and TOKEN are required together: a vault token is stored against a (token, customer) PAIR and a mismatched set declines 50168, which reads like a broken token and is not."
+              exit 1
+            fi
+          done
 
       - name: Setup JDK
         uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c
@@ -789,6 +857,12 @@ jobs:
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
           # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
           # the production path, so this step SKIPs the 503+not_processed row.
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the prod-sandbox vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           # -Dmaven.javadoc.skip=true: the generated core's maven-javadoc-plugin
@@ -804,6 +878,12 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the Backbone-staging vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           # Step 1 already installed the reactor into this workspace, so this
@@ -830,6 +910,15 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          SANDBOX_VAULT: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SANDBOX_VAULT_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          SANDBOX_VAULT_CUSTOMER: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          SANDBOX_VAULT_ROUTING: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          SANDBOX_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SMOKE_VAULT_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          SMOKE_VAULT_CUSTOMER: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          SMOKE_VAULT_ROUTING: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
@@ -852,6 +941,25 @@ jobs:
             echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
+          # The vault-token set (spec 2.6.0 / SC-477), per target. A PARTIAL set
+          # is a hard error — a half-configured credential degrades the row into
+          # a decline that reads like a product defect. A wholly ABSENT set is a
+          # warning: the rows SKIP visibly and the run stays green, which is the
+          # state until the secrets are provisioned in the 'staging' environment.
+          for target in SANDBOX SMOKE; do
+            key="${target}_VAULT_KEY"; cust="${target}_VAULT_CUSTOMER"
+            route="${target}_VAULT_ROUTING"; tok="${target}_VAULT_TOKEN"
+            set_count=0
+            for v in "$key" "$cust" "$route" "$tok"; do
+              [ -n "${!v}" ] && set_count=$((set_count + 1))
+            done
+            if [ "$set_count" -eq 0 ]; then
+              echo "::warning::RAP_${target}_VAULT_* is not provisioned in the 'staging' environment — the vault-token rows will SKIP on this target. The spec-2.6.0 vaultToken surfaces are then unproven here (docs/pipeline-and-release.md §2)."
+            elif [ "$set_count" -ne 4 ]; then
+              echo "::error::RAP_${target}_VAULT_* is only partially provisioned ($set_count/4). All four of API_KEY, CUSTOMER_ID, ROUTING_ID and TOKEN are required together: a vault token is stored against a (token, customer) PAIR and a mismatched set declines 50168, which reads like a broken token and is not."
+              exit 1
+            fi
+          done
 
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
@@ -872,6 +980,12 @@ jobs:
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
           # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
           # the production path, so this step SKIPs the 503+not_processed row.
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the prod-sandbox vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
         run: php smoke/smoke.php
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
@@ -881,6 +995,12 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the Backbone-staging vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: php smoke/smoke.php
 
   smoke-typescript:
@@ -903,6 +1023,15 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          SANDBOX_VAULT: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SANDBOX_VAULT_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          SANDBOX_VAULT_CUSTOMER: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          SANDBOX_VAULT_ROUTING: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          SANDBOX_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SMOKE_VAULT_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          SMOKE_VAULT_CUSTOMER: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          SMOKE_VAULT_ROUTING: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
@@ -925,6 +1054,25 @@ jobs:
             echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
+          # The vault-token set (spec 2.6.0 / SC-477), per target. A PARTIAL set
+          # is a hard error — a half-configured credential degrades the row into
+          # a decline that reads like a product defect. A wholly ABSENT set is a
+          # warning: the rows SKIP visibly and the run stays green, which is the
+          # state until the secrets are provisioned in the 'staging' environment.
+          for target in SANDBOX SMOKE; do
+            key="${target}_VAULT_KEY"; cust="${target}_VAULT_CUSTOMER"
+            route="${target}_VAULT_ROUTING"; tok="${target}_VAULT_TOKEN"
+            set_count=0
+            for v in "$key" "$cust" "$route" "$tok"; do
+              [ -n "${!v}" ] && set_count=$((set_count + 1))
+            done
+            if [ "$set_count" -eq 0 ]; then
+              echo "::warning::RAP_${target}_VAULT_* is not provisioned in the 'staging' environment — the vault-token rows will SKIP on this target. The spec-2.6.0 vaultToken surfaces are then unproven here (docs/pipeline-and-release.md §2)."
+            elif [ "$set_count" -ne 4 ]; then
+              echo "::error::RAP_${target}_VAULT_* is only partially provisioned ($set_count/4). All four of API_KEY, CUSTOMER_ID, ROUTING_ID and TOKEN are required together: a vault token is stored against a (token, customer) PAIR and a mismatched set declines 50168, which reads like a broken token and is not."
+              exit 1
+            fi
+          done
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -943,6 +1091,12 @@ jobs:
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
           # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
           # the production path, so this step SKIPs the 503+not_processed row.
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the prod-sandbox vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
         run: npm run smoke --prefix languages/typescript
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
@@ -951,6 +1105,12 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the Backbone-staging vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: npm run smoke --prefix languages/typescript
 
   smoke-python:
@@ -973,6 +1133,15 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          SANDBOX_VAULT: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SANDBOX_VAULT_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          SANDBOX_VAULT_CUSTOMER: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          SANDBOX_VAULT_ROUTING: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          SANDBOX_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SMOKE_VAULT_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          SMOKE_VAULT_CUSTOMER: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          SMOKE_VAULT_ROUTING: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
@@ -995,6 +1164,25 @@ jobs:
             echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
+          # The vault-token set (spec 2.6.0 / SC-477), per target. A PARTIAL set
+          # is a hard error — a half-configured credential degrades the row into
+          # a decline that reads like a product defect. A wholly ABSENT set is a
+          # warning: the rows SKIP visibly and the run stays green, which is the
+          # state until the secrets are provisioned in the 'staging' environment.
+          for target in SANDBOX SMOKE; do
+            key="${target}_VAULT_KEY"; cust="${target}_VAULT_CUSTOMER"
+            route="${target}_VAULT_ROUTING"; tok="${target}_VAULT_TOKEN"
+            set_count=0
+            for v in "$key" "$cust" "$route" "$tok"; do
+              [ -n "${!v}" ] && set_count=$((set_count + 1))
+            done
+            if [ "$set_count" -eq 0 ]; then
+              echo "::warning::RAP_${target}_VAULT_* is not provisioned in the 'staging' environment — the vault-token rows will SKIP on this target. The spec-2.6.0 vaultToken surfaces are then unproven here (docs/pipeline-and-release.md §2)."
+            elif [ "$set_count" -ne 4 ]; then
+              echo "::error::RAP_${target}_VAULT_* is only partially provisioned ($set_count/4). All four of API_KEY, CUSTOMER_ID, ROUTING_ID and TOKEN are required together: a vault token is stored against a (token, customer) PAIR and a mismatched set declines 50168, which reads like a broken token and is not."
+              exit 1
+            fi
+          done
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
@@ -1013,6 +1201,12 @@ jobs:
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
           # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
           # the production path, so this step SKIPs the 503+not_processed row.
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the prod-sandbox vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
         run: python languages/python/smoke/smoke.py
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
@@ -1021,6 +1215,12 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the Backbone-staging vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: python languages/python/smoke/smoke.py
 
   smoke-go:
@@ -1043,6 +1243,15 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          SANDBOX_VAULT: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SANDBOX_VAULT_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          SANDBOX_VAULT_CUSTOMER: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          SANDBOX_VAULT_ROUTING: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          SANDBOX_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
+          SMOKE_VAULT_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          SMOKE_VAULT_CUSTOMER: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          SMOKE_VAULT_ROUTING: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: |
           set -euo pipefail
           for v in RAP_SANDBOX_BASE_URL RAP_SANDBOX_API_KEY RAP_SANDBOX_GATEWAY_ROUTING_ID; do
@@ -1065,6 +1274,25 @@ jobs:
             echo "::error::the 'staging' environment variable RAP_SMOKE_FAULT_INJECT is unset (expected: pre-dispatch). Step 2 proves the 503+not_processed row; unset would silently SKIP it (ADR-SDK-024)."
             exit 1
           fi
+          # The vault-token set (spec 2.6.0 / SC-477), per target. A PARTIAL set
+          # is a hard error — a half-configured credential degrades the row into
+          # a decline that reads like a product defect. A wholly ABSENT set is a
+          # warning: the rows SKIP visibly and the run stays green, which is the
+          # state until the secrets are provisioned in the 'staging' environment.
+          for target in SANDBOX SMOKE; do
+            key="${target}_VAULT_KEY"; cust="${target}_VAULT_CUSTOMER"
+            route="${target}_VAULT_ROUTING"; tok="${target}_VAULT_TOKEN"
+            set_count=0
+            for v in "$key" "$cust" "$route" "$tok"; do
+              [ -n "${!v}" ] && set_count=$((set_count + 1))
+            done
+            if [ "$set_count" -eq 0 ]; then
+              echo "::warning::RAP_${target}_VAULT_* is not provisioned in the 'staging' environment — the vault-token rows will SKIP on this target. The spec-2.6.0 vaultToken surfaces are then unproven here (docs/pipeline-and-release.md §2)."
+            elif [ "$set_count" -ne 4 ]; then
+              echo "::error::RAP_${target}_VAULT_* is only partially provisioned ($set_count/4). All four of API_KEY, CUSTOMER_ID, ROUTING_ID and TOKEN are required together: a vault token is stored against a (token, customer) PAIR and a mismatched set declines 50168, which reads like a broken token and is not."
+              exit 1
+            fi
+          done
 
       - name: Setup Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
@@ -1080,6 +1308,12 @@ jobs:
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SANDBOX_GATEWAY_ROUTING_ID }}
           # RAP_SMOKE_FAULT_INJECT deliberately absent: the injector is inert on
           # the production path, so this step SKIPs the 503+not_processed row.
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the prod-sandbox vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SANDBOX_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SANDBOX_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SANDBOX_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SANDBOX_VAULT_TOKEN }}
         run: go run ./smoke
 
       - name: Step 2 - Fault-Injection Smoke (Backbone staging)
@@ -1089,6 +1323,12 @@ jobs:
           RAP_SMOKE_API_KEY: ${{ secrets.RAP_SMOKE_API_KEY }}
           RAP_SMOKE_GATEWAY_ROUTING_ID: ${{ secrets.RAP_SMOKE_GATEWAY_ROUTING_ID }}
           RAP_SMOKE_FAULT_INJECT: ${{ vars.RAP_SMOKE_FAULT_INJECT }}
+          # The vault-token rows run on BOTH targets (spec 2.6.0 / SC-477); this
+          # step carries the Backbone-staging vault credential.
+          RAP_SMOKE_VAULT_API_KEY: ${{ secrets.RAP_SMOKE_VAULT_API_KEY }}
+          RAP_SMOKE_VAULT_CUSTOMER_ID: ${{ secrets.RAP_SMOKE_VAULT_CUSTOMER_ID }}
+          RAP_SMOKE_VAULT_ROUTING_ID: ${{ secrets.RAP_SMOKE_VAULT_ROUTING_ID }}
+          RAP_SMOKE_VAULT_TOKEN: ${{ secrets.RAP_SMOKE_VAULT_TOKEN }}
         run: go run ./smoke
 
   # ---------------------------------------------------------------------------

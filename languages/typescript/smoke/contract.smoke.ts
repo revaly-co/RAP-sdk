@@ -21,6 +21,8 @@
  */
 import { beforeAll, test } from 'vitest';
 import {
+    InitiatedBy,
+    PaymentRequestPaymentMethodTypeEnum,
     RapClient,
     RapError,
     RapPermanentRejection,
@@ -28,6 +30,7 @@ import {
     type RapReconcileVerdict,
     type RapTransactionOutcome,
     type RapWireTrace,
+    type TransactionResponse,
 } from '../runtime/src/index';
 
 // The platform's executor fault seam (Backbone ADR 014 test affordance):
@@ -55,10 +58,31 @@ const SKIP_DIRECT_PATH_RETRY_COUNT = 1;
 // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
 const TEST_PAN = '4111111111111111';
 
+// The vault rows present an EXISTING token rather than auto-vaulting a card.
+// Presenting is non-mutating (it mints no new vault record on every CI run),
+// deterministic (the reported token must equal the one presented), and the one
+// shape that works identically on both smoke targets.
+//
+// Amount 2500, matching the platform's own vault E2E body — but the vault rows
+// deliberately DO NOT assert approval. The approval outcome on a vault route is
+// amount- and gateway-specific per target (staging's Chase sandbox approves
+// 2500 and declines 1999 "Do not honor"), while the thing spec 2.6.0 changed —
+// that the token is REPORTED — holds on approved and declined transactions
+// alike. Gating on status here would buy nothing and break on the other target.
+const VAULT_AMOUNT = 2500;
+// Returned when a presented token is rejected as bad; not-this-code is the
+// assertion that the token was accepted as a real credential.
+const VAULT_BAD_TOKEN_RESPONSE_CODE = '50167';
+
 const baseUrl = process.env.RAP_SMOKE_BASE_URL;
 const apiKey = process.env.RAP_SMOKE_API_KEY;
 const routingId = process.env.RAP_SMOKE_GATEWAY_ROUTING_ID;
 const faultValue = process.env.RAP_SMOKE_FAULT_INJECT;
+const vaultKey = process.env.RAP_SMOKE_VAULT_API_KEY;
+const vaultCustomer = process.env.RAP_SMOKE_VAULT_CUSTOMER_ID;
+const vaultRouting = process.env.RAP_SMOKE_VAULT_ROUTING_ID;
+const vaultToken = process.env.RAP_SMOKE_VAULT_TOKEN;
+const vaultReady = Boolean(vaultKey && vaultCustomer && vaultRouting && vaultToken);
 if (!baseUrl || !apiKey) {
     throw new Error('smoke: RAP_SMOKE_BASE_URL and RAP_SMOKE_API_KEY must be set (ADR-SDK-024) — refusing to run.');
 }
@@ -100,6 +124,13 @@ const faultClient = faultValue
           },
       })
     : undefined;
+
+// The vault-enrolled merchant is a DIFFERENT key-scope from the main smoke
+// account, so the vault rows need their own client.
+const vaultClient = vaultReady
+    ? new RapClient({ apiKey: vaultKey!, baseUrl, overallDeadlineMs: 15_000 })
+    : undefined;
+let vaultTxn: string | undefined;
 
 /** Unique merchantTransactionId (≤ 100 chars) — every reconcile scenario uses a fresh one (ADR-SDK-024). */
 function freshId(label: string): string {
@@ -168,6 +199,39 @@ function buildCharge(merchantTransactionId: string, pan: string, expiryYear: str
                 cardVerificationCode: '123',
                 expiryMonth: '12',
                 expiryYear,
+            },
+        },
+    };
+}
+
+/**
+ * Charge presenting an EXISTING vault token (spec 2.6.0 / SC-477).
+ *
+ * bin and last-four are derived from the token: vault tokens are
+ * format-preserving, so "478825NrfD2H8291" carries bin 478825 and last-four
+ * 8291 in the value itself. customerId is part of the credential, not
+ * decoration — a token presented under any other customer resolves to nothing.
+ */
+function buildVaultCharge(merchantTransactionId: string) {
+    return {
+        amount: VAULT_AMOUNT,
+        currency: 'USD',
+        merchantTransactionId,
+        orderId: merchantTransactionId,
+        customerId: vaultCustomer!,
+        initiatedBy: InitiatedBy.Mit,
+        recovery: { retryCount: SKIP_DIRECT_PATH_RETRY_COUNT },
+        gatewayRoutingId: vaultRouting!,
+        paymentMethodType: PaymentRequestPaymentMethodTypeEnum.VaultToken,
+        paymentMethod: {
+            fullName: 'Smoke Test',
+            email: 'smoke@example.com',
+            vaultPaymentMethod: {
+                vaultToken: vaultToken!,
+                bin: vaultToken!.slice(0, 6),
+                lastFourDigits: vaultToken!.slice(-4),
+                expiryMonth: '12',
+                expiryYear: '2029',
             },
         },
     };
@@ -396,5 +460,67 @@ test('reconcile-not-found-yet', () =>
         }
         if (!verdict.lastCorrelationId) {
             throw new SmokeFailure('no X-Correlation-ID on the NotFoundYet verdict (DX §c)');
+        }
+    }));
+
+// --- vault-token rows (spec 2.6.0 / SC-477) ---------------------------------
+// Split into two so a failure says WHICH half broke: the charge path, or the
+// reporting of the token on the surfaces 2.6.0 added.
+test.skipIf(!vaultClient)('charge-vault-token', () =>
+    guard(async () => {
+        const transaction: TransactionResponse = await vaultClient!.charge(
+            buildVaultCharge(freshId('vault')),
+        );
+        if (!transaction.transactionId) {
+            throw new SmokeFailure('transactionId is empty on the vault-token surface');
+        }
+        // The token was accepted as a real credential, not rejected as a bad
+        // one. Deliberately NOT an approval assertion — see VAULT_AMOUNT.
+        if (transaction.responseCode === VAULT_BAD_TOKEN_RESPONSE_CODE) {
+            throw new SmokeFailure(
+                `presented vault token rejected as bad (responseCode=${transaction.responseCode})` +
+                    ' — the token/customer pair is wrong for this target',
+            );
+        }
+        const method = transaction.paymentMethod;
+        if (method?.paymentMethodType !== 'VaultToken') {
+            throw new SmokeFailure(
+                `expected paymentMethodType=VaultToken, got ${String(method?.paymentMethodType)}`,
+            );
+        }
+        if (method.vaultToken !== vaultToken) {
+            throw new SmokeFailure('charge response did not report the presented vault token');
+        }
+        vaultTxn = transaction.transactionId;
+    }));
+
+test.skipIf(!vaultClient)('vault-token-on-reads', () =>
+    guard(async () => {
+        if (!vaultTxn) {
+            throw new SmokeFailure('charge-vault-token did not produce a transaction');
+        }
+        // The read is an anyOf union (spec 2.4.0): a group envelope carries
+        // `transactions`, a single transaction carries `paymentMethod`. Narrow
+        // rather than cast — the default branch is mandatory for an open union.
+        const read = await vaultClient!.transactions.getTransactionById({ transactionId: vaultTxn });
+        if (!('paymentMethod' in read)) {
+            throw new SmokeFailure('the transaction read did not bind a single TransactionResponse');
+        }
+        if (read.paymentMethod?.vaultToken !== vaultToken) {
+            throw new SmokeFailure('GET /transactions/{id} did not report the nested vaultToken (spec 2.6.0)');
+        }
+
+        const rows = await vaultClient!.transactions.listTransactions({
+            responseType: 'detailed',
+            order: 'desc',
+            count: 50,
+        });
+        const row = rows.find((candidate) => candidate.transactionId === vaultTxn);
+        if (!row) {
+            throw new SmokeFailure('the vault transaction is absent from the detailed list page');
+        }
+        // FLAT on the row, not nested — this is the 2.6.0 schema change.
+        if (row.vaultToken !== vaultToken) {
+            throw new SmokeFailure('the detailed list row did not report the FLAT vaultToken (spec 2.6.0)');
         }
     }));

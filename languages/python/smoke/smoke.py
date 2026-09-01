@@ -14,6 +14,16 @@ Environment contract (same across all six languages):
     RAP_SMOKE_FAULT_INJECT        optional — sent as the platform's
                                   X-Backbone-Fault-Inject header to trigger the
                                   503+not_processed row; SKIPs when unset
+    RAP_SMOKE_VAULT_API_KEY       optional — vault-enrolled merchant key; the
+                                  vault rows SKIP as a set when unset
+    RAP_SMOKE_VAULT_CUSTOMER_ID   required with the key — a vault token is
+                                  stored against a (token, customer) PAIR;
+                                  presenting it under any other customer
+                                  resolves to nothing and declines 50168
+    RAP_SMOKE_VAULT_ROUTING_ID    required with the key — the vault gateway
+    RAP_SMOKE_VAULT_TOKEN         required with the key — a format-preserving
+                                  vault token; bin and last-four are derived
+                                  from it
 
 Scenarios mirror the quickstart shape (README). Output is values-free
 (ADR-SDK-020): identifiers, statuses, classes and correlation ids only — never
@@ -44,6 +54,7 @@ from revaly_sdk import (
     RapTransientFailure,
     ReconcilePolicy,
     Recovery,
+    VaultPaymentMethod,
 )
 from revaly_sdk.errors import RapError
 from revaly_sdk.transport import _Urllib3Wire
@@ -74,6 +85,24 @@ SKIP_DIRECT_PATH_RETRY_COUNT = 1
 # One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
 # matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
 TEST_PAN = "4111111111111111"
+
+# The vault rows present an EXISTING token rather than auto-vaulting a card.
+# Presenting is non-mutating (it mints no new vault record on every CI run),
+# deterministic (the reported token must equal the one presented), and the one
+# shape that works identically on both smoke targets.
+#
+# Amount 2500, matching the platform's own vault E2E body — but the vault rows
+# deliberately DO NOT assert approval. The approval outcome on a vault route is
+# amount- and gateway-specific per target (staging's Chase sandbox approves
+# 2500 and declines 1999 "Do not honor"), while the thing spec 2.6.0 changed —
+# that the token is REPORTED — holds on approved and declined transactions
+# alike. Gating on status here would buy nothing and break on the other target.
+VAULT_AMOUNT = 2500
+
+# The response code the platform returns when a presented token is rejected as
+# bad. Not-this-code is the assertion that the token was accepted as a real
+# credential (the platform's own CICD-VAULT-TOKEN-CHARGE-001 asserts the same).
+VAULT_BAD_TOKEN_RESPONSE_CODE = "50167"
 
 
 class SmokeFailure(Exception):
@@ -146,6 +175,43 @@ def build_charge(
     )
 
 
+def build_vault_charge(
+    mtid: str, token: str, customer_id: str, routing_id: Optional[str]
+) -> PaymentRequest:
+    """Charge presenting an EXISTING vault token (spec 2.6.0 / SC-477).
+
+    bin and last-four are derived from the token: vault tokens are
+    format-preserving, so "478825NrfD2H8291" carries bin 478825 and last-four
+    8291 in the value itself. customerId is part of the credential, not
+    decoration — see the env contract at the top.
+    """
+    kwargs = {}
+    if routing_id:
+        kwargs["gateway_routing_id"] = routing_id
+    return PaymentRequest(
+        amount=VAULT_AMOUNT,
+        currency="USD",
+        merchant_transaction_id=mtid,
+        order_id=mtid,
+        customer_id=customer_id,
+        initiated_by="MIT",
+        payment_method_type="vaultToken",
+        recovery=Recovery(retry_count=SKIP_DIRECT_PATH_RETRY_COUNT),
+        payment_method=PaymentMethod(
+            full_name="Smoke Test",
+            email="smoke@example.com",
+            vault_payment_method=VaultPaymentMethod(
+                vault_token=token,
+                bin=token[:6],
+                last_four_digits=token[-4:],
+                expiry_month="12",
+                expiry_year="2029",
+            ),
+        ),
+        **kwargs,
+    )
+
+
 def classified(context: str, err: Exception) -> SmokeFailure:
     """Values-free rendering of an unexpected failure: typed classes print
     their runtime-crafted message (status, code, correlation — never payloads,
@@ -189,6 +255,11 @@ def main() -> int:
     api_key = os.environ.get("RAP_SMOKE_API_KEY", "")
     routing_id = os.environ.get("RAP_SMOKE_GATEWAY_ROUTING_ID") or None
     fault_value = os.environ.get("RAP_SMOKE_FAULT_INJECT") or None
+    vault_key = os.environ.get("RAP_SMOKE_VAULT_API_KEY") or None
+    vault_customer = os.environ.get("RAP_SMOKE_VAULT_CUSTOMER_ID") or None
+    vault_routing = os.environ.get("RAP_SMOKE_VAULT_ROUTING_ID") or None
+    vault_token = os.environ.get("RAP_SMOKE_VAULT_TOKEN") or None
+    vault_ready = all((vault_key, vault_customer, vault_routing, vault_token))
     if not base_url or not api_key:
         print(
             "smoke: RAP_SMOKE_BASE_URL and RAP_SMOKE_API_KEY must be set (ADR-SDK-024) — refusing to run.",
@@ -232,6 +303,20 @@ def main() -> int:
             transport=_FaultInjectingWire(FAULT_INJECT_HEADER, fault_value),
         )
         if fault_value
+        else None
+    )
+
+    # The vault-enrolled merchant is a DIFFERENT key-scope from the main smoke
+    # account, so the vault rows need their own client.
+    vault_client = (
+        RapClient(
+            vault_key,
+            base_url=base_url,
+            connect_timeout=5.0,
+            overall_deadline=15.0,
+            wire_trace_hook=trace_hook,
+        )
+        if vault_ready
         else None
     )
 
@@ -382,6 +467,74 @@ def main() -> int:
             raise SmokeFailure("a never-used id reconciled as Found")
         raise SmokeFailure(f"unrecognized verdict {type(verdict).__name__}")
 
+    # --- vault-token rows (spec 2.6.0 / SC-477) -----------------------------
+    # State shared between the two rows: the first charges, the second proves
+    # the token is reported on the surfaces 2.6.0 added. Split so a failure
+    # says WHICH half broke — the charge path, or the reporting.
+    vault_txn: List[Optional[str]] = [None]
+
+    def charge_vault_token() -> str:
+        if vault_client is None:
+            raise SmokeSkip("RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)")
+        transaction = vault_client.charge(
+            build_vault_charge(fresh_id("vault"), vault_token, vault_customer, vault_routing)
+        )
+        if not transaction.transaction_id:
+            raise SmokeFailure("transactionId is empty on the vault-token surface")
+        # The token was accepted as a real credential, not rejected as a bad one.
+        # Deliberately NOT an approval assertion — see VAULT_AMOUNT.
+        if transaction.response_code == VAULT_BAD_TOKEN_RESPONSE_CODE:
+            raise SmokeFailure(
+                f"presented vault token rejected as bad (responseCode={transaction.response_code})"
+                " — the token/customer pair is wrong for this target"
+            )
+        method = transaction.payment_method
+        if method is None or method.payment_method_type != "VaultToken":
+            raise SmokeFailure(
+                "expected paymentMethodType=VaultToken, got "
+                f"{None if method is None else method.payment_method_type}"
+            )
+        if method.vault_token != vault_token:
+            raise SmokeFailure(
+                "charge response did not report the presented vault token"
+                f" (reported={'absent' if method.vault_token is None else 'a different value'})"
+            )
+        vault_txn[0] = transaction.transaction_id
+        return f" (txn={transaction.transaction_id} status={transaction.transaction_status})"
+
+    def vault_token_on_reads() -> str:
+        """The spec-2.6.0 delta itself: nested on the single-transaction read,
+        and FLAT on the detailed list row."""
+        if vault_client is None:
+            raise SmokeSkip("RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)")
+        if vault_txn[0] is None:
+            raise SmokeSkip("charge-vault-token did not produce a transaction")
+        txn = vault_txn[0]
+
+        # The two reads return an anyOf union (spec 2.4.0) — unwrap before
+        # reaching paymentMethod.
+        read = vault_client.transactions.get_transaction_by_id(txn)
+        read = getattr(read, "actual_instance", read) or read
+        method = getattr(read, "payment_method", None)
+        if getattr(method, "vault_token", None) != vault_token:
+            raise SmokeFailure(
+                "GET /transactions/{id} did not report the nested vaultToken (spec 2.6.0)"
+            )
+
+        rows = vault_client.transactions.list_transactions(
+            response_type="detailed", order="desc", count=50
+        )
+        rows = rows if isinstance(rows, list) else (getattr(rows, "transactions", None) or [])
+        row = next((r for r in rows if getattr(r, "transaction_id", None) == txn), None)
+        if row is None:
+            raise SmokeFailure("the vault transaction is absent from the detailed list page")
+        # FLAT on the row, not nested — this is the 2.6.0 schema change.
+        if getattr(row, "vault_token", None) != vault_token:
+            raise SmokeFailure(
+                "the detailed list row did not report the FLAT vaultToken (spec 2.6.0)"
+            )
+        return f" (txn={txn} nested+flat)"
+
     scenarios: List[Tuple[str, Callable[[], str]]] = [
         ("charge-approved", charge_approved),
         ("charge-declined", charge_declined),
@@ -391,6 +544,8 @@ def main() -> int:
         ("reconcile-found-approved", reconcile_found_approved),
         ("reconcile-found-declined", reconcile_found_declined),
         ("reconcile-not-found-yet", reconcile_not_found_yet),
+        ("charge-vault-token", charge_vault_token),
+        ("vault-token-on-reads", vault_token_on_reads),
     ]
 
     # Advisory preflight: asserts nothing and can never fail the suite. The

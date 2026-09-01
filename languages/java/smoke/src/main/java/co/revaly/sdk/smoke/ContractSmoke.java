@@ -2,10 +2,14 @@ package co.revaly.sdk.smoke;
 
 import co.revaly.sdk.RapClient;
 import co.revaly.sdk.core.model.CreditCard;
+import co.revaly.sdk.core.model.InitiatedBy;
 import co.revaly.sdk.core.model.PaymentMethod;
+import co.revaly.sdk.core.model.PaymentMethodResponse;
 import co.revaly.sdk.core.model.PaymentRequest;
 import co.revaly.sdk.core.model.Recovery;
+import co.revaly.sdk.core.model.TransactionListItem;
 import co.revaly.sdk.core.model.TransactionResponse;
+import co.revaly.sdk.core.model.VaultPaymentMethod;
 import co.revaly.sdk.errors.PermanentRejectionException;
 import co.revaly.sdk.errors.RapCoreException;
 import co.revaly.sdk.errors.TransientFailureException;
@@ -15,6 +19,7 @@ import co.revaly.sdk.reconcile.ReconcilePolicy;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -65,6 +70,24 @@ public final class ContractSmoke {
     // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
     private static final String TEST_PAN = "4111111111111111";
 
+    // The vault rows present an EXISTING token rather than auto-vaulting a card.
+    // Presenting is non-mutating (it mints no new vault record on every CI run),
+    // deterministic (the reported token must equal the one presented), and the
+    // one shape that works identically on both smoke targets.
+    //
+    // Amount 2500, matching the platform's own vault E2E body — but the vault
+    // rows deliberately DO NOT assert approval. The approval outcome on a vault
+    // route is amount- and gateway-specific per target (staging's Chase sandbox
+    // approves 2500 and declines 1999 "Do not honor"), while the thing spec
+    // 2.6.0 changed — that the token is REPORTED — holds on approved and
+    // declined transactions alike. Gating on status here would buy nothing and
+    // break on the other target.
+    private static final long VAULT_AMOUNT = 2500L;
+
+    // Returned when a presented token is rejected as bad; not-this-code is the
+    // assertion that the token was accepted as a real credential.
+    private static final String VAULT_BAD_TOKEN_RESPONSE_CODE = "50167";
+
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private ContractSmoke() {}
@@ -93,6 +116,15 @@ public final class ContractSmoke {
         String apiKey = System.getenv("RAP_SMOKE_API_KEY");
         String routingId = System.getenv("RAP_SMOKE_GATEWAY_ROUTING_ID");
         String faultValue = System.getenv("RAP_SMOKE_FAULT_INJECT");
+        String vaultKey = System.getenv("RAP_SMOKE_VAULT_API_KEY");
+        String vaultCustomer = System.getenv("RAP_SMOKE_VAULT_CUSTOMER_ID");
+        String vaultRouting = System.getenv("RAP_SMOKE_VAULT_ROUTING_ID");
+        String vaultToken = System.getenv("RAP_SMOKE_VAULT_TOKEN");
+        boolean vaultReady =
+                !isBlank(vaultKey)
+                        && !isBlank(vaultCustomer)
+                        && !isBlank(vaultRouting)
+                        && !isBlank(vaultToken);
         if (isBlank(baseUrl) || isBlank(apiKey)) {
             System.err.println(
                     "smoke: RAP_SMOKE_BASE_URL and RAP_SMOKE_API_KEY must be set (ADR-SDK-024)"
@@ -137,6 +169,21 @@ public final class ContractSmoke {
                                         new HeaderInjectingHttpClient(
                                                 FAULT_INJECT_HEADER, faultValue))
                                 .build();
+
+        // The vault-enrolled merchant is a DIFFERENT key-scope from the main
+        // smoke account, so the vault rows need their own client.
+        RapClient vaultClient =
+                !vaultReady
+                        ? null
+                        : RapClient.builder()
+                                .apiKey(vaultKey)
+                                .baseUrl(baseUrl)
+                                .connectTimeout(Duration.ofSeconds(5))
+                                .overallDeadline(Duration.ofSeconds(15))
+                                .build();
+        // Shared between the two vault rows: the first charges, the second
+        // proves the token is reported on the surfaces 2.6.0 added.
+        AtomicReference<String> vaultTxn = new AtomicReference<>();
 
         // Charged ids feed the reconcile scenarios: the verdicts — through the
         // runtime's own outcome mapping — are the proof the charge outcomes
@@ -353,6 +400,101 @@ public final class ContractSmoke {
                             "unrecognized verdict " + verdict.getClass().getSimpleName());
                 });
 
+        // --- vault-token rows (spec 2.6.0 / SC-477) -------------------------
+        // Split into two so a failure says WHICH half broke: the charge path,
+        // or the reporting of the token on the surfaces 2.6.0 added.
+        scenarios.put(
+                "charge-vault-token",
+                () -> {
+                    if (vaultClient == null) {
+                        throw new SmokeSkip("RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)");
+                    }
+                    TransactionResponse transaction =
+                            vaultClient.charge(
+                                    buildVaultCharge(
+                                            freshId("vault"),
+                                            vaultToken,
+                                            vaultCustomer,
+                                            vaultRouting));
+                    if (isBlank(transaction.getTransactionId())) {
+                        throw new SmokeFailure("transactionId is empty on the vault-token surface");
+                    }
+                    // The token was accepted as a real credential, not rejected
+                    // as a bad one. Deliberately NOT an approval assertion —
+                    // see VAULT_AMOUNT.
+                    if (VAULT_BAD_TOKEN_RESPONSE_CODE.equals(transaction.getResponseCode())) {
+                        throw new SmokeFailure(
+                                "presented vault token rejected as bad (responseCode="
+                                        + transaction.getResponseCode()
+                                        + ") - the token/customer pair is wrong for this target");
+                    }
+                    PaymentMethodResponse method = transaction.getPaymentMethod();
+                    if (method == null || !"VaultToken".equals(method.getPaymentMethodType())) {
+                        throw new SmokeFailure(
+                                "expected paymentMethodType=VaultToken, got "
+                                        + (method == null
+                                                ? "null"
+                                                : method.getPaymentMethodType()));
+                    }
+                    if (!vaultToken.equals(method.getVaultToken())) {
+                        throw new SmokeFailure(
+                                "charge response did not report the presented vault token");
+                    }
+                    vaultTxn.set(transaction.getTransactionId());
+                    return String.format(
+                            " (txn=%s status=%s)",
+                            transaction.getTransactionId(), transaction.getTransactionStatus());
+                });
+
+        scenarios.put(
+                "vault-token-on-reads",
+                () -> {
+                    // The spec-2.6.0 delta itself: nested on the
+                    // single-transaction read, and FLAT on the detailed list
+                    // row.
+                    if (vaultClient == null) {
+                        throw new SmokeSkip("RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)");
+                    }
+                    String txn = vaultTxn.get();
+                    if (isBlank(txn)) {
+                        throw new SmokeSkip("charge-vault-token did not produce a transaction");
+                    }
+                    // The read returns an anyOf union (spec 2.4.0) - unwrap
+                    // before reaching paymentMethod.
+                    TransactionResponse read =
+                            vaultClient
+                                    .transactions()
+                                    .getTransactionById(txn, null, null)
+                                    .getTransactionResponse();
+                    if (read == null
+                            || read.getPaymentMethod() == null
+                            || !vaultToken.equals(read.getPaymentMethod().getVaultToken())) {
+                        throw new SmokeFailure(
+                                "GET /transactions/{id} did not report the nested vaultToken"
+                                        + " (spec 2.6.0)");
+                    }
+
+                    List<TransactionListItem> rows =
+                            vaultClient
+                                    .transactions()
+                                    .listTransactions(
+                                            null, 50, "desc", null, null, null, null, "detailed");
+                    for (TransactionListItem row : rows) {
+                        if (!txn.equals(row.getTransactionId())) {
+                            continue;
+                        }
+                        // FLAT on the row, not nested - the 2.6.0 schema change.
+                        if (!vaultToken.equals(row.getVaultToken())) {
+                            throw new SmokeFailure(
+                                    "the detailed list row did not report the FLAT vaultToken"
+                                            + " (spec 2.6.0)");
+                        }
+                        return String.format(" (txn=%s nested+flat)", txn);
+                    }
+                    throw new SmokeFailure(
+                            "the vault transaction is absent from the detailed list page");
+                });
+
         // Advisory preflight: asserts nothing and can never fail the suite. The
         // elapsed time is printed so a cold path stays VISIBLE rather than hidden.
         RapClient warmClient =
@@ -427,6 +569,38 @@ public final class ContractSmoke {
      * <p>recovery.retryCount is stamped on EVERY charge — see {@code SKIP_DIRECT_PATH_RETRY_COUNT}
      * for why the smoke must stay off the direct path on both targets.
      */
+    /**
+     * Charge presenting an EXISTING vault token (spec 2.6.0 / SC-477).
+     *
+     * <p>bin and last-four are derived from the token: vault tokens are format-preserving, so a
+     * token carries its bin and last-four in the value itself. customerId is part of the
+     * credential, not decoration - a token presented under any other customer resolves to nothing.
+     */
+    private static PaymentRequest buildVaultCharge(
+            String merchantTransactionId, String token, String customerId, String routingId) {
+        return new PaymentRequest()
+                .amount(VAULT_AMOUNT)
+                .merchantTransactionId(merchantTransactionId)
+                .currency("USD")
+                .orderId(merchantTransactionId)
+                .customerId(customerId)
+                .gatewayRoutingId(routingId)
+                .initiatedBy(InitiatedBy.MIT)
+                .paymentMethodType(PaymentRequest.PaymentMethodTypeEnum.VAULT_TOKEN)
+                .recovery(new Recovery().retryCount(SKIP_DIRECT_PATH_RETRY_COUNT))
+                .paymentMethod(
+                        new PaymentMethod()
+                                .fullName("Smoke Test")
+                                .email("smoke@example.com")
+                                .vaultPaymentMethod(
+                                        new VaultPaymentMethod()
+                                                .vaultToken(token)
+                                                .bin(token.substring(0, 6))
+                                                .lastFourDigits(token.substring(token.length() - 4))
+                                                .expiryMonth("12")
+                                                .expiryYear("2029")));
+    }
+
     private static PaymentRequest buildCharge(
             String merchantTransactionId,
             String pan,

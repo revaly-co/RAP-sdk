@@ -30,6 +30,7 @@ use Revaly\Sdk\Core\Model\CreditCard;
 use Revaly\Sdk\Core\Model\PaymentMethod;
 use Revaly\Sdk\Core\Model\PaymentRequest;
 use Revaly\Sdk\Core\Model\Recovery;
+use Revaly\Sdk\Core\Model\VaultPaymentMethod;
 use Revaly\Sdk\Errors\PermanentRejectionException;
 use Revaly\Sdk\Errors\RapCoreException;
 use Revaly\Sdk\Errors\TransientFailureException;
@@ -66,6 +67,24 @@ const SKIP_DIRECT_PATH_RETRY_COUNT = 1;
 // One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
 // matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
 const TEST_PAN = '4111111111111111';
+
+/**
+ * The vault rows present an EXISTING token rather than auto-vaulting a card.
+ * Presenting is non-mutating (it mints no new vault record on every CI run),
+ * deterministic (the reported token must equal the one presented), and the one
+ * shape that works identically on both smoke targets.
+ *
+ * Amount 2500, matching the platform's own vault E2E body — but the vault rows
+ * deliberately DO NOT assert approval. The approval outcome on a vault route is
+ * amount- and gateway-specific per target (staging's Chase sandbox approves
+ * 2500 and declines 1999 "Do not honor"), while the thing spec 2.6.0 changed —
+ * that the token is REPORTED — holds on approved and declined transactions
+ * alike. Gating on status here would buy nothing and break on the other target.
+ */
+const VAULT_AMOUNT = 2500;
+
+/** Returned when a presented token is rejected as bad. */
+const VAULT_BAD_TOKEN_RESPONSE_CODE = '50167';
 
 /** A scenario assertion failure (values-free message). */
 final class SmokeFailure extends \RuntimeException
@@ -122,6 +141,43 @@ function buildCharge(string $mtid, string $pan, string $expiryYear, ?string $rou
     if ($routingId !== null && $routingId !== '') {
         $request->setGatewayRoutingId($routingId);
     }
+
+    return $request;
+}
+
+/**
+ * Charge presenting an EXISTING vault token (spec 2.6.0 / SC-477).
+ *
+ * bin and last-four are derived from the token: vault tokens are
+ * format-preserving, so "478825NrfD2H8291" carries bin 478825 and last-four
+ * 8291 in the value itself. customerId is part of the credential, not
+ * decoration — a token presented under any other customer resolves to nothing.
+ */
+function buildVaultCharge(string $mtid, string $token, string $customerId, string $routingId): PaymentRequest
+{
+    $vault = new VaultPaymentMethod();
+    $vault->setVaultToken($token);
+    $vault->setBin(substr($token, 0, 6));
+    $vault->setLastFourDigits(substr($token, -4));
+    $vault->setExpiryMonth('12');
+    $vault->setExpiryYear('2029');
+
+    $method = new PaymentMethod();
+    $method->setFullName('Smoke Test');
+    $method->setEmail('smoke@example.com');
+    $method->setVaultPaymentMethod($vault);
+
+    $request = new PaymentRequest();
+    $request->setAmount(VAULT_AMOUNT);
+    $request->setPaymentMethodType('vaultToken');
+    $request->setCurrency('USD');
+    $request->setMerchantTransactionId($mtid);
+    $request->setOrderId($mtid);
+    $request->setCustomerId($customerId);
+    $request->setInitiatedBy('MIT');
+    $request->setGatewayRoutingId($routingId);
+    $request->setRecovery((new Recovery())->setRetryCount(SKIP_DIRECT_PATH_RETRY_COUNT));
+    $request->setPaymentMethod($method);
 
     return $request;
 }
@@ -207,6 +263,11 @@ $baseUrl = getenv('RAP_SMOKE_BASE_URL') ?: '';
 $apiKey = getenv('RAP_SMOKE_API_KEY') ?: '';
 $routingId = getenv('RAP_SMOKE_GATEWAY_ROUTING_ID') ?: null;
 $faultValue = getenv('RAP_SMOKE_FAULT_INJECT') ?: null;
+$vaultKey = getenv('RAP_SMOKE_VAULT_API_KEY') ?: null;
+$vaultCustomer = getenv('RAP_SMOKE_VAULT_CUSTOMER_ID') ?: null;
+$vaultRouting = getenv('RAP_SMOKE_VAULT_ROUTING_ID') ?: null;
+$vaultToken = getenv('RAP_SMOKE_VAULT_TOKEN') ?: null;
+$vaultReady = $vaultKey !== null && $vaultCustomer !== null && $vaultRouting !== null && $vaultToken !== null;
 if ($baseUrl === '' || $apiKey === '') {
     fwrite(STDERR, "smoke: RAP_SMOKE_BASE_URL and RAP_SMOKE_API_KEY must be set (ADR-SDK-024) — refusing to run.\n");
     exit(2);
@@ -252,6 +313,21 @@ if ($faultValue !== null && $faultValue !== '') {
         ),
     );
 }
+
+// The vault-enrolled merchant is a DIFFERENT key-scope from the main smoke
+// account, so the vault rows need their own client.
+$vaultClient = null;
+if ($vaultReady) {
+    $vaultClient = new RapClient(
+        apiKey: $vaultKey,
+        baseUrl: $baseUrl,
+        connectTimeout: 5.0,
+        overallDeadline: 15.0,
+    );
+}
+// Shared between the two vault rows: the first charges, the second proves the
+// token is reported on the surfaces 2.6.0 added.
+$vaultTxn = null;
 
 // Charged ids feed the reconcile scenarios: the verdicts — through the
 // runtime's own outcome mapping — are the proof the charge outcomes were what
@@ -420,6 +496,79 @@ $scenarios = [
 
         throw new SmokeFailure(sprintf('unrecognized verdict %s', $verdict::class));
     },
+
+    // --- vault-token rows (spec 2.6.0 / SC-477) --------------------------------
+    // Split into two so a failure says WHICH half broke: the charge path, or
+    // the reporting of the token on the surfaces 2.6.0 added.
+    'charge-vault-token' => function () use ($vaultClient, $vaultToken, $vaultCustomer, $vaultRouting, &$vaultTxn): string {
+        if ($vaultClient === null) {
+            throw new SmokeSkip('RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)');
+        }
+        $transaction = $vaultClient->charge(
+            buildVaultCharge(freshId('vault'), $vaultToken, $vaultCustomer, $vaultRouting)
+        );
+        if (($transaction->getTransactionId() ?? '') === '') {
+            throw new SmokeFailure('transactionId is empty on the vault-token surface');
+        }
+        // The token was accepted as a real credential, not rejected as a bad
+        // one. Deliberately NOT an approval assertion — see VAULT_AMOUNT.
+        if ($transaction->getResponseCode() === VAULT_BAD_TOKEN_RESPONSE_CODE) {
+            throw new SmokeFailure(sprintf(
+                'presented vault token rejected as bad (responseCode=%s) — the token/customer pair is wrong for this target',
+                $transaction->getResponseCode()
+            ));
+        }
+        $method = $transaction->getPaymentMethod();
+        if ($method === null || $method->getPaymentMethodType() !== 'VaultToken') {
+            throw new SmokeFailure(sprintf(
+                'expected paymentMethodType=VaultToken, got %s',
+                $method === null ? 'null' : (string) $method->getPaymentMethodType()
+            ));
+        }
+        if ($method->getVaultToken() !== $vaultToken) {
+            throw new SmokeFailure('charge response did not report the presented vault token');
+        }
+        $vaultTxn = $transaction->getTransactionId();
+
+        return sprintf(' (txn=%s status=%d)', $vaultTxn, $transaction->getTransactionStatus() ?? 0);
+    },
+
+    'vault-token-on-reads' => function () use ($vaultClient, $vaultToken, &$vaultTxn): string {
+        // The spec-2.6.0 delta itself: nested on the single-transaction read,
+        // and FLAT on the detailed list row.
+        if ($vaultClient === null) {
+            throw new SmokeSkip('RAP_SMOKE_VAULT_* not set (vault-enrolled key-scope)');
+        }
+        if ($vaultTxn === null) {
+            throw new SmokeSkip('charge-vault-token did not produce a transaction');
+        }
+        // The read returns an anyOf union (spec 2.4.0) — unwrap before
+        // reaching paymentMethod.
+        $read = $vaultClient->transactions()->getTransactionById($vaultTxn);
+        if (is_object($read) && method_exists($read, 'getActualInstance')) {
+            $read = $read->getActualInstance() ?? $read;
+        }
+        $readMethod = is_object($read) && method_exists($read, 'getPaymentMethod') ? $read->getPaymentMethod() : null;
+        if ($readMethod === null || $readMethod->getVaultToken() !== $vaultToken) {
+            throw new SmokeFailure('GET /transactions/{id} did not report the nested vaultToken (spec 2.6.0)');
+        }
+
+        $rows = $vaultClient->transactions()->listTransactions(null, 50, 'desc', null, null, null, null, 'detailed');
+        foreach ((array) $rows as $row) {
+            if (!is_object($row) || $row->getTransactionId() !== $vaultTxn) {
+                continue;
+            }
+            // FLAT on the row, not nested — this is the 2.6.0 schema change.
+            if ($row->getVaultToken() !== $vaultToken) {
+                throw new SmokeFailure('the detailed list row did not report the FLAT vaultToken (spec 2.6.0)');
+            }
+
+            return sprintf(' (txn=%s nested+flat)', $vaultTxn);
+        }
+
+        throw new SmokeFailure('the vault transaction is absent from the detailed list page');
+    },
+
 ];
 
 // Advisory preflight: asserts nothing and can never fail the suite. The elapsed
