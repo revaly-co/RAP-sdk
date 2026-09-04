@@ -69,6 +69,22 @@ const faultInjectHeader = "X-Backbone-Fault-Inject"
 //	and approves (nightly 30983100997: red 6/6, 2026-08-05).
 const skipDirectPathRetryCount = 1
 
+// Two synthetic test PANs; the CARD NUMBER drives the outcome, on a live
+// expiry both targets accept. Expiry stopped being a lever on 2026-09-02:
+// since RAP-vault-service ADR-043 a charge is forwarded as a vault token and
+// dispatch detokenizes the STORED expiry (Account Updater owns it), so the
+// request's expiry never reaches the gateway. Live-verified 2026-09-04 against
+// both smoke targets — prod sandbox routes stripe_payment_intents, Backbone
+// staging routes cyber_source_direct:
+//   testPAN     approves on both (10000 Approved).
+//   declinePAN  declines on both (prod 20022 "Bank decline"; staging 20126,
+//   5/5 runs across three amounts) — Stripe's published generic_decline
+//   card, https://docs.stripe.com/testing.
+const (
+	testPAN    = "4111111111111111"
+	declinePAN = "4000000000000002"
+)
+
 // errSkip marks a scenario that cannot run in this environment (reported as
 // SKIP, never silently dropped, never a failure).
 type errSkip struct{ reason string }
@@ -139,8 +155,8 @@ func main() {
 	// 2.3.0); paymentMethodType is optional since spec 2.3.0 (Backbone #251
 	// inference) — sent explicitly here to keep the wire shape deterministic
 	// across the six languages. orderId + email are additionally required by
-	// the staging simulator for an approval. One synthetic test PAN; the
-	// EXPIRY drives the outcome (12/2027 approves, 12/2020 declines).
+	// the staging gateway for an approval. The CARD NUMBER drives the
+	// outcome — see testPAN / declinePAN.
 	// recovery.retryCount is stamped on every charge — see
 	// skipDirectPathRetryCount for why the smoke must stay off the direct path
 	// on both targets.
@@ -178,7 +194,7 @@ func main() {
 		run  func(ctx context.Context) (string, error)
 	}{
 		{"charge-approved", func(ctx context.Context) (string, error) {
-			transaction, err := client.Charge(ctx, buildCharge(chargedID, "4111111111111111", "2027", true))
+			transaction, err := client.Charge(ctx, buildCharge(chargedID, testPAN, "2027", true))
 			if err != nil {
 				return "", classified("expected a successful charge", err)
 			}
@@ -197,11 +213,11 @@ func main() {
 		}},
 
 		{"charge-declined", func(ctx context.Context) (string, error) {
-			// An expired expiry declines deterministically (same PAN — the
-			// expiry drives the outcome). A decline is a business outcome on
-			// the SUCCESS surface — not a failure class;
+			// The decline PAN declines deterministically (live expiry — the
+			// card number drives the outcome). A decline is a business outcome
+			// on the SUCCESS surface — not a failure class;
 			// reconcile-found-declined proves the mapping below.
-			transaction, err := client.Charge(ctx, buildCharge(declinedID, "4111111111111111", "2020", true))
+			transaction, err := client.Charge(ctx, buildCharge(declinedID, declinePAN, "2027", true))
 			if err != nil {
 				return "", classified("expected a declined charge on the success surface", err)
 			}
@@ -209,9 +225,9 @@ func main() {
 				return "", errors.New("transactionId is empty on the declined-charge surface")
 			}
 			// Assert the decline actually happened — a gateway that approves the
-			// expired card would otherwise slip through to reconcile-found-declined.
+			// decline PAN would otherwise slip through to reconcile-found-declined.
 			if transaction.GetTransactionStatus() != 2 {
-				return "", fmt.Errorf("expected transactionStatus=2 (declined), got %d — the staging gateway must be one where expiry drives the outcome", transaction.GetTransactionStatus())
+				return "", fmt.Errorf("expected transactionStatus=2 (declined), got %d — the target gateway must be one where this decline PAN declines", transaction.GetTransactionStatus())
 			}
 			if lastTrace.CorrelationID == "" {
 				return "", errors.New("no X-Correlation-ID observed on the declined-charge path (DX §c)")
@@ -225,7 +241,7 @@ func main() {
 			// so the PAN stays valid — and fails the server's cardholder-name
 			// business validation: the rejection is proven to come from
 			// reality (HTTP 400, no code on 4xx).
-			_, err := client.Charge(ctx, buildCharge(freshID("validation"), "4111111111111111", "2027", false))
+			_, err := client.Charge(ctx, buildCharge(freshID("validation"), testPAN, "2027", false))
 			if err == nil {
 				return "", errors.New("server accepted a nameless charge — expected PermanentRejection")
 			}
@@ -243,7 +259,7 @@ func main() {
 		}},
 
 		{"charge-auth-rejected", func(ctx context.Context) (string, error) {
-			_, err := badKeyClient.Charge(ctx, buildCharge(freshID("auth"), "4111111111111111", "2027", true))
+			_, err := badKeyClient.Charge(ctx, buildCharge(freshID("auth"), testPAN, "2027", true))
 			if err == nil {
 				return "", errors.New("server accepted a synthetic invalid key — expected PermanentRejection")
 			}
@@ -271,7 +287,7 @@ func main() {
 			}
 			// The retryCount buildCharge stamps is what keeps this charge on the
 			// route that carries the seam — see skipDirectPathRetryCount.
-			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), "4111111111111111", "2027", true))
+			_, err := faultClient.Charge(ctx, buildCharge(freshID("fault"), testPAN, "2027", true))
 			if err == nil {
 				return "", errors.New("fault-injected charge succeeded — expected TransientFailure")
 			}

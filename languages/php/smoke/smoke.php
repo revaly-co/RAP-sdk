@@ -63,9 +63,19 @@ const FAULT_INJECT_HEADER = 'X-Backbone-Fault-Inject';
 //     the dispatch path, so a first-attempt fault charge never reaches the seam
 //     and approves (nightly 30983100997: red 6/6, 2026-08-05).
 const SKIP_DIRECT_PATH_RETRY_COUNT = 1;
-// One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
-// matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+// Two synthetic test PANs; the CARD NUMBER drives the outcome, on a live
+// expiry both targets accept. Expiry stopped being a lever on 2026-09-02:
+// since RAP-vault-service ADR-043 a charge is forwarded as a vault token and
+// dispatch detokenizes the STORED expiry (Account Updater owns it), so the
+// request's expiry never reaches the gateway. Live-verified 2026-09-04 against
+// both smoke targets — prod sandbox routes stripe_payment_intents, Backbone
+// staging routes cyber_source_direct:
+//   TEST_PAN     approves on both (10000 Approved).
+//   DECLINE_PAN  declines on both (prod 20022 "Bank decline"; staging 20126,
+//   5/5 runs across three amounts) — Stripe's published generic_decline
+//   card, https://docs.stripe.com/testing.
 const TEST_PAN = '4111111111111111';
+const DECLINE_PAN = '4000000000000002';
 
 /** A scenario assertion failure (values-free message). */
 final class SmokeFailure extends \RuntimeException
@@ -278,17 +288,17 @@ $scenarios = [
     },
 
     'charge-declined' => function () use ($client, $declinedId, $routingId, &$lastCorrelation): string {
-        // An expired expiry declines deterministically (same PAN). A decline is a business
+        // The decline PAN declines deterministically (live expiry). A decline is a business
         // outcome on the SUCCESS surface — not a failure class;
         // reconcile-found-declined proves the mapping below.
-        $transaction = $client->charge(buildCharge($declinedId, TEST_PAN, '2020', $routingId));
+        $transaction = $client->charge(buildCharge($declinedId, DECLINE_PAN, '2027', $routingId));
         if (($transaction->getTransactionId() ?? '') === '') {
             throw new SmokeFailure('transactionId is empty on the declined-charge surface');
         }
-        // Assert the decline actually happened — a gateway that approves the expired
-        // card would otherwise slip through to reconcile-found-declined.
+        // Assert the decline actually happened — a gateway that approves the decline
+        // PAN would otherwise slip through to reconcile-found-declined.
         if ($transaction->getTransactionStatus() !== 2) {
-            throw new SmokeFailure(sprintf('expected transactionStatus=2 (declined), got %s — the staging gateway must be one where expiry drives the outcome', var_export($transaction->getTransactionStatus(), true)));
+            throw new SmokeFailure(sprintf('expected transactionStatus=2 (declined), got %s — the target gateway must be one where this decline PAN declines', var_export($transaction->getTransactionStatus(), true)));
         }
         if (($lastCorrelation ?? '') === '') {
             throw new SmokeFailure('no X-Correlation-ID observed on the declined-charge path (DX §c)');

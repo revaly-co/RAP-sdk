@@ -136,10 +136,12 @@ logs):**
 1. `charge-approved` — `4111111111111111` 12/**2027**, USD — success surface, `transactionId`
    non-empty, correlation id observed via the wire-trace hook (the designed success-path
    observer, DX §c).
-2. `charge-declined` — the **same PAN** with 12/**2020**: the expiry drives the outcome
-   (staging-verified matrix, Backbone test run 2026-07-18 — `transactionStatus 1` at 12/2027,
-   `2` at 12/2020; supersedes the CHG-032 18-digit-card row from the Playwright spec). A
+2. `charge-declined` — a **decline PAN** (`4000000000000002`) on the same live 12/**2027**
+   expiry: the card number drives the outcome, verified on both targets 2026-09-04. A
    decline is a **success-surface business outcome**, not a failure class.
+   *(Superseded lever, 2026-07-18 → 2026-09-03: the same approve PAN with 12/2020, on the
+   assumption that expiry drives the outcome. Killed by the vault cutover — see the
+   2026-09-04 record at the end of this ADR.)*
 3. `charge-validation-rejected` — **empty card number** → PermanentRejection 400. Chosen
    because it passes every client-side model (python's pydantic enforces the spec's
    `amount ≥ 0` and id max-length locally, so those triggers never reach the wire) while the
@@ -301,8 +303,8 @@ RAP_SANDBOX_API_KEY             sandbox-scoped merchant key
 RAP_SANDBOX_GATEWAY_ROUTING_ID  sandbox gateway routing token
 RAP_SMOKE_BASE_URL              Backbone staging base URL — HOST ROOT ONLY, no /payments
 RAP_SMOKE_API_KEY               staging E2E-pool key
-RAP_SMOKE_GATEWAY_ROUTING_ID    staging routing token for a gateway where expiry drives
-                                the outcome (12/2027 approves, 12/2020 DECLINES)
+RAP_SMOKE_GATEWAY_ROUTING_ID    staging routing token for a gateway that approves
+                                4111111111111111 and DECLINES 4000000000000002
 vars.RAP_SMOKE_FAULT_INJECT     pre-dispatch
 ```
 
@@ -315,8 +317,10 @@ passes **both** steps — step 1 `RESULT: PASS (7/8 passed, 1 skipped)` with
 `RESULT: PASS (8/8 passed, 0 skipped)` with
 `PASS charge-not-processed-503 (status=503 code=not_processed)`. The full failover-contract §2
 taxonomy is now proven against real servers in all six languages, with **nothing demoted to
-mock-only coverage**. The staging gateway that makes this work is one where expiry drives the
-outcome; it also restores `reconcile-found-declined (outcome=Declined)`.
+mock-only coverage**. The staging gateway that makes this work is one that produces a real
+decline; it also restores `reconcile-found-declined (outcome=Declined)`. *(As written in 2026-07
+the decline lever was an expired expiry; it became the decline PAN on 2026-09-04 — see the record
+at the end of this ADR. Nothing else in this paragraph changes.)*
 
 **Two staging-provisioning traps, both hit on 2026-07-25 and both reproduced locally:**
 
@@ -325,11 +329,15 @@ outcome; it also restores `reconcile-found-declined (outcome=Declined)`.
    signature is unmistakable and misleading: 7 of 8 scenarios fail while `reconcile-not-found-yet`
    *passes*, because that is the one scenario expecting a 404. Verified by reproducing the exact
    CI result (`1/8 passed`) locally with the suffixed URL.
-2. **The staging gateway must be one where the expiry drives the outcome.** The suites depend on
-   12/2027 approving and 12/2020 **declining**. A routing token pointing at a gateway that approves
-   regardless passes `charge-declined` — which only asserts that a transaction binds — and then
-   fails `reconcile-found-declined` with `expected outcome Declined, got Approved`. Confirmed
-   independently by the integration app reporting `transactionStatus=1` where 2 was required.
+2. **The target gateway must be one that declines the decline PAN.** The suites depend on
+   `4111111111111111` approving and `4000000000000002` **declining**. A routing token pointing at
+   a gateway that approves regardless passes `charge-declined` — which only asserts that a
+   transaction binds — and then fails `reconcile-found-declined` with `expected outcome Declined,
+   got Approved`. Confirmed independently by the integration app reporting `transactionStatus=1`
+   where 2 was required. *(As written on 2026-07-25 this trap named the expiry as the lever; the
+   lever changed on 2026-09-03 — see the 2026-09-04 record at the end. The trap itself is
+   unchanged: whatever the lever is, a gateway that ignores it fails at reconcile, not at
+   charge.)*
 
 ---
 
@@ -408,3 +416,63 @@ recorded, owned, reversible.
 them as the one open act, which is stale. They are currently pointed at Backbone staging: the
 v0.4.1 release run (2026-07-23) passed stage 4 including the fault-injected row, which only the
 staging injector can satisfy. What remains is the repoint above, not the creation.
+
+---
+
+## Decline lever replaced: expiry → card number (2026-09-04)
+
+**What happened.** The nightly smoke went red on all six languages on 2026-09-03 (run
+33721667699), on the same commit that had passed the day before. Two scenarios failed on both
+targets: `charge-declined` and `reconcile-found-declined`. No SDK change, no repo change, and no
+platform deploy in the break window — this was a data/config change under an unchanged test.
+
+**Root cause.** The suites drove the decline with an expired expiry on the approve PAN. That
+lever stopped existing when vault tokenization was switched on for the smoke merchants:
+`RAP-vault-service` ADR-043 (accepted and implemented 2026-09-02) stopped refusing customer
+binding conflicts, so smoke charges are now minted into a vault token and forwarded, and dispatch
+detokenizes the **stored** expiry rather than the requested one. A re-tokenize of an
+already-vaulted PAN does not refresh the stored expiry, so the decline row's 12/2020 was replaced
+by the 12/2027 the approve row had already stored, and the charge approved. Account Updater
+owning the stored expiry is intentional and confirmed by the vault owner; it is not a defect to
+be fixed, which is why the smoke's lever had to move rather than the platform's behaviour.
+
+**Consequence for any future lever.** Expiry is now owned by the vault, and Account Updater's
+whole purpose is to advance expired cards, so *any* expiry-based decline trigger is fragile by
+construction — including a second PAN seeded with a past date, which AU may silently supersede.
+The lever must be something the request owns end-to-end. The card number is exactly that: it is
+what gets tokenized and detokenized, and nothing in the vault path rewrites it.
+
+**Both smoke targets were re-identified, because neither is what earlier records assumed.**
+Probed live 2026-09-04 through `POST /payments` on each target's own key-scope:
+
+| target | `gatewayType` on the response | `4111111111111111` | `4000000000000002` |
+| --- | --- | --- | --- |
+| step 1 — prod sandbox key-scope | `stripe_payment_intents` | 10000 Approved | **20022 Bank decline** |
+| step 2 — Backbone staging | `cyber_source_direct` | 10000 Approved | **20126, declined** |
+
+Because the two targets run different gateways, the decline card had to satisfy both published
+test-data sets at once. Stripe's documented `generic_decline` card
+(`4000000000000002`, <https://docs.stripe.com/testing>) is the one that does. Cards that decline
+on only one target were rejected as candidates: the Amex `371449635398431` declines on staging
+(30086) but approves on prod, and Spreedly's `4012888888881881` approves on both.
+
+Determinism was measured before adopting it, not assumed: `4000000000000002` declined on **8
+consecutive charges** — three on prod (amounts 19.99, 25.01, 7.77) and five on staging (the same
+three amounts plus two repeats) — with a unique `merchantTransactionId` on every call. The
+transaction amount is not a lever on either gateway and was varied deliberately to rule out a
+dedupe artefact behind staging's response.
+
+**Change made.** Each suite now carries two PANs — the approve PAN unchanged, plus
+`DECLINE_PAN` / `declinePAN` = `4000000000000002` — and `charge-declined` charges the decline PAN
+on the same live 12/2027 expiry every other scenario uses. Both PANs vault into their own record,
+so the two rows no longer contend for one stored expiry.
+
+**Verified.** dotnet and go run live against both targets: step 1
+`RESULT: PASS (7/8 passed, 1 skipped)`, step 2 `RESULT: PASS (8/8 passed, 0 skipped)` — including
+the two rows that were red. The other four suites take the textually identical change.
+
+**Residual risk, accepted and monitored.** Account Updater can in principle replace a stored card
+number, not only its expiry, which would break a PAN-driven lever the same way it broke the
+expiry-driven one. Nothing observed suggests it does so for these synthetic sandbox cards, and
+the nightly is the detector: a `charge-declined` red on an unchanged commit means the lever moved
+again, and this record is the place to look first.
