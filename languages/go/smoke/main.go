@@ -76,10 +76,11 @@ const skipDirectPathRetryCount = 1
 // request's expiry never reaches the gateway. Live-verified 2026-09-04 against
 // both smoke targets — prod sandbox routes stripe_payment_intents, Backbone
 // staging routes cyber_source_direct:
-//   testPAN     approves on both (10000 Approved).
-//   declinePAN  declines on both (prod 20022 "Bank decline"; staging 20126,
-//   5/5 runs across three amounts) — Stripe's published generic_decline
-//   card, https://docs.stripe.com/testing.
+//
+//	testPAN     approves on both (10000 Approved).
+//	declinePAN  declines on both (prod 20022 "Bank decline"; staging 20126,
+//	5/5 runs across three amounts) — Stripe's published generic_decline
+//	card, https://docs.stripe.com/testing.
 const (
 	testPAN    = "4111111111111111"
 	declinePAN = "4000000000000002"
