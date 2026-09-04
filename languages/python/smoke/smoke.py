@@ -71,9 +71,19 @@ FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject"
 #     and approves (nightly 30983100997: red 6/6, 2026-08-05).
 SKIP_DIRECT_PATH_RETRY_COUNT = 1
 
-# One synthetic test PAN; the EXPIRY drives the outcome (staging-verified
-# matrix 2026-07-18: 12/2027 approves, 12/2020 declines).
+# Two synthetic test PANs; the CARD NUMBER drives the outcome, on a live
+# expiry both targets accept. Expiry stopped being a lever on 2026-09-02:
+# since RAP-vault-service ADR-043 a charge is forwarded as a vault token and
+# dispatch detokenizes the STORED expiry (Account Updater owns it), so the
+# request's expiry never reaches the gateway. Live-verified 2026-09-04 against
+# both smoke targets — prod sandbox routes stripe_payment_intents, Backbone
+# staging routes cyber_source_direct:
+#   TEST_PAN     approves on both (10000 Approved).
+#   DECLINE_PAN  declines on both (prod 20022 "Bank decline"; staging 20126,
+#   5/5 runs across three amounts) — Stripe's published generic_decline
+#   card, https://docs.stripe.com/testing.
 TEST_PAN = "4111111111111111"
+DECLINE_PAN = "4000000000000002"
 
 
 class SmokeFailure(Exception):
@@ -256,18 +266,18 @@ def main() -> int:
         return f" (txn={transaction.transaction_id} correlation={last_correlation[0]})"
 
     def charge_declined() -> str:
-        # An expired expiry declines deterministically (same PAN). A decline is a business
+        # The decline PAN declines deterministically (live expiry). A decline is a business
         # outcome on the SUCCESS surface — not a failure class;
         # reconcile-found-declined proves the mapping below.
-        transaction = client.charge(build_charge(declined_id, TEST_PAN, "2020", routing_id))
+        transaction = client.charge(build_charge(declined_id, DECLINE_PAN, "2027", routing_id))
         if not transaction.transaction_id:
             raise SmokeFailure("transactionId is empty on the declined-charge surface")
-        # Assert the decline actually happened — a gateway that approves the expired
-        # card would otherwise slip through to reconcile-found-declined.
+        # Assert the decline actually happened — a gateway that approves the decline
+        # PAN would otherwise slip through to reconcile-found-declined.
         if transaction.transaction_status != 2:
             raise SmokeFailure(
                 f"expected transactionStatus=2 (declined), got {transaction.transaction_status}"
-                " — the staging gateway must be one where expiry drives the outcome"
+                " — the target gateway must be one where this decline PAN declines"
             )
         if not last_correlation[0]:
             raise SmokeFailure("no X-Correlation-ID observed on the declined-charge path (DX §c)")

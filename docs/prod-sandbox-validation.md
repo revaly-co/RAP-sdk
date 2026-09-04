@@ -100,6 +100,10 @@ environment secret alongside URL + key.
 > approved, and the 12/2020 row = `transactionStatus 2` / `30026` "Expired card" (a real gateway
 > decline rather than the sink).
 >
+> **Superseded 2026-09-04:** the 12/2020 row no longer declines anywhere. Vault tokenization now
+> owns the stored expiry, so the smoke drives its decline with PAN `4000000000000002` instead —
+> see ADR-SDK-024 §"Decline lever replaced". The `50130` finding above is unaffected.
+>
 > **Timeline, verified vs inferred.** Verified: the enrolment migration landed 2026-08-11; the
 > 2026-08-12 nightly failed stage-4 across all six languages with exactly this `50130` signature;
 > nightly runs from 2026-08-13 through 2026-08-24 06:09 UTC were green; a live probe on
