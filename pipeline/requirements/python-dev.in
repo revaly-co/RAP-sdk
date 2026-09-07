@@ -2,4 +2,4 @@
 # Runtime deps + the [dev] extra of languages/python/pyproject.toml — keep in sync by hand.
 -r python-runtime.in
 pytest>=8.0
-coverage>=7.6
+coverage>=7.16.0
