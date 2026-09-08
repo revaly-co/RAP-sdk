@@ -37,7 +37,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.15.0</version>
+                <version>3.16.0</version>
                 <!-- Error Prone (ADR-SDK-028), default ERROR-severity checks only; forked
                      so the JDK 17+ add-exports/add-opens flags ride javac itself (the
                      "-J" args below) — CI runs maven from the repo root, so .mvn/jvm.config
