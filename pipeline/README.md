@@ -47,8 +47,12 @@ requirements.txt, composer.json, csproj, go.mod ranges) whose versions come from
 generator's templates. **Dependabot alerts are the detector; the fix vehicle is always the
 generation config** — bump the floor in a template fork (or flag) under `pipeline/<language>/`
 and regenerate. A Dependabot (or human) PR that edits `languages/*/core/` directly can never
-merge: stage 2 regenerates and rejects any byte drift (ADR-SDK-001). For that reason
-Dependabot's *automated security-fix PRs* are disabled repo-wide while *alerts stay enabled*;
+merge: stage 2 regenerates and rejects any byte drift (ADR-SDK-001). Dependabot *alerts* and
+*automated security-fix PRs* are both enabled on this repo (verified via the repository API
+2026-09-14) — a security-fix PR that lands against `languages/*/core/` is closed and the floor
+moved in the template instead. Dependabot *version-update* PRs are off
+(`.github/dependabot.yml` sets `open-pull-requests-limit: 0` on every ecosystem, 2026-09-14);
+dependency currency is a hand-run monthly sweep shipped as one batch PR.
 `languages/go/go.mod`/`go.sum` are the one hand-maintained manifest pair (bump directly).
 First applied 2026-07-15: jackson-databind 2.21.5 (java pom fork), urllib3 ≥ 2.7.0 + dev-group
 pytest ≥ 9.0.3 (python manifest forks) — 11 of 12 launch alerts cleared, the 12th (filelock,
