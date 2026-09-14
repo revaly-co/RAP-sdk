@@ -1,27 +1,72 @@
-# Dependabot — dependency-update automation (Scorecard Dependency-Update-Tool check; SC-478).
+# Dependabot — SECURITY UPDATES ONLY. Version-update PRs are disabled (2026-09-14).
 #
-# Scope rule: generated cores (languages/*/core/ — ADR-SDK-001) change only by regeneration,
-# so every entry below points at a hand-written manifest. A Dependabot PR that edited a core
-# manifest would fail the stage-2 regen-diff check; scoping keeps that noise from existing.
+# Why: between 2026-08-27 and 2026-09-07 the weekly schedule opened 52 version-update PRs
+# and 0 merged as authored — 51 were closed and redone by hand as batches (#48, #71, #74,
+# and #85, the PR that carries this change), and the 52nd (#84, the vitest 5 major) is
+# closed with #85 as a standing decline. Dependabot's bumps do not survive this repo's
+# constraints: a lock-only bump desyncs the pip `.in` floors from the hash-pinned lock,
+# `npm --package-lock-only` drifts transitives, the Maven reactor's 0.0.0-SNAPSHOT siblings
+# get "bumped" to the last published jar (a false green — see the one live ignore below),
+# and every major needs an individual call. Two config rounds (per-ecosystem grouping,
+# per-package ignores) did not change the outcome. Dependency currency is now a hand-run
+# monthly sweep — each ecosystem's `outdated` command, shipped as ONE batch PR in the shape
+# of #85.
 #
-# That rule is why there is NO `/languages/java` entry: languages/java/pom.xml is a reactor
-# aggregator, so Dependabot walks its <modules> and rewrites core/pom.xml along with the
-# hand-written ones — and it then duplicated every child bump as a second PR (the 2026-08-31
-# batch arrived as 20 PRs, 8 of them pure duplicates). The three hand-written modules are
-# listed individually instead. Generated-core dependency floors move only by forking
-# pipeline/java/templates/libraries/native/pom.mustache and regenerating (an ADR-SDK-023
-# revision), never by a manifest bump. Core deps stay covered for SECURITY: Dependabot
-# alerts are driven by the dependency graph, not by this file, and the graph does carry the
-# core-only artifacts (verified 2026-08-31: jsr305, jakarta.annotation-api,
-# jackson-datatype-jsr310 all present in the repo SBOM).
+# What this file still does:
+#   * `open-pull-requests-limit: 0` on every entry is GitHub's documented "security updates
+#     only" setting: version updates stop for that ecosystem; security-update PRs are not
+#     subject to the limit and keep flowing (repository settings: Dependabot alerts and
+#     automated security fixes are both enabled). The `schedule` key is mandatory in the
+#     schema and inert at limit 0. The file's presence also keeps the OpenSSF Scorecard
+#     Dependency-Update-Tool check satisfied (SC-478) — that check detects the tool by the
+#     file, not by its contents.
+#   * Per GitHub's options reference, `directories`, `commit-message` AND `ignore` also
+#     shape security-update PRs. So the commit prefixes below apply to them — and any
+#     `ignore` rule here narrows the security net, which is why the standing declines are
+#     recorded as comments (next section), not as live rules. The ONE live ignore
+#     (co.revaly:*, maven) is kept on purpose; see its rationale.
 #
-# Grouping: one PR per ecosystem per week for minor+patch, and a SEPARATE one for majors.
-# Majors are split out on purpose — they need individual evaluation and must not hold a
-# batch of safe patches hostage. The 2026-08-31 batch is the worked example: junit-jupiter
-# 6.x and jakarta.annotation-api 3.x both had to be declined while everything else shipped.
+# Standing declines — the manual sweep's rule book. NOT live rules: a security-update PR
+# for any of these still opens (that is the point) and is evaluated individually, with the
+# gate failure it causes as the evidence. Each lifts on the condition stated.
+#   * typescript >= 7 in languages/typescript/lint: that package pins TS 6.x ON PURPOSE (see
+#     its package.json description) as typescript-eslint's type engine — typescript-eslint
+#     8.x declares peer `typescript >=4.8.4 <6.1.0`. TS 7 is the native tsc with no JS
+#     compiler API and typescript-eslint hard-refuses it ("typescript-eslint does not
+#     support TS 7.0", verified 2026-08-31 against PR #73), so the lint gate dies on load.
+#     The package ROOT separately pins TS 7.x for `npm run typecheck`; the two cannot share
+#     an npm root. Lift when typescript-eslint supports >= 7.1 (typescript-eslint#10940).
+#   * vitest / @vitest/coverage-v8 >= 5.0.0: 5.0.0 ships type declarations that fail strict
+#     tsc (config.d.ts imports the dropped @vitest/expect; plugin.d.ts references a missing
+#     MarkOptions), so the "Typecheck Runtime + Core" gate dies before a test runs, and
+#     skipLibCheck would loosen the DX-contract §a typecheck across every declaration to
+#     absorb one upstream defect (PR #85). Lift at the first 5.x whose .d.ts set typechecks.
+#   * ruff >= 0.16: it rewrote the pyupgrade gate — with `from __future__ import annotations`
+#     present (20 of 23 hand-written modules), UP006/UP007/UP035/UP045 fire under
+#     target-version = py39, and BLE001 flags the deliberate broad excepts in client.py /
+#     reconcile.py / _scrub.py that failover-contract §2 REQUIRES (an unclassifiable failure
+#     is OutcomeUnknown — never guess toward "safe"). 158 findings on a tree that is clean
+#     under 0.15.22. Moving the lint surface is an ADR-SDK-028 revision, not a dependency
+#     bump; lift when that lands.
+#   * junit-jupiter 6.x and jakarta.annotation-api 3.x: Java 17 bytecode and the Jakarta
+#     EE 11 line respectively; every java module compiles at maven.compiler.release 11
+#     (floor set by the generated core's enforcer). Raising the baseline is an ADR decision,
+#     not a test-dependency bump.
+#
+# Scope rule (unchanged, ADR-SDK-001): generated cores (languages/*/core/) change only by
+# regeneration, so every entry below points at a hand-written manifest and there is NO
+# `/languages/java` entry — languages/java/pom.xml is a reactor aggregator, and Dependabot
+# walks its <modules> into core/pom.xml (the 2026-08-31 batch arrived as 20 PRs, 8 of them
+# pure duplicates, for exactly that reason). Alerts are driven by the dependency graph, which
+# does carry the core-only artifacts (verified 2026-08-31: jsr305, jakarta.annotation-api,
+# jackson-datatype-jsr310 all present in the repo SBOM). If Dependabot raises a fix PR
+# against a core manifest, it fails the stage-2 regen-diff by design: close it and move the
+# floor in the generator template under pipeline/<language>/ instead (ADR-SDK-023;
+# pipeline/README.md § Dependency hygiene).
 #
 # pipeline/requirements/*.txt are pip-compile-style hash-pinned lockfiles (uv-generated,
-# paired .in inputs) for the CI pip-install sites; Dependabot updates pins and hashes there.
+# paired .in inputs) for the CI pip-install sites — regenerate them from the repo root with
+# the command in each lock's own header, never from pipeline/.
 
 version: 2
 updates:
@@ -30,15 +75,9 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(ci)
-    groups:
-      actions-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      actions-major:
-        patterns: ["*"]
-        update-types: [major]
 
   - package-ecosystem: npm
     directories:
@@ -48,27 +87,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
-    groups:
-      npm-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      npm-major:
-        patterns: ["*"]
-        update-types: [major]
-    ignore:
-      # languages/typescript/lint pins typescript 6.x ON PURPOSE (see that package.json's
-      # description): it is typescript-eslint's type engine, and typescript-eslint 8.x
-      # declares peer `typescript >=4.8.4 <6.1.0`. TS 7 is the native tsc with no JS
-      # compiler API — typescript-eslint hard-refuses it ("typescript-eslint does not
-      # support TS 7.0", verified 2026-08-31 against PR #73), so the lint gate dies on
-      # load. The package ROOT separately pins typescript 7.x for `npm run typecheck`;
-      # the two cannot share an npm root. Lift when typescript-eslint supports >=7.1
-      # (typescript-eslint#10940).
-      - dependency-name: typescript
-        versions: [">=7.0.0"]
 
   - package-ecosystem: pip
     directories:
@@ -77,26 +99,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
-    groups:
-      pip-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      pip-major:
-        patterns: ["*"]
-        update-types: [major]
-    ignore:
-      # ruff 0.16 rewrote the pyupgrade gate: with `from __future__ import annotations`
-      # present (20 of 23 hand-written modules), UP006/UP007/UP035/UP045 now fire under
-      # target-version = py39, and BLE001 flags the deliberate broad excepts in
-      # client.py / reconcile.py / _scrub.py that failover-contract §2 REQUIRES (an
-      # unclassifiable failure is OutcomeUnknown — never guess toward "safe"). 158
-      # findings on a tree that is clean under 0.15.22. Moving the lint surface is an
-      # ADR-SDK-028 revision, not a dependency bump; lift this when that lands.
-      - dependency-name: ruff
-        versions: [">=0.16.0"]
 
   - package-ecosystem: maven
     directories:
@@ -106,18 +112,15 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
-    groups:
-      maven-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      maven-major:
-        patterns: ["*"]
-        update-types: [major]
     ignore:
-      # The reactor's own modules. languages/java/{runtime,tests,smoke} depend on
+      # The reactor's own modules — the one ignore that stays LIVE. It applies to
+      # security-update PRs too, and that is correct: a "fix" that bumps our own placeholder
+      # is never right (a CVE in our own SDK is fixed by our own release, not by a dependency
+      # bump inside its reactor). languages/java/{runtime,tests,smoke} depend on
       # co.revaly:revaly-sdk / revaly-sdk-core at the 0.0.0-SNAPSHOT placeholder that
       # stage 5 stamps at release time; Dependabot resolves that against Maven Central
       # and "bumps" it to the last published release (it proposed 0.5.2 on 2026-08-31,
@@ -126,12 +129,8 @@ updates:
       # instead of the working tree — a false green, not a build failure. Demonstrated:
       # with 0.5.2 in place, sabotaging RapUserAgent.PRODUCT_NAME still passed 83/83
       # including TransportHeadersTests; at 0.0.0-SNAPSHOT the same edit fails the build.
+      # The manual sweep never touches these two coordinates either.
       - dependency-name: co.revaly:*
-      # junit-jupiter 6.x ships Java 17 bytecode; every module here compiles at
-      # maven.compiler.release 11 (floor set by the generated core's enforcer). Raising
-      # the baseline is an ADR decision, not a test-dependency bump.
-      - dependency-name: org.junit.jupiter:junit-jupiter
-        update-types: [version-update:semver-major]
 
   - package-ecosystem: nuget
     directories:
@@ -140,44 +139,26 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
-    groups:
-      nuget-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      nuget-major:
-        patterns: ["*"]
-        update-types: [major]
 
   - package-ecosystem: composer
     directory: /languages/php
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(deps)
       prefix-development: chore(deps-dev)
-    groups:
-      composer-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      composer-major:
-        patterns: ["*"]
-        update-types: [major]
 
   - package-ecosystem: gomod
     directory: /languages/go
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 0
     commit-message:
       prefix: chore(deps)
-    groups:
-      gomod-minor-patch:
-        patterns: ["*"]
-        update-types: [minor, patch]
-      gomod-major:
-        patterns: ["*"]
-        update-types: [major]

@@ -52,6 +52,33 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-09-14)
+
+- **Dependabot version updates disabled; security updates kept** (PR #85). Between
+  2026-08-27 and 2026-09-07 the weekly schedule opened 52 version-update PRs and none merged
+  as authored — 51 were closed and redone by hand as batches (#48, #71, #74, and #85, which
+  carries this change), and the 52nd (#84, the vitest 5 major) is closed with #85 as a
+  standing decline. The bumps do not survive this repo's constraints: a lock-only bump
+  desyncs the pip `.in` floors, `npm --package-lock-only` drifts transitives, the Maven
+  reactor's 0.0.0-SNAPSHOT siblings resolve to the last published jar (a false green), and
+  every major needs an individual call. Two config rounds (grouping, ignores) did not
+  change that.
+  `.github/dependabot.yml` now sets `open-pull-requests-limit: 0` on every ecosystem —
+  GitHub's documented "security updates only" setting — so Dependabot alerts and
+  security-update PRs keep flowing (both verified enabled via the repository API), the file
+  keeps the Scorecard Dependency-Update-Tool check satisfied (SC-478), and the standing
+  declines (typescript ≥ 7 in lint, vitest 5.0.0, ruff ≥ 0.16, junit-jupiter 6,
+  jakarta.annotation-api 3) are recorded there as comments — the manual sweep's rule book —
+  not as live `ignore` rules: GitHub applies `ignore` to security-update PRs too, so live
+  rules would have narrowed the very security net this change keeps. The one live ignore,
+  the co.revaly reactor-sibling guard, stays because a "fix" that bumps our own
+  0.0.0-SNAPSHOT placeholder is never right.
+  Dependency currency is a hand-run monthly sweep — each ecosystem's `outdated` command,
+  shipped as one batch PR. `pipeline/README.md` § Dependency hygiene corrected in the same
+  PR: it had said automated security-fix PRs were disabled repo-wide; on this repo they are
+  enabled, and the handling rule is stated instead — a security-fix PR that lands against
+  `languages/*/core/` is closed and the floor moved in the generator template.
+
 ## Status snapshot (2026-09-01)
 
 - **Spec re-pinned v2.4.0 → v2.6.0+abf71b6 (seventh pin, issue #77)** — the intermediate
