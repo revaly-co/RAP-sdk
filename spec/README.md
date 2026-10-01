@@ -9,12 +9,12 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.6.0+abf71b6`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.6.0%2Babf71b6) (platform repo) |
-| Spec version | 2.6.0 |
-| Source commit | `abf71b63d19336a0fa10643908215bea6c3161b4` |
+| Release | [`spec/v2.7.0+7a05e7b`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.7.0%2B7a05e7b) (platform repo) |
+| Spec version | 2.7.0 |
+| Source commit | `7a05e7bfdc6cb49a91d1ec7fefdef307355022bd` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `24845f01e4b5b6ec97a762039f0c63b783f6cf6438d47fa0e38bd9be038dd8c8` |
-| Pinned | 2026-09-01 |
+| sha256 (`openapi.bundled.yaml`) | `f7bc364c69a588ab237b1ce91bfa47fdb04c9efc9607fa4be8f00e76d85f7f49` |
+| Pinned | 2026-10-01 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
@@ -27,7 +27,9 @@ Backbone ADR 020 / PR #251) → `v2.4.0+4ce73e2` (2026-08-27 — nested `vaultTo
 charge/authorize response payment methods, transaction-lookup unions `oneOf` → `anyOf` with
 documented discriminators, 404 documented on charge/authorize, SC-478) → `v2.6.0+abf71b6`
 (2026-09-01 — flat `vaultToken` on `TransactionListItem`, nested `vaultToken` extended to the
-transaction reads, `recordRefund` documented for gateway-routed transactions).
+transaction reads, `recordRefund` documented for gateway-routed transactions) →
+`v2.7.0+7a05e7b` (2026-10-01 — `bypassPlatform` on charge/authorize deprecated: `true` is now
+refused with 404 before any processor; no shape change).
 
 Two published artifacts were never consumed and are superseded rather than skipped:
 `v2.3.1+40d659b` (2026-08-10) and `v2.5.0+6d41224` (2026-08-27).
@@ -41,7 +43,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.6.0+abf71b6" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.7.0+7a05e7b" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

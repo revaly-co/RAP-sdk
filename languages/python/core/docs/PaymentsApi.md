@@ -33,9 +33,8 @@ the type is inferred. See the `AuthorizeRequest` schema for the per-type require
 
 To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
-A `404` originates from the fallback-processor path (reached when `bypassPlatform: true`
-routes the payment directly to it, or when platform failover dispatches it): the fallback
-processor could not find a resource the request references.
+A `404` is also returned when the deprecated `bypassPlatform` field is `true`: the request is
+refused before it reaches any payment processor.
 
 
 ### Example
@@ -238,9 +237,8 @@ the type is inferred. See the `PaymentRequest` schema for the per-type required 
 
 To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
-A `404` originates from the fallback-processor path (reached when `bypassPlatform: true`
-routes the payment directly to it, or when platform failover dispatches it): the fallback
-processor could not find a resource the request references.
+A `404` is also returned when the deprecated `bypassPlatform` field is `true`: the request is
+refused before it reaches any payment processor.
 
 
 ### Example

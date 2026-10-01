@@ -54,6 +54,22 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 
 ## Status snapshot (2026-10-01)
 
+- **Spec re-pinned v2.6.0 → v2.7.0+7a05e7b (eighth pin, issue #86).** A deprecation-only
+  delta of 18 changed lines with no shape change. `bypassPlatform` on the charge
+  (`PaymentRequest`) and authorize (`AuthorizeRequest`) request bodies is now
+  `deprecated: true`. Sending `true` is refused with 404 before the request reaches any
+  payment processor; it used to skip the primary processor and run only the fallback flow.
+  The charge/authorize 404 prose changes to match. Type, default (`false`) and optionality are
+  unchanged, and the declared responses are unchanged. The SDK never sends `bypassPlatform`
+  (ADR-SDK-003/004), and a 404 already classifies as PermanentRejection (failover-contract
+  §2), so classification, quickstarts and smoke suites are untouched. Of the 427 regenerated
+  files, 395 are only the version banner. The other 32 carry the deprecation as each
+  language's native marker (`[Obsolete]`, `@Deprecated`, `@deprecated`, `// Deprecated`) and
+  the new 404 text. The .NET core build now reports two CS0612 warnings: its own generated JSON
+  converter reads the obsolete property. They are generated code, outside the runtime's
+  warnings-as-errors scope, and are left as is. Verified locally: .NET builds with 0 errors and
+  passes 68/68 tests; Go build, vet and tests are clean.
+
 - **Published release notes now match the registries (SC-517).** Until today every release
   note published since the 2026-08-07 flip still told developers that registry publish was
   embargoed and that the GitHub release was the install channel, with local-feed install

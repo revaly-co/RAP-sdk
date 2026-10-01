@@ -19,7 +19,7 @@ Request to process a payment (charge) transaction
 |**paymentMethod** | [**PaymentMethod**](PaymentMethod.md) |  |  [optional] |
 |**orderId** | **String** | Order identifier from the merchant system |  [optional] |
 |**storeOnSuccess** | **Boolean** | Whether to store the payment method on successful transaction |  [optional] |
-|**bypassPlatform** | **Boolean** | When true, bypass the primary Revaly processor and execute only the fallback flow |  [optional] |
+|**bypassPlatform** | **Boolean** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. |  [optional] |
 |**customerIp** | **String** | Customer&#39;s IP address |  [optional] |
 |**customerId** | **String** | Customer identifier |  [optional] |
 |**gatewayFields** | **Map&lt;String, Object&gt;** | Additional gateway-specific fields |  [optional] |

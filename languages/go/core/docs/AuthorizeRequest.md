@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 **PaymentMethod** | Pointer to [**PaymentMethod**](PaymentMethod.md) |  | [optional] 
 **OrderId** | Pointer to **NullableString** | Order identifier from the merchant system | [optional] 
 **StoreOnSuccess** | Pointer to **NullableBool** | Whether to store the payment method on successful authorization | [optional] 
-**BypassPlatform** | Pointer to **bool** | When true, bypass the primary Revaly processor and execute only the fallback flow | [optional] [default to false]
+**BypassPlatform** | Pointer to **bool** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. | [optional] [default to false]
 **CustomerIp** | Pointer to **NullableString** | Customer&#39;s IP address | [optional] 
 **CustomerId** | Pointer to **NullableString** | Customer identifier | [optional] 
 **GatewayFields** | Pointer to **map[string]interface{}** | Additional gateway-specific fields | [optional] 
