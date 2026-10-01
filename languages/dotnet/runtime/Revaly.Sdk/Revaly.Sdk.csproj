@@ -6,9 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Revaly.Sdk</RootNamespace>
     <AssemblyName>Revaly.Sdk</AssemblyName>
-    <!-- Package identity is FINAL (ADR-SDK-030, runtime-tdd.md §7); publish stays
-         embargoed until the flip runbook executes (repo rule 3, ADR-SDK-031). Version is
-         a placeholder: stage 5 stamps real versions from per-language release tags. -->
+    <!-- Package identity is FINAL (ADR-SDK-030, runtime-tdd.md §7); published on NuGet
+         since the 2026-08-07 flip (ADR-SDK-031). Version is a placeholder: stage 5 stamps
+         real versions from per-language release tags. -->
     <PackageId>Revaly.Sdk</PackageId>
     <Version>0.0.0-dev</Version>
     <Description>Revaly RAP V2 server-side SDK for .NET — hand-written runtime over the generated core (ADR-SDK-001). Failover-safe typed errors, reconcile helper, values-free logging, mock transport.</Description>

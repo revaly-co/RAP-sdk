@@ -464,36 +464,8 @@ jq -n \
 
 # --- release notes (stage 5 stamps the version → spec SHA mapping) -------------
 
-case "$LANG_ID" in
-  dotnet)
-    INSTALL_SNIPPET="Download both nupkgs and their .sha256 files, verify, then use the folder as a local NuGet feed:
-
-    dotnet nuget add source ./release-artifacts --name revaly-local
-    dotnet add package Revaly.Sdk --version $VERSION" ;;
-  java)
-    INSTALL_SNIPPET="Download revaly-sdk-java.zip, verify its .sha256, unzip, then consume as a file repository (or unzip into ~/.m2/repository):
-
-    <repository><id>revaly-local</id><url>file://\${basedir}/revaly-sdk-java</url></repository>
-    <dependency><groupId>co.revaly</groupId><artifactId>revaly-sdk</artifactId><version>$VERSION</version></dependency>" ;;
-  php)
-    INSTALL_SNIPPET="Download revaly-sdk-php.zip, verify its .sha256, then:
-
-    composer config repositories.revaly artifact ./release-artifacts/
-    composer require revaly/sdk:$VERSION" ;;
-  typescript)
-    INSTALL_SNIPPET="Download revaly-sdk-typescript.tgz, verify its .sha256, then:
-
-    npm install ./revaly-sdk-typescript.tgz" ;;
-  python)
-    INSTALL_SNIPPET="Download revaly-sdk-python.tar.gz, verify its .sha256, then:
-
-    pip install ./revaly-sdk-python.tar.gz" ;;
-  go)
-    INSTALL_SNIPPET="Download revaly-sdk-go.zip, verify its .sha256, unzip (e.g. to ./third_party/revaly-sdk-go), then:
-
-    go mod edit -replace github.com/revaly-co/rap-sdk/languages/go=./third_party/revaly-sdk-go
-    go get github.com/revaly-co/rap-sdk/languages/go" ;;
-esac
+# shellcheck source=pipeline/release-notes.sh
+. "$REPO_ROOT/pipeline/release-notes.sh"
 
 ASSET_TABLE="$(
   cd "$OUT"
@@ -511,11 +483,7 @@ read \`$GATE_VALUE\`). Only CI runs from a release tag publish releases."
 fi
 
 cat > "$OUT/RELEASE_NOTES.md" <<EOF
-Interim distribution artifact (ADR-SDK-026): registry publish remains embargoed
-(repo rule 3) — this GitHub release is the supported install channel. Registry
-names are **final** (ADR-SDK-030) and registry publish goes live when the
-rule-3 gates close (the stage-6 registry job runs dark until then,
-ADR-SDK-031); GitHub releases continue as the provenance anchor afterwards.
+$(rn_preamble "$LANG_ID" "$VERSION")
 
 ## Traceability (version → spec)
 
@@ -538,12 +506,7 @@ $ASSET_TABLE
 Verify: \`sha256sum -c <asset>.sha256\` next to the downloaded files.
 \`provenance.json\` carries the full spec + generator + gate trail.
 
-## Install (interim)
-
-$INSTALL_SNIPPET
-
-See \`languages/$LANG_ID/README.md\` for the quickstart (charge + all three
-error classes + reconcile, ≤ 15 minutes).
+$(rn_install_section "$LANG_ID" "$VERSION" "$SOURCE_COMMIT")
 EOF
 
 echo "== stage 5 complete: $(ls "$OUT" | tr '\n' ' ')"

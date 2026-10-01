@@ -1,7 +1,11 @@
 # ADR-SDK-031 — Stage-6 Registry Publish Ships DARK; Double-Keyed Flip; Packagist via Split Mirror; GitHub Releases Stay
 
-**Status:** Proposed — authored 2026-08-03 (build session after the NuGet `Revaly.*` prefix
-reservation landed); ratification rides the PR review
+**Status:** Accepted. Authored 2026-08-03 (build session after the NuGet `Revaly.*` prefix
+reservation landed) and ratified by the merge of its PR the same day (archive repo PR #51).
+**Flip executed 2026-08-07:** guard-removal PR #8 merged and `REGISTRY_PUBLISH_MODE=live`,
+and v0.5.1 published on all six registries. The registry job has run live ever since. The
+"dark" wording below describes the pre-flip state; since the guards are gone, a non-`live`
+mode now fails the job rather than rehearsing (status recorded 2026-10-01, SC-517).
 **Source:** ADR-SDK-013 (publish mechanics — concretized here), ADR-SDK-026 (interim channel),
 ADR-SDK-030 (final names), `../registry-provisioning.md` (per-registry board + flip runbook)
 **Owner:** SC squad (per ADR-SDK-018)

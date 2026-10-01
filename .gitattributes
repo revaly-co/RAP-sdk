@@ -19,3 +19,5 @@ pipeline/*/config.yaml text eol=lf
 pipeline/generate.sh text eol=lf
 pipeline/package.sh text eol=lf
 pipeline/registry-publish.sh text eol=lf
+pipeline/release-notes.sh text eol=lf
+pipeline/release-notes-check.sh text eol=lf

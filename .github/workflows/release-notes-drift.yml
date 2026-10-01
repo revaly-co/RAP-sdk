@@ -1,0 +1,111 @@
+name: Release Notes Drift
+
+# SC-517 — published release notes vs the real distribution state. Every per-language GitHub
+# release from the first registry version (0.5.1) on must tell developers the truth about where
+# that version installs from: the registry install line when the registry serves the version,
+# an explicit "Not published to <registry>" when it does not (a failed registry leg is never
+# re-run — precedent: typescript 0.5.2), and none of the pre-flip embargo wording. Stage 5
+# writes the note BEFORE stage 6 publishes, so a red registry leg leaves a note promising a
+# version the registry never received; this is the check that notices.
+#
+# The rules live in pipeline/release-notes-check.sh and share their text with the generator
+# (pipeline/release-notes.sh), so the two cannot disagree.
+#
+# Behaviour (idempotent):
+#   clean → close any open `release-notes-drift` issue; exit green.
+#   drift → ensure ONE open `release-notes-drift` issue carrying the current findings; exit red.
+# Pull requests that touch the check run it read-only and never file issues. A registry that
+# cannot be read is reported as inconclusive and turns the run red — "the detector never ran"
+# is never shown as green.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # 06:30 UTC — after the 06:00 nightly smoke and the 06:15 spec-freshness watchdog.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - pipeline/release-notes.sh
+      - pipeline/release-notes-check.sh
+      - pipeline/package.sh
+      - .github/workflows/release-notes-drift.yml
+
+concurrency:
+  group: release-notes-drift-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Published Release Notes vs Registries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Check Published Release Notes
+        id: check
+        run: |
+          # +e: the runner's default shell is bash -e, and the status must be
+          # recorded (for the issue step) before this step can fail.
+          set +e -uo pipefail
+          bash pipeline/release-notes-check.sh 2>&1 | tee check.log
+          echo "status=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Keep One Tracking Issue (scheduled and manual runs only)
+        if: github.event_name != 'pull_request'
+        env:
+          STATUS: ${{ steps.check.outputs.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          OPEN=$(gh issue list --label release-notes-drift --state open --json number --jq '.[].number')
+          if [ "$STATUS" = "0" ]; then
+            for n in $OPEN; do
+              gh issue close "$n" --comment "Every published release note matches its registry again ($RUN_URL). Closed automatically by \`release-notes-drift.yml\`."
+            done
+            exit 0
+          fi
+
+          BODY_FILE=$(mktemp)
+          {
+            echo "One or more published GitHub release notes no longer match what the registries serve. Developers read these notes right after installing, so a wrong one tells them the package is not where it is, or is where it is not."
+            echo
+            echo "## Findings"
+            echo
+            sed -n 's/^::error:://p' check.log | sed 's/^/- /'
+            echo
+            echo "## How to fix"
+            echo
+            echo "- A note that still carries pre-flip wording or lacks the registry install: rewrite its preamble and Install section from \`pipeline/release-notes.sh\` (\`rn_preamble\`, \`rn_install_section\`), keeping the Traceability and Assets tables untouched, with \`gh release edit <tag> --notes-file <file>\`."
+            echo "- A version the registry does not serve: never re-run the release. Replace the Install section with \`rn_not_published_marker\` plus the reason and the next version that is on the registry, as for \`typescript/v0.5.2\` (\`docs/registry-provisioning.md\` § Known deviation)."
+            echo "- \"Could not read\": a registry outage, not drift. Re-run this workflow once the registry answers."
+            echo
+            echo "Run: $RUN_URL"
+            echo
+            echo "---"
+            echo "Filed automatically by \`release-notes-drift.yml\` (SC-517; daily 06:30 UTC). Updated in place while drift persists and closed automatically once every note matches."
+          } > "$BODY_FILE"
+
+          FIRST=$(echo "$OPEN" | head -1)
+          if [ -n "$FIRST" ]; then
+            gh issue edit "$FIRST" --body-file "$BODY_FILE"
+            echo "Updated tracking issue #$FIRST."
+          else
+            gh label create release-notes-drift --description "A published release note contradicts the registry state" --color "d93f0b" --force
+            gh issue create --title "Published release notes drift from the registries" --label release-notes-drift --body-file "$BODY_FILE"
+          fi
+
+      - name: Fail on Drift
+        if: steps.check.outputs.status != '0'
+        run: |
+          echo "::error::Published release notes drift from the registries — see the findings above."
+          exit 1

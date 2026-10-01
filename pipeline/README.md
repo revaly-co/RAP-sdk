@@ -3,10 +3,12 @@
 One deterministic pipeline (`../docs/pipeline-and-release.md`): **validate → generate ×6 →
 build+test → contract smoke → package → publish**. Stages 1–3 run on every PR
 (`../.github/workflows/pipeline.yml`); stage 4 runs on release tags (blocking), the nightly
-schedule (advisory) and manual dispatch; stage 5 and the **interim** stage 6 (GitHub release,
-ADR-SDK-026) run only from per-language release tags on `main`. **Registry publish stays
-embargoed** until its gates close (repo rule 3; ADR-SDK-011/013/019/022) — the GitHub release
-IS the sanctioned interim distribution channel.
+schedule (advisory) and manual dispatch; stage 5 and stage 6 (GitHub release, then registry
+publish) run only from per-language release tags on `main`. **Registry publish is live on all
+six registries since the 2026-08-07 flip** (ADR-SDK-031); the GitHub release is the provenance
+anchor and registry-outage fallback (ADR-SDK-026 as amended 2026-10-01). Release-note text
+lives in `release-notes.sh`; `release-notes-check.sh` checks the published notes against the
+registries daily (`release-notes-drift.yml`, SC-517).
 
 ## What exists today
 
@@ -17,6 +19,8 @@ IS the sanctioned interim distribution channel.
 | `generator-pin.yaml` | Generator toolchain pin (ADR-SDK-023) — stage 2's input; upgrades are ADR revisions riding PRs where the regeneration diff makes the blast radius reviewable |
 | `generate.sh` | The only generation entry point (local and CI): downloads the pinned artifact (or takes `--spec`), **sha256-verifies it against `../spec/pin.yaml` before generating** (ADR-SDK-006), wipes each `core/` and regenerates it with the digest-pinned image — never a floating tag, never a local install |
 | `package.sh` | The only stage-5 packaging entry point (local and CI, ADR-SDK-026): `package.sh <language> <version>` packages **exactly the committed tree at HEAD** (`git archive` — untracked files can never leak into an artifact), stamps the tag version into the ephemeral staging copy only (committed manifests keep their `0.0.0-dev` placeholders), refuses pre-release version suffixes, and emits `dist/<language>/`: the distributable asset(s) + one `.sha256` per asset + `provenance.json` (spec pin + generator pin + gate trail — the platform `spec/v*` release model) + generated `RELEASE_NOTES.md` mapping the version to the spec commit SHA. Talks to **no** registry, ever |
+| `release-notes.sh` | Sourced text library for the release note (SC-517): registry name, package, the per-ecosystem install line, the opening paragraph and the Install section. `package.sh` writes the note from it, and `release-notes-check.sh` checks published notes against the same strings, so the two cannot disagree |
+| `release-notes-check.sh` | Published-notes drift check (SC-517), run daily by `../.github/workflows/release-notes-drift.yml`: every GitHub release from v0.5.1 on must carry its registry install line when the registry serves the version, say "Not published to <registry>" when it does not, and contain no pre-flip wording. Read-only (release reads + anonymous registry GETs); `--tag <lang>/vX.Y.Z` checks one release |
 | `typescript/compile-check/` | Stage-3 compile harness for the TS core: lockfile-pinned `typescript` (`npm ci`, same trust posture as `spec-tooling/`), strict no-emit `tsc` over `../languages/typescript/core/`. Exists because the core is generated **bare** (no `npmName` → no package scaffolding, see `typescript/config.yaml`): the core ships inside the runtime's package (runtime-tdd.md §2), so the harness never becomes a publishable package — the npm identity is [Proposed] until OQ-3 and belongs to the runtime |
 | `<language>/` (×6: `dotnet` `java` `php` `typescript` `python` `go`) | Per-language generation config (ADR-SDK-023 flag table): `config.yaml` (flags, [Proposed] OQ-3 package identities, explicit Apache-2.0 license fields per ADR-SDK-019), `.openapi-generator-ignore` (exclusions — note: patterns need a `**/` prefix, this matcher is narrower than gitignore), `templates/` (generated-code banner partial per ADR-SDK-016; python additionally forks `model_generic.mustache` to make enum validators open-vocabulary; all six fork their auth-example templates so every generated README/api-doc shows the RAP scheme — an API key in the `Authorization` header with the **required `ApiKey` prefix**, `Authorization: ApiKey <key>` — instead of the stock Bearer-style or prefix-less samples (java native's stock samples didn't even compile); dotnet additionally forks the generichost `JsonConverter.mustache` (2026-07-16) to guard optional inner-enum serialization with `Option.IsSet` — the stock template dereferences the unset Option, crashing any request that omits e.g. `paymentMethodType`/`cardType`; each `config.yaml` header lists its exact fork set — re-diff forks against the embedded originals on any generator upgrade) |
 
@@ -68,7 +72,7 @@ merchant sandbox key at the GA retarget) → stage 5 + stage 6 interim (package 
 release — **built 2026-07-20**, ADR-SDK-026: per-language release tags `<lang>/vX.Y.Z` on
 `main` drive `package.sh` and `gh release create`; go tags as `go/vX.Y.Z`, its
 module-activating `languages/go/v*` form is reserved for the gated Go registry publish).
-Registry stage 6 (npm / PyPI / NuGet / Packagist / Maven Central / pkg.go.dev) remains
-**embargoed** until the OQ-3 residuals + ADR-SDK-013 machine gates close (ADR-SDK-019 Legal
-ratification: ✅ in writing, recorded 2026-08-06); going live is the flip runbook.
+Registry stage 6 (npm / PyPI / NuGet / Packagist / Maven Central / pkg.go.dev) — **built dark
+2026-08-03, live since the 2026-08-07 flip** (ADR-SDK-031; runbook executed, ADR-SDK-019 Legal
+ratification recorded 2026-08-06).
 Each stage appends a job to `pipeline.yml` chained with `needs:`.
