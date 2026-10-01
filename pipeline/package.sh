@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stage 5 — package one language as a GitHub release artifact set
-# (docs/pipeline-and-release.md §2 row 5; ADR-SDK-026 interim distribution).
+# (docs/pipeline-and-release.md §2 row 5; ADR-SDK-026 as amended 2026-10-01).
 #
 # The only packaging entry point, local and CI alike:
 #   pipeline/package.sh <language> <version>       e.g.  pipeline/package.sh dotnet 0.1.0
@@ -12,13 +12,13 @@
 # Guarantees (fail-closed):
 #   * packages EXACTLY the committed tree at HEAD (git archive) — never the working
 #     tree, never untracked files;
-#   * <version> must be plain X.Y.Z — the interim channel refuses pre-release
-#     identifiers (no alpha/beta/rc; ADR-SDK-026) and refuses a `v` prefix;
+#   * <version> must be plain X.Y.Z — releases carry no pre-release identifiers
+#     (no alpha/beta/rc; ADR-SDK-026) and no `v` prefix;
 #   * committed manifests stay at their 0.0.0-dev placeholders; the release version
 #     is stamped into the ephemeral staging copy only, and every stamp is verified
 #     (a silently no-op sed is treated as failure);
-#   * registry publish is EMBARGOED (repo rule 3): this script produces files on
-#     disk and never talks to any registry.
+#   * this script produces files on disk and never talks to any registry —
+#     registry publish is stage 6 (pipeline/registry-publish.sh, ADR-SDK-031).
 #
 # Requires: git, jq, sha256sum, tar; plus the language toolchain (dotnet / mvn /
 # php / node+npm / python3 with the `build` package / go). zip is used when
@@ -48,9 +48,8 @@ case " $ALL_LANGS " in
   *) die "unknown language '$LANG_ID' (expected one of: $ALL_LANGS)" ;;
 esac
 
-# Plain semver only. The interim GitHub-release channel ships no pre-release
-# versions (decision 2026-07-20, ADR-SDK-026): a "beta" artifact would look like
-# the pre-1.0 registry publishing that repo rule 3 embargoes.
+# Plain semver only. Releases ship no pre-release versions (decision 2026-07-20,
+# ADR-SDK-026): the same tag drives the GitHub release and the registry publish.
 echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
   || die "version '$VERSION' is not plain X.Y.Z — no v prefix, no pre-release/build suffix (ADR-SDK-026)"
 
@@ -306,8 +305,9 @@ package_typescript() {
   stamp "$src/runtime/src/version.ts" \
     "s/export const SDK_VERSION = '0\\.0\\.0';/export const SDK_VERSION = '$VERSION';/" \
     "export const SDK_VERSION = '$VERSION';"
-  # npm pack runs prepack → tsconfig.build.json emits dist/ (CommonJS + d.ts);
-  # "private": true stays — it blocks npm publish (repo rule 3), not npm pack.
+  # npm pack runs prepack → tsconfig.build.json emits dist/ (CommonJS + d.ts).
+  # The "private": true embargo guard was removed at the 2026-08-07 flip;
+  # registry-publish.sh refuses to publish if it ever comes back.
   (cd "$src" && npm ci --no-audit --no-fund && npm pack --pack-destination "$OUT")
   mv "$OUT/revaly-sdk-$VERSION.tgz" "$OUT/revaly-sdk-typescript.tgz"
   # Packed-typings gate: the hand-written runtime's packed d.ts must compile
@@ -361,8 +361,8 @@ package_python() {
   stamp "$src/runtime/revaly_sdk/_version.py" \
     "s/SDK_VERSION = \"0\\.0\\.0\\.dev0\"/SDK_VERSION = \"$VERSION\"/" \
     "SDK_VERSION = \"$VERSION\""
-  # The "Private :: Do Not Upload" classifier stays in the artifact: it makes PyPI
-  # reject any upload (embargo guard, repo rule 3) and is inert for file installs.
+  # The "Private :: Do Not Upload" embargo classifier was removed at the
+  # 2026-08-07 flip; registry-publish.sh refuses to publish if it ever comes back.
   (cd "$src" && "$py" -m build --outdir "$WORK/pydist")
   cp "$WORK/pydist/revaly_sdk-$VERSION.tar.gz" "$OUT/revaly-sdk-python.tar.gz" \
     || die "expected sdist revaly_sdk-$VERSION.tar.gz missing"

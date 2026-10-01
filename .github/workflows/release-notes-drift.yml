@@ -33,8 +33,10 @@ on:
       - pipeline/package.sh
       - .github/workflows/release-notes-drift.yml
 
+# One group for scheduled and manual runs, so two runs can never both find no
+# open issue and both file one; pull requests (read-only) get their own group.
 concurrency:
-  group: release-notes-drift-${{ github.event_name }}
+  group: release-notes-drift-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
   cancel-in-progress: false
 
 jobs:

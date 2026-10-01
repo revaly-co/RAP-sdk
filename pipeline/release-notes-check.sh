@@ -7,7 +7,9 @@
 # --tag), asserts the note matches what the registry actually serves:
 #   - no pre-flip wording (embargo, interim channel, local-feed installs);
 #   - version ON the registry   -> the note carries the exact install line from
-#                                  pipeline/release-notes.sh (rn_install_cmd);
+#                                  pipeline/release-notes.sh (rn_install_cmd), as
+#                                  its own indented code line (whole-line match,
+#                                  so 0.6.1 never matches 0.6.10);
 #   - version NOT on the registry -> the note says so (rn_not_published_marker)
 #                                  and advertises no registry install.
 # Releases younger than --min-age-hours (default 6) are skipped: Maven Central
@@ -103,7 +105,9 @@ while read -r TAG CREATED; do
   fi
 
   BODY="$(gh release view "$TAG" --repo "$REPO" --json body --jq .body)"
+  BODY="${BODY//$'\r'/}"   # notes edited in the web UI come back CRLF
   INSTALL="$(rn_install_cmd "$LANG_ID" "$VERSION")"
+  INSTALL_LINE="    $INSTALL"   # rn_install_section prints it as an indented code line
   MARKER="$(rn_not_published_marker "$LANG_ID")"
   REGISTRY="$(rn_registry "$LANG_ID")"
   HAS="$(registry_has "$LANG_ID" "$VERSION")"
@@ -114,10 +118,10 @@ while read -r TAG CREATED; do
   fi
   case "$HAS" in
     yes)
-      grep -q -F -- "$INSTALL" <<<"$BODY" ||
+      grep -q -x -F -- "$INSTALL_LINE" <<<"$BODY" ||
         FINDINGS+=("$TAG: $VERSION is on $REGISTRY but the note does not give the registry install (\`$INSTALL\`)") ;;
     no)
-      if grep -q -F -- "$INSTALL" <<<"$BODY"; then
+      if grep -q -x -F -- "$INSTALL_LINE" <<<"$BODY"; then
         FINDINGS+=("$TAG: note tells developers to install from $REGISTRY, which does not serve $VERSION")
       elif ! grep -q -F -- "$MARKER" <<<"$BODY"; then
         FINDINGS+=("$TAG: $VERSION is not on $REGISTRY and the note does not say so ($MARKER)")
