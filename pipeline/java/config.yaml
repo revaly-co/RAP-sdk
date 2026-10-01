@@ -26,6 +26,10 @@
 # to the jakarta.* namespace — a generator-level migration (ADR-SDK-023 revision), not a
 # manifest bump; junit-version stays 5.10.2 because junit-jupiter 6.x ships Java 17
 # bytecode and the enforcer here pins the Java 11 baseline.
+# pom.mustache re-forked 2026-10-01 (security): jackson-version 2.22.2 → 2.22.3 (jackson2
+# block only) — jackson-core GHSA-7hhh-6rmp-j9qf / GHSA-p6pp-m3f8-5c89 and jackson-databind
+# GHSA-cxp5-3px4-pw24 / GHSA-wv8q-qhhj-9h54, all high (Dependabot #90, the core half; the
+# runtime pom carries the same bump directly, #91). jackson-annotations-version stays 2.22.
 # templates/libraries/native/api_doc.mustache + README.mustache — forked 2026-07-15
 # solely to fix auth guidance: the stock java api_doc emits okhttp-gson-style
 # `ApiKeyAuth`/`setApiKeyPrefix` snippets that DO NOT COMPILE against the `native`
