@@ -12,9 +12,10 @@ import (
 // The string is a contract with platform adoption dashboards — it is force-set
 // at the transport layer so the generated core cannot bypass or replace it, and
 // it carries only the coarse tokens below (no hostnames, no distro
-// fingerprints).
+// fingerprints). The version is SDKVersion, not the Version constant, so a
+// module-proxy install reports its real version (SC-624).
 func buildUserAgent() string {
-	return fmt.Sprintf("revaly-sdk-go/%s (%s; %s)", Version, goruntime.Version(), osToken())
+	return fmt.Sprintf("revaly-sdk-go/%s (%s; %s)", SDKVersion(), goruntime.Version(), osToken())
 }
 
 // osToken maps GOOS to the ADR-SDK-005 coarse platform tokens

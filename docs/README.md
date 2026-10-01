@@ -54,6 +54,19 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 
 ## Status snapshot (2026-10-01)
 
+- **v0.7.0 released ×6** off `099ea43` (spec v2.7.0 re-pin, PR #89; security dependency
+  updates, PR #93; SC-622). It is live on NuGet, Maven Central, Packagist, npm, PyPI and the
+  Go proxy, and its release notes are the first written by the SC-517 generator (drift check
+  clean). npm took about 20 minutes to serve the version after the pipeline's successful
+  publish.
+- **Go User-Agent version fixed for module-proxy installs (SC-624).** Every Go install from
+  the module proxy had reported `revaly-sdk-go/0.0.0-dev`, because the proxy serves the
+  unstamped tag tree and stage 5 stamps only the GitHub zip. The User-Agent now takes the
+  module version that the Go toolchain records in the consumer's build info. A stamped build,
+  a local `replace` and in-repo builds are unchanged. Proven end to end: a consumer fetching
+  the fix as a module reports its module version, and a consumer of the stamped zip reports
+  the stamp. It ships with the next Go release.
+
 - **Spec re-pinned v2.6.0 → v2.7.0+7a05e7b (eighth pin, issue #86).** A deprecation-only
   delta of 18 changed lines with no shape change. `bypassPlatform` on the charge
   (`PaymentRequest`) and authorize (`AuthorizeRequest`) request bodies is now
