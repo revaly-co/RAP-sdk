@@ -52,6 +52,32 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-10-01)
+
+- **Published release notes now match the registries (SC-517).** Until today every release
+  note published since the 2026-08-07 flip still told developers that registry publish was
+  embargoed and that the GitHub release was the install channel, with local-feed install
+  steps. The twenty affected releases are v0.5.1, v0.5.2, v0.5.3 and v0.6.0 across the six
+  languages. All twenty were rewritten in place on 2026-10-01: the opening paragraph and the
+  Install section now name the registry package and give its install line, and the
+  traceability and checksum tables are unchanged. `typescript/v0.5.2` now says plainly that
+  it is not on npm, because that version was never published there (recorded deviation). The
+  generator (`pipeline/package.sh`, text in `pipeline/release-notes.sh`) emits the same
+  wording for every future release. ADR-SDK-026 is amended and ADR-SDK-031 is marked
+  Accepted. The stage-6 jobs are now named "Stage 6 - GitHub Release" and "Stage 6 -
+  Registry Publish". **Verified:** every post-flip version is on its registry except npm
+  0.5.2 (NuGet, Maven Central, npm, PyPI, Packagist and the Go proxy queried 2026-10-01). The
+  new daily `release-notes-drift.yml` reported 33 findings before the rewrite and 0 after.
+  Releases before v0.5.1 were left as published, because those versions exist only on
+  GitHub.
+- **Found during the same sweep, not fixed here:** (1) Go modules installed from the module
+  proxy report `User-Agent: revaly-sdk-go/0.0.0-dev`. The proxy serves the unstamped git
+  tree at `languages/go/vX.Y.Z`, so the stage-5 version stamp never reaches Go registry
+  installs (ADR-SDK-005 adoption telemetry under-reports Go). (2) For five of the six languages (all
+  but PHP), the v0.5.1 registry package page shows the README as it was at that commit,
+  which still has the interim install banner. That text is frozen inside the published
+  packages and is gone from 0.5.2 onward.
+
 ## Status snapshot (2026-09-14)
 
 - **Dependabot version updates disabled; security updates kept** (PR #85). Between

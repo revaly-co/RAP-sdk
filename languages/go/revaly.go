@@ -24,9 +24,9 @@ import (
 )
 
 // Version is the SDK package version reported in the User-Agent product token.
-// Release identity comes from per-language `go/vX.Y.Z` tags cut in pipeline
-// stage 5; the tree carries the embargo placeholder until the registry-publish
-// gates close (repo rule 3).
+// Release identity comes from the release tags (`go/vX.Y.Z` for the GitHub
+// release, `languages/go/vX.Y.Z` for the module); the tree between releases
+// carries the placeholder "0.0.0-dev".
 const Version = runtime.Version
 
 // Client construction and configuration (runtime-tdd §1).

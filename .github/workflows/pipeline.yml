@@ -43,20 +43,18 @@ name: Pipeline
 # copy of the committed tree and produces the asset + .sha256 +
 # provenance.json set (the platform spec/v* release model).
 #
-# Stage 6 (interim) — GitHub release: uploads the stage-5 output as a GitHub
-# release on this repo — the sanctioned interim distribution channel (repo
-# rule 3), and the permanent provenance anchor once registries go live
-# (ADR-SDK-031: the GitHub release stays after registry GA).
+# Stage 6 — GitHub release: uploads the stage-5 output as a GitHub release on
+# this repo — the provenance anchor and registry-outage fallback for every
+# version (ADR-SDK-026 as amended 2026-10-01; ADR-SDK-031).
 #
-# Stage 6 (registries) — registry-publish, DARK until flip (ADR-SDK-031):
-# runs on every release tag in the protected `publish` environment, rehearses
-# the full publish path (checksums, ADR-SDK-030 names, embargo-guard
-# integrity, per-registry flip-readiness lint) and contacts NO registry
-# unless the repo variable REGISTRY_PUBLISH_MODE is exactly 'live' AND the
-# flip-day guard-removal PR has shipped — the flip is double-keyed
-# (pipeline/registry-publish.sh enforces both). Registry publish itself stays
-# embargoed until the OQ-3 residuals close (ADR-SDK-019's written ratification
-# landed 2026-08-06); flipping is the runbook in docs/registry-provisioning.md.
+# Stage 6 — registry publish (ADR-SDK-031): runs on every release tag in the
+# protected `publish` environment and publishes to the language's registry.
+# LIVE since the 2026-08-07 flip (REGISTRY_PUBLISH_MODE=live, embargo guards
+# removed); pipeline/registry-publish.sh still enforces the double key, so an
+# unset or non-'live' variable now fails the job without contacting a
+# registry (dark mode with the guards gone is a half-flip). Published release
+# notes are checked against the registries daily (release-notes-drift.yml,
+# SC-517).
 
 permissions:
   contents: read
@@ -1143,7 +1141,7 @@ jobs:
               exit 1 ;;
           esac
           if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Version '${VERSION}' is not plain X.Y.Z — the interim channel ships no pre-release identifiers (ADR-SDK-026)."
+            echo "::error::Version '${VERSION}' is not plain X.Y.Z — releases ship no pre-release identifiers (ADR-SDK-026)."
             exit 1
           fi
           {
@@ -1205,7 +1203,7 @@ jobs:
         if: steps.tag.outputs.lang == 'python'
         run: python3 -m pip install --quiet --require-hashes -r pipeline/requirements/build.txt
 
-      # (go needs no toolchain here: its interim asset is a source-module zip.)
+      # (go needs no toolchain here: its release asset is a source-module zip.)
 
       - name: Package (pipeline/package.sh)
         env:
@@ -1222,15 +1220,15 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # Stage 6 (interim) — GitHub release (ADR-SDK-026): the sanctioned interim
-  # distribution channel while registry publish is embargoed (repo rule 3).
+  # Stage 6 — GitHub release (ADR-SDK-026 as amended 2026-10-01): the
+  # provenance anchor and registry-outage fallback for every version.
   # gh release create FAILS if the release already exists — deliberate: a
   # failed release never resumes via re-run; fix, then cut a new tag
   # (docs/pipeline-and-release.md §1).
   # ---------------------------------------------------------------------------
 
   github-release:
-    name: Stage 6 (interim) - GitHub Release
+    name: Stage 6 - GitHub Release
     runs-on: ubuntu-latest
     needs: package
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -1278,19 +1276,20 @@ jobs:
           echo "Release $REF published with $(echo "$ASSETS" | wc -l) assets."
 
   # ---------------------------------------------------------------------------
-  # Stage 6 (registries) — DARK until the rule-3 gates close (ADR-SDK-031).
-  # Runs on every release tag in the protected `publish` environment so the
-  # deployment policies, artifact plumbing, and per-registry flip readiness
-  # are proven release by release. Contacts NO registry unless
-  # REGISTRY_PUBLISH_MODE (repo variable) is exactly 'live' AND the flip-day
-  # guard-removal PR has shipped — pipeline/registry-publish.sh enforces both
-  # keys. Ordered after the GitHub release: the interim channel (ADR-SDK-026)
-  # is the provenance anchor and is never blocked by registry state; a red
-  # registry job never retracts a shipped GitHub release (fix, new tag).
+  # Stage 6 (registries) — LIVE since the 2026-08-07 flip (ADR-SDK-031).
+  # Runs on every release tag in the protected `publish` environment and
+  # publishes to the language's registry. REGISTRY_PUBLISH_MODE (repo
+  # variable) must be exactly 'live' AND the embargo guards must be absent —
+  # pipeline/registry-publish.sh enforces both keys; any other combination
+  # fails without contacting a registry. Ordered after the GitHub release: the
+  # release (ADR-SDK-026) is the provenance anchor and is never blocked by
+  # registry state; a red registry job never retracts a shipped GitHub
+  # release (fix, new tag) — and it leaves a release note promising a version
+  # the registry never received, which release-notes-drift.yml flags.
   # ---------------------------------------------------------------------------
 
   registry-publish:
-    name: Stage 6 - Registry Publish (dark until flip)
+    name: Stage 6 - Registry Publish
     runs-on: ubuntu-latest
     needs: github-release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')

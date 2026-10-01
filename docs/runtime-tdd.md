@@ -126,8 +126,8 @@ Final names (decided 2026-07-29, ratified 2026-07-30; consistent with the RFC's 
 Names do **not** embed the GitHub org (except Go's module path — ADR-SDK-022 governs its timing).
 Committed metadata now carries the final name in **all six** languages — the npm rename to
 `@revaly/sdk` shipped with the stage-6 prep on 2026-08-03 (ADR-SDK-030 §Consequences,
-ADR-SDK-031). Quickstart install lines switch from the interim GitHub-release artifact to
-registry installs at the flip (runbook in `registry-provisioning.md`).
+ADR-SDK-031). Quickstart install lines have used the registry installs since the
+2026-08-07 flip; GitHub release artifacts remain the provenance anchor and fallback.
 
 ## 8. Mock transport (DX contract §d)
 

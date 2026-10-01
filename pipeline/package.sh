@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stage 5 — package one language as a GitHub release artifact set
-# (docs/pipeline-and-release.md §2 row 5; ADR-SDK-026 interim distribution).
+# (docs/pipeline-and-release.md §2 row 5; ADR-SDK-026 as amended 2026-10-01).
 #
 # The only packaging entry point, local and CI alike:
 #   pipeline/package.sh <language> <version>       e.g.  pipeline/package.sh dotnet 0.1.0
@@ -12,13 +12,13 @@
 # Guarantees (fail-closed):
 #   * packages EXACTLY the committed tree at HEAD (git archive) — never the working
 #     tree, never untracked files;
-#   * <version> must be plain X.Y.Z — the interim channel refuses pre-release
-#     identifiers (no alpha/beta/rc; ADR-SDK-026) and refuses a `v` prefix;
+#   * <version> must be plain X.Y.Z — releases carry no pre-release identifiers
+#     (no alpha/beta/rc; ADR-SDK-026) and no `v` prefix;
 #   * committed manifests stay at their 0.0.0-dev placeholders; the release version
 #     is stamped into the ephemeral staging copy only, and every stamp is verified
 #     (a silently no-op sed is treated as failure);
-#   * registry publish is EMBARGOED (repo rule 3): this script produces files on
-#     disk and never talks to any registry.
+#   * this script produces files on disk and never talks to any registry —
+#     registry publish is stage 6 (pipeline/registry-publish.sh, ADR-SDK-031).
 #
 # Requires: git, jq, sha256sum, tar; plus the language toolchain (dotnet / mvn /
 # php / node+npm / python3 with the `build` package / go). zip is used when
@@ -48,9 +48,8 @@ case " $ALL_LANGS " in
   *) die "unknown language '$LANG_ID' (expected one of: $ALL_LANGS)" ;;
 esac
 
-# Plain semver only. The interim GitHub-release channel ships no pre-release
-# versions (decision 2026-07-20, ADR-SDK-026): a "beta" artifact would look like
-# the pre-1.0 registry publishing that repo rule 3 embargoes.
+# Plain semver only. Releases ship no pre-release versions (decision 2026-07-20,
+# ADR-SDK-026): the same tag drives the GitHub release and the registry publish.
 echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
   || die "version '$VERSION' is not plain X.Y.Z — no v prefix, no pre-release/build suffix (ADR-SDK-026)"
 
@@ -306,8 +305,9 @@ package_typescript() {
   stamp "$src/runtime/src/version.ts" \
     "s/export const SDK_VERSION = '0\\.0\\.0';/export const SDK_VERSION = '$VERSION';/" \
     "export const SDK_VERSION = '$VERSION';"
-  # npm pack runs prepack → tsconfig.build.json emits dist/ (CommonJS + d.ts);
-  # "private": true stays — it blocks npm publish (repo rule 3), not npm pack.
+  # npm pack runs prepack → tsconfig.build.json emits dist/ (CommonJS + d.ts).
+  # The "private": true embargo guard was removed at the 2026-08-07 flip;
+  # registry-publish.sh refuses to publish if it ever comes back.
   (cd "$src" && npm ci --no-audit --no-fund && npm pack --pack-destination "$OUT")
   mv "$OUT/revaly-sdk-$VERSION.tgz" "$OUT/revaly-sdk-typescript.tgz"
   # Packed-typings gate: the hand-written runtime's packed d.ts must compile
@@ -361,8 +361,8 @@ package_python() {
   stamp "$src/runtime/revaly_sdk/_version.py" \
     "s/SDK_VERSION = \"0\\.0\\.0\\.dev0\"/SDK_VERSION = \"$VERSION\"/" \
     "SDK_VERSION = \"$VERSION\""
-  # The "Private :: Do Not Upload" classifier stays in the artifact: it makes PyPI
-  # reject any upload (embargo guard, repo rule 3) and is inert for file installs.
+  # The "Private :: Do Not Upload" embargo classifier was removed at the
+  # 2026-08-07 flip; registry-publish.sh refuses to publish if it ever comes back.
   (cd "$src" && "$py" -m build --outdir "$WORK/pydist")
   cp "$WORK/pydist/revaly_sdk-$VERSION.tar.gz" "$OUT/revaly-sdk-python.tar.gz" \
     || die "expected sdist revaly_sdk-$VERSION.tar.gz missing"
@@ -464,36 +464,8 @@ jq -n \
 
 # --- release notes (stage 5 stamps the version → spec SHA mapping) -------------
 
-case "$LANG_ID" in
-  dotnet)
-    INSTALL_SNIPPET="Download both nupkgs and their .sha256 files, verify, then use the folder as a local NuGet feed:
-
-    dotnet nuget add source ./release-artifacts --name revaly-local
-    dotnet add package Revaly.Sdk --version $VERSION" ;;
-  java)
-    INSTALL_SNIPPET="Download revaly-sdk-java.zip, verify its .sha256, unzip, then consume as a file repository (or unzip into ~/.m2/repository):
-
-    <repository><id>revaly-local</id><url>file://\${basedir}/revaly-sdk-java</url></repository>
-    <dependency><groupId>co.revaly</groupId><artifactId>revaly-sdk</artifactId><version>$VERSION</version></dependency>" ;;
-  php)
-    INSTALL_SNIPPET="Download revaly-sdk-php.zip, verify its .sha256, then:
-
-    composer config repositories.revaly artifact ./release-artifacts/
-    composer require revaly/sdk:$VERSION" ;;
-  typescript)
-    INSTALL_SNIPPET="Download revaly-sdk-typescript.tgz, verify its .sha256, then:
-
-    npm install ./revaly-sdk-typescript.tgz" ;;
-  python)
-    INSTALL_SNIPPET="Download revaly-sdk-python.tar.gz, verify its .sha256, then:
-
-    pip install ./revaly-sdk-python.tar.gz" ;;
-  go)
-    INSTALL_SNIPPET="Download revaly-sdk-go.zip, verify its .sha256, unzip (e.g. to ./third_party/revaly-sdk-go), then:
-
-    go mod edit -replace github.com/revaly-co/rap-sdk/languages/go=./third_party/revaly-sdk-go
-    go get github.com/revaly-co/rap-sdk/languages/go" ;;
-esac
+# shellcheck source=pipeline/release-notes.sh
+. "$REPO_ROOT/pipeline/release-notes.sh"
 
 ASSET_TABLE="$(
   cd "$OUT"
@@ -511,11 +483,7 @@ read \`$GATE_VALUE\`). Only CI runs from a release tag publish releases."
 fi
 
 cat > "$OUT/RELEASE_NOTES.md" <<EOF
-Interim distribution artifact (ADR-SDK-026): registry publish remains embargoed
-(repo rule 3) — this GitHub release is the supported install channel. Registry
-names are **final** (ADR-SDK-030) and registry publish goes live when the
-rule-3 gates close (the stage-6 registry job runs dark until then,
-ADR-SDK-031); GitHub releases continue as the provenance anchor afterwards.
+$(rn_preamble "$LANG_ID" "$VERSION")
 
 ## Traceability (version → spec)
 
@@ -538,12 +506,7 @@ $ASSET_TABLE
 Verify: \`sha256sum -c <asset>.sha256\` next to the downloaded files.
 \`provenance.json\` carries the full spec + generator + gate trail.
 
-## Install (interim)
-
-$INSTALL_SNIPPET
-
-See \`languages/$LANG_ID/README.md\` for the quickstart (charge + all three
-error classes + reconcile, ≤ 15 minutes).
+$(rn_install_section "$LANG_ID" "$VERSION" "$SOURCE_COMMIT")
 EOF
 
 echo "== stage 5 complete: $(ls "$OUT" | tr '\n' ' ')"

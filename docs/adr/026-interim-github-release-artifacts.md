@@ -3,11 +3,62 @@
 **Status:** Accepted — 2026-07-20 (build-sequencing decision of 2026-07-18: release artifacts
 before idiom flags, registry publish last; first-cut version + no-pre-release decision: Dimitri,
 2026-07-20). Built the same day (`../../pipeline/package.sh`, `pipeline.yml` `package` +
-`github-release` jobs).
+`github-release` jobs). **Amended 2026-10-01 (SC-517):** the registry embargo this ADR was
+written under ended on 2026-08-07. The GitHub-release channel continues on every tag, but as
+the provenance anchor and registry-outage fallback, no longer the install channel — see
+§ Amendment.
 **Source:** repo rule 3 (interim-distribution clause) · `../pipeline-and-release.md` §2 rows 5–6,
 §3–4 · ADR-SDK-006 (artifact model) · ADR-SDK-013 (release-cut human gate) · ADR-SDK-015 (GA
 order) · ADR-SDK-016 (tag scheme) · ADR-SDK-019 (license) · ADR-SDK-022 (namespace)
 **Owner:** SC squad (per ADR-SDK-018)
+
+## Amendment — 2026-10-01 (SC-517): the embargo ended on 2026-08-07
+
+On 2026-08-07 the ADR-SDK-031 flip executed: the guard-removal PR merged (#8, 16:39Z),
+`REGISTRY_PUBLISH_MODE` was set to `live`, and **v0.5.1 became the first version published on
+all six registries**. Every release since then is a registry release. The text below is kept
+as written in July; where it and this amendment disagree, this amendment governs.
+
+**What changed:**
+
+- **The channel's role.** Stage 6 still creates a GitHub release with asset + `.sha256` +
+  `provenance.json` on every tag, but it is now the **provenance anchor and registry-outage
+  fallback** (ADR-SDK-031), not "the supported install channel". The registry is the
+  documented install path; the language READMEs have led with it since the flip.
+- **Decision 1** ("no registry surface is touched") is superseded by ADR-SDK-031: the registry
+  job runs after the GitHub release, in the protected `publish` environment.
+- **Decision 2** (Go): the module-form `languages/go/vX.Y.Z` tag **is** now the Go registry
+  publish (pull-based, no push step). `BlockGoModuleFormTags` is disabled; Go releases cut both
+  tag forms, and stage 5 skips the module form (`../registry-provisioning.md`).
+- **Decision 7** (embargo guards) is retired: npm `"private": true` and the PyPI
+  `Private :: Do Not Upload` classifier were removed at the flip (PR #8), after the ADR-SDK-019
+  written ratification landed on 2026-08-06.
+- **Decision 8** (deferrals): the protected `publish` environment, the tag rulesets and the
+  OIDC/GPG bindings landed with ADR-SDK-031. This amendment does not change the status of the
+  other deferred items.
+- **Consequences**, "interim install paths … become the supported merchant path until registry
+  publish": that period ended on 2026-08-07.
+
+**Release notes.** Stage 5 (`../../pipeline/package.sh`, text in
+`../../pipeline/release-notes.sh`) no longer tells developers the registry is embargoed or
+gives local-feed install steps. Each note names the registry package and gives the
+registry install line for that version, and keeps the traceability and checksum tables. The
+notes already published for **v0.5.1, v0.5.2, v0.5.3 and v0.6.0** (twenty releases across the six
+languages) were rewritten in place on 2026-10-01. Only the opening paragraph and the Install
+section changed; the traceability and checksum tables are untouched. One of the twenty is
+different: **`typescript/v0.5.2` is not on npm** (its registry leg failed and was never re-run,
+`../registry-provisioning.md` § Known deviation), and its note says so and points at 0.5.3.
+Releases **before v0.5.1 were not edited**: those versions exist only as GitHub releases, and
+their notes were accurate when published.
+
+**Detection.** `../../.github/workflows/release-notes-drift.yml` runs
+`../../pipeline/release-notes-check.sh` daily. It fails, and keeps one tracking issue open,
+when any published note from v0.5.1 on carries pre-flip wording or disagrees with what its
+registry serves. Stage 5 writes the note before stage 6 publishes, so a failed registry leg
+leaves a note that promises a version the registry never received. This check is what notices.
+
+**Unchanged:** the tag scheme, plain `X.Y.Z` versions, the tag as version source, the
+artifact set, and the gate mechanics (Decisions 2 to 6, apart from the Go note above).
 
 ## Context
 
