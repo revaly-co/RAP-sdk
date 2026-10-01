@@ -23,10 +23,13 @@ import (
 	"github.com/revaly-co/rap-sdk/languages/go/internal/runtime"
 )
 
-// Version is the SDK package version reported in the User-Agent product token.
-// Release identity comes from the release tags (`go/vX.Y.Z` for the GitHub
-// release, `languages/go/vX.Y.Z` for the module); the tree between releases
-// carries the placeholder "0.0.0-dev".
+// Version is the version stamped into the GitHub release zip; the tree between
+// releases, which is also what the Go module proxy serves, carries the
+// placeholder "0.0.0-dev". Release identity comes from the release tags
+// (`go/vX.Y.Z` for the GitHub release, `languages/go/vX.Y.Z` for the module).
+// The User-Agent does not rely on this constant: it reports the module version
+// the Go toolchain records for a proxy install, so platform telemetry sees the
+// real release either way.
 const Version = runtime.Version
 
 // Client construction and configuration (runtime-tdd §1).
