@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.6.0
+API version: 2.7.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -68,9 +68,8 @@ the type is inferred. See the `AuthorizeRequest` schema for the per-type require
 
 To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
-A `404` originates from the fallback-processor path (reached when `bypassPlatform: true`
-routes the payment directly to it, or when platform failover dispatches it): the fallback
-processor could not find a resource the request references.
+A `404` is also returned when the deprecated `bypassPlatform` field is `true`: the request is
+refused before it reaches any payment processor.
 
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
@@ -521,9 +520,8 @@ the type is inferred. See the `PaymentRequest` schema for the per-type required 
 
 To charge a previously stored payment method, omit `paymentMethodType` and supply `paymentMethod.paymentMethodId`.
 
-A `404` originates from the fallback-processor path (reached when `bypassPlatform: true`
-routes the payment directly to it, or when platform failover dispatches it): the fallback
-processor could not find a resource the request references.
+A `404` is also returned when the deprecated `bypassPlatform` field is `true`: the request is
+refused before it reaches any payment processor.
 
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().

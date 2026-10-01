@@ -16,7 +16,7 @@ Name | Type | Description | Notes
 **PaymentMethod** | [**PaymentMethod**](PaymentMethod.md) |  | [optional] 
 **OrderId** | **string** | Order identifier from the merchant system | [optional] 
 **StoreOnSuccess** | **bool** | Whether to store the payment method on successful authorization | [optional] 
-**BypassPlatform** | **bool** | When true, bypass the primary Revaly processor and execute only the fallback flow | [optional] [default to false]
+**BypassPlatform** | **bool** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. | [optional] [default to false]
 **CustomerIp** | **string** | Customer&#39;s IP address | [optional] 
 **CustomerId** | **string** | Customer identifier | [optional] 
 **GatewayFields** | **Dictionary&lt;string, Object&gt;** | Additional gateway-specific fields | [optional] 

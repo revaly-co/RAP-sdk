@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 **payment_method** | [**\Revaly\Sdk\Core\Model\PaymentMethod**](PaymentMethod.md) |  | [optional]
 **order_id** | **string** | Order identifier from the merchant system | [optional]
 **store_on_success** | **bool** | Whether to store the payment method on successful transaction | [optional]
-**bypass_platform** | **bool** | When true, bypass the primary Revaly processor and execute only the fallback flow | [optional] [default to false]
+**bypass_platform** | **bool** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. | [optional] [default to false]
 **customer_ip** | **string** | Customer&#39;s IP address | [optional]
 **customer_id** | **string** | Customer identifier | [optional]
 **gateway_fields** | **array<string,mixed>** | Additional gateway-specific fields | [optional]
