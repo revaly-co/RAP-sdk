@@ -136,12 +136,14 @@ logs):**
 1. `charge-approved` — `4111111111111111` 12/**2027**, USD — success surface, `transactionId`
    non-empty, correlation id observed via the wire-trace hook (the designed success-path
    observer, DX §c).
-2. `charge-declined` — a **decline PAN** (`4000000000000002`) on the same live 12/**2027**
-   expiry: the card number drives the outcome, verified on both targets 2026-09-04. A
+2. `charge-declined` — a **decline PAN** (`4000000000000002`) on an **expired** 12/**2020**
+   request expiry: the card number declines it on the prod sandbox and the expiry declines it
+   on Backbone staging, verified on both targets 2026-10-06. A
    decline is a **success-surface business outcome**, not a failure class.
-   *(Superseded lever, 2026-07-18 → 2026-09-03: the same approve PAN with 12/2020, on the
-   assumption that expiry drives the outcome. Killed by the vault cutover — see the
-   2026-09-04 record at the end of this ADR.)*
+   *(Superseded levers: 2026-07-18 → 2026-09-03, the approve PAN with 12/2020, on the
+   assumption that expiry drives the outcome, killed by the vault cutover; 2026-09-04 →
+   2026-10-05, the decline PAN on a live 12/2027 expiry, which stopped declining on staging
+   on 2026-10-03. See the 2026-09-04 and 2026-10-06 records at the end of this ADR.)*
 3. `charge-validation-rejected` — **empty card number** → PermanentRejection 400. Chosen
    because it passes every client-side model (python's pydantic enforces the spec's
    `amount ≥ 0` and id max-length locally, so those triggers never reach the wire) while the
@@ -305,6 +307,7 @@ RAP_SMOKE_BASE_URL              Backbone staging base URL — HOST ROOT ONLY, no
 RAP_SMOKE_API_KEY               staging E2E-pool key
 RAP_SMOKE_GATEWAY_ROUTING_ID    staging routing token for a gateway that approves
                                 4111111111111111 and DECLINES 4000000000000002
+                                on an expired expiry
 vars.RAP_SMOKE_FAULT_INJECT     pre-dispatch
 ```
 
@@ -319,8 +322,9 @@ passes **both** steps — step 1 `RESULT: PASS (7/8 passed, 1 skipped)` with
 taxonomy is now proven against real servers in all six languages, with **nothing demoted to
 mock-only coverage**. The staging gateway that makes this work is one that produces a real
 decline; it also restores `reconcile-found-declined (outcome=Declined)`. *(As written in 2026-07
-the decline lever was an expired expiry; it became the decline PAN on 2026-09-04 — see the record
-at the end of this ADR. Nothing else in this paragraph changes.)*
+the decline lever was an expired expiry; it became the decline PAN on 2026-09-04, and the decline
+PAN on an expired expiry on 2026-10-06 — see the records at the end of this ADR. Nothing else in
+this paragraph changes.)*
 
 **Two staging-provisioning traps, both hit on 2026-07-25 and both reproduced locally:**
 
@@ -335,9 +339,11 @@ at the end of this ADR. Nothing else in this paragraph changes.)*
    transaction binds — and then fails `reconcile-found-declined` with `expected outcome Declined,
    got Approved`. Confirmed independently by the integration app reporting `transactionStatus=1`
    where 2 was required. *(As written on 2026-07-25 this trap named the expiry as the lever; the
-   lever changed on 2026-09-03 — see the 2026-09-04 record at the end. The trap itself is
-   unchanged: whatever the lever is, a gateway that ignores it fails at reconcile, not at
-   charge.)*
+   lever changed on 2026-09-03 and again on 2026-10-06 — see the two records at the end. On
+   staging the decline also depends on the expired request expiry the row sends, not on the
+   card number alone. The trap itself is unchanged: whatever the lever is, a gateway that
+   ignores it fails the suite. Since 2026-07-25 `charge-declined` asserts `transactionStatus=2`
+   itself, so the failure now shows at charge and again at reconcile.)*
 
 ---
 
@@ -476,3 +482,60 @@ number, not only its expiry, which would break a PAN-driven lever the same way i
 expiry-driven one. Nothing observed suggests it does so for these synthetic sandbox cards, and
 the nightly is the detector: a `charge-declined` red on an unchanged commit means the lever moved
 again, and this record is the place to look first.
+
+---
+
+## Decline lever adjusted: the decline PAN now rides an expired request expiry (2026-10-06)
+
+**What happened.** The nightly smoke went red on all six languages on 2026-10-03 (run
+37102009390) and stayed red on each nightly through 2026-10-06 (run 37421831379), on commit
+`2e997f5`, the same commit that was green on 2026-10-02. Only step 2 (Backbone staging) failed,
+on `charge-declined` and `reconcile-found-declined`. Step 1 (prod sandbox) passed throughout. No
+SDK change and no repo change. The nightly is advisory, so nothing was blocked, but stage 4 is
+blocking on release tags, so no language could have been released while these rows were red.
+
+**Root cause.** On Backbone staging the decline PAN was never declined for its number.
+CyberSource declined it because the expiry that reached the gateway had passed: the staging
+smoke merchant's vault record for that PAN holds a passed expiry, and until 2026-10-02 dispatch
+always sent the stored date. Gateways-api SC-627 (PR #369, on staging 2026-10-02) changed which
+expiry a vault-token charge sends. The request's expiry is now sent when the vault's has passed
+and the request's is valid and later. A vault expiry still in force is always sent, and so is a
+passed one when the request's is missing, invalid, passed or not later. The decline row
+sent a live 12/2027, so from 2026-10-03 that date reached CyberSource and the charge approved.
+SC-627 is correct by design, which is why the smoke moved rather than the platform.
+
+**Change made.** `charge-declined` keeps the decline PAN and sends an expired 12/2020 request
+expiry instead of 12/2027, in all six suites. Under the SC-627 rule an expired request expiry
+never replaces the stored one, so the passed date reaches CyberSource again and the charge
+declines. On the prod sandbox the card number still declines the charge on Stripe whatever the
+expiry. Every other scenario keeps the live 12/2027 expiry. The 2026-09-04 statement above that
+the card number drives the outcome holds for the prod sandbox only.
+
+**Verified.** dotnet, go, typescript and python run live against both targets on 2026-10-06:
+step 1 `RESULT: PASS (7/8 passed, 1 skipped)`, step 2 `RESULT: PASS (8/8 passed, 0 skipped)`,
+including the two rows that were red. The php and java suites take the textually identical
+change and were not run from a workstation; the stage-4 run dispatched on the fix branch is
+what exercises all six.
+
+**What is verified and what is inferred.** Verified: the failing rows and the failing step in
+the four red nightly runs; the SC-627 rule, read from the Gateways-api tests that pin it; the
+live results above. Verified from staging telemetry on 2026-10-04: on the decline row the
+gateway span tag `gateways.expiry_source` read `Merchant` on 2026-10-03 and 2026-10-04, when the
+charge approved, and was absent on 2026-10-02, when CyberSource declined it with response code
+20126, with the same card, token, gateway and route on all three days. Inferred, not read
+directly: the expiry stored on the vault record, and how that record came to hold a passed date.
+
+**Residual risk.** This reverses the 2026-09-04 guidance above that any expiry-based trigger is
+fragile. The smoke owner chose it on 2026-10-06 as the adjustment that restores the row; on
+staging the row depends on vault data again. Two changes would turn it red on an unchanged
+commit:
+
+1. Account Updater replaces the stored expiry on the staging record with a date still in force.
+   The vault's date is then sent and CyberSource approves.
+2. Expiry incrementation is extended to the CyberSource gateway. A passed vault date is then
+   advanced before it is sent. Gateways-api has no such switch for CyberSource as of
+   2026-10-06, so this needs a platform code change, not a configuration change.
+
+The nightly is the detector for both. Two durable alternatives were identified and not taken in
+this change: pointing the staging routing id at a Stripe test-mode gateway, where the card number
+alone declines, or finding a decline trigger native to the CyberSource sandbox.

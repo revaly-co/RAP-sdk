@@ -104,6 +104,10 @@ environment secret alongside URL + key.
 > owns the stored expiry, so the smoke drives its decline with PAN `4000000000000002` instead —
 > see ADR-SDK-024 §"Decline lever replaced". The `50130` finding above is unaffected.
 >
+> **Updated 2026-10-06:** the decline row sends PAN `4000000000000002` on an expired 12/2020
+> again. On this prod sandbox scope the card number is still what declines it; the expired
+> expiry is there for the Backbone staging target — see ADR-SDK-024 §"Decline lever adjusted".
+>
 > **Timeline, verified vs inferred.** Verified: the enrolment migration landed 2026-08-11; the
 > 2026-08-12 nightly failed stage-4 across all six languages with exactly this `50130` signature;
 > nightly runs from 2026-08-13 through 2026-08-24 06:09 UTC were green; a live probe on

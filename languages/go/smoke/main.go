@@ -69,18 +69,24 @@ const faultInjectHeader = "X-Backbone-Fault-Inject"
 //	and approves (nightly 30983100997: red 6/6, 2026-08-05).
 const skipDirectPathRetryCount = 1
 
-// Two synthetic test PANs; the CARD NUMBER drives the outcome, on a live
-// expiry both targets accept. Expiry stopped being a lever on 2026-09-02:
-// since RAP-vault-service ADR-043 a charge is forwarded as a vault token and
-// dispatch detokenizes the STORED expiry (Account Updater owns it), so the
-// request's expiry never reaches the gateway. Live-verified 2026-09-04 against
-// both smoke targets — prod sandbox routes stripe_payment_intents, Backbone
-// staging routes cyber_source_direct:
+// Two synthetic test PANs. Every row charges a live 12/2027 expiry except
+// charge-declined, which sends declinePAN on an EXPIRED 12/2020, because the
+// two smoke targets decline it for different reasons — prod sandbox routes
+// stripe_payment_intents, Backbone staging routes cyber_source_direct.
 //
-//	testPAN     approves on both (10000 Approved).
-//	declinePAN  declines on both (prod 20022 "Bank decline"; staging 20126,
-//	5/5 runs across three amounts) — Stripe's published generic_decline
-//	card, https://docs.stripe.com/testing.
+// Prod sandbox declines on the CARD NUMBER: declinePAN is Stripe's published
+// generic_decline card, https://docs.stripe.com/testing.
+//
+// Staging declines on the EXPIRY: a charge is forwarded as a vault token
+// (RAP-vault-service ADR-043) and CyberSource declines declinePAN on the
+// passed expiry the vault holds for it, not on the number. Since Gateways-api
+// SC-627 (staging 2026-10-02) dispatch sends the REQUEST's expiry when the
+// stored one has passed and the request's is valid and later, so a live
+// request expiry approved there (nightly red on all six from 2026-10-03). An
+// expired request expiry never replaces the stored one.
+//
+// Live-verified 2026-10-06 on both targets; testPAN approves on both (10000
+// Approved). History and residual risk: ADR-SDK-024.
 const (
 	testPAN    = "4111111111111111"
 	declinePAN = "4000000000000002"
@@ -156,8 +162,8 @@ func main() {
 	// 2.3.0); paymentMethodType is optional since spec 2.3.0 (Backbone #251
 	// inference) — sent explicitly here to keep the wire shape deterministic
 	// across the six languages. orderId + email are additionally required by
-	// the staging gateway for an approval. The CARD NUMBER drives the
-	// outcome — see testPAN / declinePAN.
+	// the staging gateway for an approval. The card number and the expiry
+	// drive the outcome — see testPAN / declinePAN.
 	// recovery.retryCount is stamped on every charge — see
 	// skipDirectPathRetryCount for why the smoke must stay off the direct path
 	// on both targets.
@@ -214,11 +220,11 @@ func main() {
 		}},
 
 		{"charge-declined", func(ctx context.Context) (string, error) {
-			// The decline PAN declines deterministically (live expiry — the
-			// card number drives the outcome). A decline is a business outcome
+			// The decline PAN on an expired expiry declines deterministically
+			// on both targets (see declinePAN). A decline is a business outcome
 			// on the SUCCESS surface — not a failure class;
 			// reconcile-found-declined proves the mapping below.
-			transaction, err := client.Charge(ctx, buildCharge(declinedID, declinePAN, "2027", true))
+			transaction, err := client.Charge(ctx, buildCharge(declinedID, declinePAN, "2020", true))
 			if err != nil {
 				return "", classified("expected a declined charge on the success surface", err)
 			}

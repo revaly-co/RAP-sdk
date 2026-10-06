@@ -52,8 +52,16 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
-## Status snapshot (2026-10-01)
+## Status snapshot (2026-10-06)
 
+- **Nightly contract smoke restored (SC-648).** The stage-4 smoke failed on all six languages
+  on every nightly from 2026-10-03 to 2026-10-06, on the Backbone staging step only: the
+  decline row was approved. No SDK code was at fault and no release was attempted in that
+  window. Staging had always declined the decline PAN on a passed expiry held in the vault,
+  not on the card number, and since Gateways-api SC-627 (staging 2026-10-02) a valid, later
+  request expiry is sent in place of a passed vault one. The decline row now sends the decline
+  PAN on an expired 12/2020 in all six suites. On staging the row depends on vault data again,
+  which is recorded as residual risk in ADR-SDK-024 §"Decline lever adjusted".
 - **v0.7.0 released ×6** off `099ea43` (spec v2.7.0 re-pin, PR #89; security dependency
   updates, PR #93; SC-622). It is live on NuGet, Maven Central, Packagist, npm, PyPI and the
   Go proxy, and its release notes are the first written by the SC-517 generator (drift check

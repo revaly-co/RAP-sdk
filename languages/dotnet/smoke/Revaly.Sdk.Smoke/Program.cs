@@ -48,17 +48,23 @@ internal static class Program
     //     on the dispatch path, so a first-attempt fault charge never reaches
     //     the seam and approves (nightly 30983100997: red 6/6, 2026-08-05).
     private const int SkipDirectPathRetryCount = 1;
-    // Two synthetic test PANs; the CARD NUMBER drives the outcome, on a live
-    // expiry both targets accept. Expiry stopped being a lever on 2026-09-02:
-    // since RAP-vault-service ADR-043 a charge is forwarded as a vault token
-    // and dispatch detokenizes the STORED expiry (Account Updater owns it), so
-    // the request's expiry never reaches the gateway. Live-verified 2026-09-04
-    // against both smoke targets — prod sandbox routes stripe_payment_intents,
-    // Backbone staging routes cyber_source_direct:
-    //   TestPan     approves on both (10000 Approved).
-    //   DeclinePan  declines on both (prod 20022 "Bank decline"; staging 20126,
-    //               5/5 runs across three amounts) — Stripe's published
-    //               generic_decline card, https://docs.stripe.com/testing.
+    // Two synthetic test PANs. Every row charges a live 12/2027 expiry except
+    // charge-declined, which sends DeclinePan on an EXPIRED 12/2020, because
+    // the two smoke targets decline it for different reasons — prod sandbox
+    // routes stripe_payment_intents, Backbone staging routes
+    // cyber_source_direct:
+    //   prod sandbox  the CARD NUMBER: DeclinePan is Stripe's published
+    //     generic_decline card, https://docs.stripe.com/testing.
+    //   staging       the EXPIRY: a charge is forwarded as a vault token
+    //     (RAP-vault-service ADR-043) and CyberSource declines DeclinePan on
+    //     the passed expiry the vault holds for it, not on the number. Since
+    //     Gateways-api SC-627 (staging 2026-10-02) dispatch sends the REQUEST's
+    //     expiry when the stored one has passed and the request's is valid and
+    //     later, so a live request expiry approved there (nightly red on all
+    //     six from 2026-10-03). An expired request expiry never replaces the
+    //     stored one.
+    // Live-verified 2026-10-06 on both targets; TestPan approves on both
+    // (10000 Approved). History and residual risk: ADR-SDK-024.
     private const string TestPan = "4111111111111111";
     private const string DeclinePan = "4000000000000002";
 
@@ -146,10 +152,11 @@ internal static class Program
 
             ("charge-declined", async () =>
             {
-                // A decline PAN declines deterministically (live expiry). A decline is a
+                // The decline PAN on an expired expiry declines deterministically
+                // on both targets (see DeclinePan). A decline is a
                 // business outcome on the SUCCESS surface — not a failure
                 // class; reconcile-found-declined proves the mapping below.
-                var response = await client.Payments.ChargePaymentAsync(BuildCharge(declinedId, DeclinePan, "2027", routingId));
+                var response = await client.Payments.ChargePaymentAsync(BuildCharge(declinedId, DeclinePan, "2020", routingId));
                 if (!response.TryOk(out var transaction) || transaction is null)
                 {
                     throw new SmokeFailure("2xx response did not bind a TransactionResponse on the declined path");

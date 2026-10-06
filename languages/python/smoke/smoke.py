@@ -71,17 +71,22 @@ FAULT_INJECT_HEADER = "X-Backbone-Fault-Inject"
 #     and approves (nightly 30983100997: red 6/6, 2026-08-05).
 SKIP_DIRECT_PATH_RETRY_COUNT = 1
 
-# Two synthetic test PANs; the CARD NUMBER drives the outcome, on a live
-# expiry both targets accept. Expiry stopped being a lever on 2026-09-02:
-# since RAP-vault-service ADR-043 a charge is forwarded as a vault token and
-# dispatch detokenizes the STORED expiry (Account Updater owns it), so the
-# request's expiry never reaches the gateway. Live-verified 2026-09-04 against
-# both smoke targets — prod sandbox routes stripe_payment_intents, Backbone
-# staging routes cyber_source_direct:
-#   TEST_PAN     approves on both (10000 Approved).
-#   DECLINE_PAN  declines on both (prod 20022 "Bank decline"; staging 20126,
-#   5/5 runs across three amounts) — Stripe's published generic_decline
-#   card, https://docs.stripe.com/testing.
+# Two synthetic test PANs. Every row charges a live 12/2027 expiry except
+# charge-declined, which sends DECLINE_PAN on an EXPIRED 12/2020, because the
+# two smoke targets decline it for different reasons — prod sandbox routes
+# stripe_payment_intents, Backbone staging routes cyber_source_direct:
+#   prod sandbox  the CARD NUMBER: DECLINE_PAN is Stripe's published
+#     generic_decline card, https://docs.stripe.com/testing.
+#   staging       the EXPIRY: a charge is forwarded as a vault token
+#     (RAP-vault-service ADR-043) and CyberSource declines DECLINE_PAN on the
+#     passed expiry the vault holds for it, not on the number. Since
+#     Gateways-api SC-627 (staging 2026-10-02) dispatch sends the REQUEST's
+#     expiry when the stored one has passed and the request's is valid and
+#     later, so a live request expiry approved there (nightly red on all six
+#     from 2026-10-03). An expired request expiry never replaces the stored
+#     one.
+# Live-verified 2026-10-06 on both targets; TEST_PAN approves on both (10000
+# Approved). History and residual risk: ADR-SDK-024.
 TEST_PAN = "4111111111111111"
 DECLINE_PAN = "4000000000000002"
 
@@ -266,10 +271,11 @@ def main() -> int:
         return f" (txn={transaction.transaction_id} correlation={last_correlation[0]})"
 
     def charge_declined() -> str:
-        # The decline PAN declines deterministically (live expiry). A decline is a business
+        # The decline PAN on an expired expiry declines deterministically on both
+        # targets (see DECLINE_PAN). A decline is a business
         # outcome on the SUCCESS surface — not a failure class;
         # reconcile-found-declined proves the mapping below.
-        transaction = client.charge(build_charge(declined_id, DECLINE_PAN, "2027", routing_id))
+        transaction = client.charge(build_charge(declined_id, DECLINE_PAN, "2020", routing_id))
         if not transaction.transaction_id:
             raise SmokeFailure("transactionId is empty on the declined-charge surface")
         # Assert the decline actually happened — a gateway that approves the decline
