@@ -54,6 +54,23 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 
 ## Status snapshot (2026-10-19)
 
+- **Spec re-pinned v2.12.2 → v2.13.0+98915d8 (tenth pin, SC-660 AC1).** One platform artifact,
+  prose only (Backbone PR #392, RFC-071 D8): the `ErrorResponse` `details` description now
+  documents the edge firewall's 403 block body (`details.edgeRejection` equal to the JSON
+  boolean `true` means the request never reached the platform and its `merchantTransactionId`
+  was not consumed; `details.reference` is the edge tracking reference; the body is served as
+  `text/html`, so every 403 body is parsed as JSON; the match is on the marker, never on the
+  `error` sentence; a 403 without the marker is final) and carries the per-operation
+  instruction; `code` stays documented as absent on every 4xx, the edge 403 included; the 403
+  and 409 descriptions gain the matching prose. The bundle differs from v2.12.2 in exactly five
+  lines; `details` stays typeless and no shape, bound, enum, status or error code changes, so
+  the classification already on `main` (ADR-SDK-033) is unchanged and the regeneration diff is
+  description text in the six `ErrorResponse` models and API docs plus the version banner (439
+  files, none new). This is the pin ADR-SDK-033 Decision 9 requires: the minor release ×6 can
+  now be cut. Verified locally against the regenerated cores: .NET 0 errors (the two known
+  CS0612 core warnings) and 84/84; Java core compiles and 99/99; PHP manifests, strict PSR-4
+  and lint clean, 107/107; TypeScript strict core `tsc` and typecheck clean, 131/131; Python
+  160/160; Go build, vet and tests clean.
 - **Edge-rejection marker implemented in all six runtimes (SC-660 AC2 → ADR-SDK-033; on
   `main`, unreleased).** Since 2026-10-16 the production edge firewall answers a blocked
   request with a 403 whose JSON body carries `details.edgeRejection: true` and

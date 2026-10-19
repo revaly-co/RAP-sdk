@@ -47,7 +47,7 @@ Create and store a payment method in the vault. Supports both credit card detail
 | **200** | Payment method successfully created |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action. A 403 whose body carries &#x60;details.edgeRejection: true&#x60; is not this rejection: the edge firewall blocked the request in front of the platform, the request did not reach it, and the merchantTransactionId was not consumed. That body is served as text/html, so parse the body of every 403 as JSON regardless of the content type. The per-operation instruction is in the ErrorResponse &#x60;details&#x60; description. A 403 without the marker is final. |  * X-Correlation-ID -  <br>  |
 | **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
 | **500** | Internal server error |  * X-Correlation-ID -  <br>  |
 | **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
@@ -90,7 +90,7 @@ Retrieve detailed information about a specific payment method.  Returns payment 
 | **200** | Successfully retrieved payment method details |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action. A 403 whose body carries &#x60;details.edgeRejection: true&#x60; is not this rejection: the edge firewall blocked the request in front of the platform, the request did not reach it, and the merchantTransactionId was not consumed. That body is served as text/html, so parse the body of every 403 as JSON regardless of the content type. The per-operation instruction is in the ErrorResponse &#x60;details&#x60; description. A 403 without the marker is final. |  * X-Correlation-ID -  <br>  |
 | **404** | Resource not found |  * X-Correlation-ID -  <br>  |
 | **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
 | **500** | Internal server error |  * X-Correlation-ID -  <br>  |
@@ -136,7 +136,7 @@ Retrieve a paginated list of stored payment methods.  Returns payment methods wi
 | **200** | Successfully retrieved payment methods |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action. A 403 whose body carries &#x60;details.edgeRejection: true&#x60; is not this rejection: the edge firewall blocked the request in front of the platform, the request did not reach it, and the merchantTransactionId was not consumed. That body is served as text/html, so parse the body of every 403 as JSON regardless of the content type. The per-operation instruction is in the ErrorResponse &#x60;details&#x60; description. A 403 without the marker is final. |  * X-Correlation-ID -  <br>  |
 | **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
 | **500** | Internal server error |  * X-Correlation-ID -  <br>  |
 | **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
@@ -180,7 +180,7 @@ Update a credit card verification value (CVV) so the card can be transacted agai
 | **200** | Payment method recached successfully |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action. A 403 whose body carries &#x60;details.edgeRejection: true&#x60; is not this rejection: the edge firewall blocked the request in front of the platform, the request did not reach it, and the merchantTransactionId was not consumed. That body is served as text/html, so parse the body of every 403 as JSON regardless of the content type. The per-operation instruction is in the ErrorResponse &#x60;details&#x60; description. A 403 without the marker is final. |  * X-Correlation-ID -  <br>  |
 | **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
 | **500** | Internal server error |  * X-Correlation-ID -  <br>  |
 | **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
@@ -223,7 +223,7 @@ Redact sensitive payment method information for compliance purposes.  This opera
 | **200** | Payment method redacted successfully |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action. A 403 whose body carries &#x60;details.edgeRejection: true&#x60; is not this rejection: the edge firewall blocked the request in front of the platform, the request did not reach it, and the merchantTransactionId was not consumed. That body is served as text/html, so parse the body of every 403 as JSON regardless of the content type. The per-operation instruction is in the ErrorResponse &#x60;details&#x60; description. A 403 without the marker is final. |  * X-Correlation-ID -  <br>  |
 | **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
 | **500** | Internal server error |  * X-Correlation-ID -  <br>  |
 | **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
@@ -267,7 +267,7 @@ Update an existing payment method's information.  Allows updating billing inform
 | **200** | Payment method updated successfully |  * X-Correlation-ID -  <br>  |
 | **400** | Bad request - invalid parameters or request body. Validation failures carry a &#x60;details&#x60; object keyed by the offending fields; business-rule rejections may carry &#x60;error&#x60; alone. |  * X-Correlation-ID -  <br>  |
 | **401** | Unauthorized - invalid or missing API key |  * X-Correlation-ID -  <br>  |
-| **403** | Forbidden - the authenticated principal is not permitted to perform this action |  * X-Correlation-ID -  <br>  |
+| **403** | Forbidden - the authenticated principal is not permitted to perform this action. A 403 whose body carries &#x60;details.edgeRejection: true&#x60; is not this rejection: the edge firewall blocked the request in front of the platform, the request did not reach it, and the merchantTransactionId was not consumed. That body is served as text/html, so parse the body of every 403 as JSON regardless of the content type. The per-operation instruction is in the ErrorResponse &#x60;details&#x60; description. A 403 without the marker is final. |  * X-Correlation-ID -  <br>  |
 | **422** | Unprocessable entity - validation succeeded but the request cannot be processed |  * X-Correlation-ID -  <br>  |
 | **500** | Internal server error |  * X-Correlation-ID -  <br>  |
 | **503** | Service unavailable - upstream dependency temporarily unavailable |  * X-Correlation-ID -  <br>  |
