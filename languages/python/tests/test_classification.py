@@ -45,6 +45,83 @@ def test_503_not_processed_narrows_to_outcome_unknown_on_api_version_20():
         make_client(mock, api_version="2.0").charge(payment_request())
 
 
+def test_edge_rejection_403_is_transient_failure():
+    mock = RapMockTransport()
+    mock.charge().returns_edge_rejection_403()
+    with pytest.raises(RapTransientFailure) as exc_info:
+        make_client(mock).charge(payment_request())
+    failure = exc_info.value
+    assert failure.status == 403
+    assert failure.is_edge_rejection is True
+    assert failure.edge_reference == synthetic_data.EDGE_REFERENCE
+    assert failure.code is None  # code stays absent on 4xx
+    assert failure.correlation_id == synthetic_data.DEFAULT_CORRELATION_ID
+    assert SYNTHETIC_API_KEY not in str(failure)
+
+
+def test_edge_marker_is_honoured_on_api_version_20_too():
+    # Unlike 503 + not_processed, the marker is not part of ErrorResponse.code: the
+    # edge sits in front of the API, so both pins honour it (ADR-SDK-033).
+    mock = RapMockTransport()
+    mock.charge().returns_edge_rejection_403()
+    with pytest.raises(RapTransientFailure) as exc_info:
+        make_client(mock, api_version="2.0").charge(payment_request())
+    assert exc_info.value.is_edge_rejection is True
+
+
+def test_edge_html_block_page_403_stays_permanent_rejection():
+    mock = RapMockTransport()
+    mock.charge().returns_edge_html_page_403()
+    with pytest.raises(RapPermanentRejection) as exc_info:
+        make_client(mock).charge(payment_request())
+    assert exc_info.value.status == 403
+    assert exc_info.value.is_edge_rejection is False
+    assert exc_info.value.edge_reference is None
+
+
+def test_platform_403_without_the_marker_stays_permanent_rejection():
+    mock = RapMockTransport()
+    mock.charge().returns_platform_forbidden_403()
+    with pytest.raises(RapPermanentRejection) as exc_info:
+        make_client(mock).charge(payment_request())
+    assert exc_info.value.status == 403
+    assert exc_info.value.is_edge_rejection is False
+    assert exc_info.value.edge_reference is None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        '{"details":{"edgeRejection":"true","reference":"x"},"error":"s"}',
+        '{"details":{"edgeRejection":1,"reference":"x"},"error":"s"}',
+        '{"details":{"edgeRejection":false,"reference":"x"},"error":"s"}',
+        '{"details":{"edgeRejection":null},"error":"s"}',
+        '{"details":"edgeRejection","error":"s"}',
+        '{"details":[true],"error":"s"}',
+        '{"edgeRejection":true,"reference":"x","error":"s"}',
+        '{"details":{"edgeRejection":true}}<html>',
+        '{"details":{"edgeRejection":true},"n":NaN}',
+    ],
+)
+def test_only_the_exact_json_boolean_marker_counts(body):
+    mock = RapMockTransport()
+    mock.charge().returns(403, body)
+    with pytest.raises(RapPermanentRejection) as exc_info:
+        make_client(mock).charge(payment_request())
+    assert exc_info.value.is_edge_rejection is False
+    assert exc_info.value.edge_reference is None
+
+
+def test_marker_on_a_non_403_status_does_not_change_classification():
+    # The marker is read on 403 only: a 500 carrying it is still OutcomeUnknown.
+    mock = RapMockTransport()
+    mock.charge().returns(500, synthetic_data.edge_rejection_body("x"))
+    with pytest.raises(RapOutcomeUnknown) as exc_info:
+        make_client(mock).charge(payment_request())
+    assert exc_info.value.is_edge_rejection is False
+    assert exc_info.value.edge_reference is None
+
+
 def test_bare_503_is_outcome_unknown():
     mock = RapMockTransport()
     mock.charge().returns_bare_503()

@@ -5,9 +5,10 @@
 // header injection and classification still run, so a merchant test exercises
 // the same safety-relevant code paths as production. It simulates every row of the
 // failover-contract §2 table (PermanentRejection statuses, TransientFailure
-// including 503+not_processed, the OutcomeUnknown family) and both reconcile
-// outcomes, supports scripting consecutive outcomes, records every request,
-// and asserts the User-Agent contract. Synthetic data only (ADR-SDK-020).
+// including 503+not_processed and the edge-rejection 403 of ADR-SDK-033, the
+// OutcomeUnknown family) and both reconcile outcomes, supports scripting
+// consecutive outcomes, records every request, and asserts the User-Agent
+// contract. Synthetic data only (ADR-SDK-020).
 package raptest
 
 import (
@@ -36,6 +37,10 @@ type outcome struct {
 	status int
 	body   string
 	err    error
+	// contentType overrides the response Content-Type ("" means
+	// application/json). The edge-rejection rows serve JSON as text/html,
+	// exactly as the production edge does (ADR-SDK-033).
+	contentType string
 }
 
 // MockTransport is an http.RoundTripper scripted per operation. Zero value is
@@ -110,6 +115,29 @@ func (o *MockOperation) ReturnsPermanentRejection(status int) *MockOperation {
 // code=not_processed (provable non-dispatch → TransientFailure).
 func (o *MockOperation) ReturnsNotProcessed503() *MockOperation {
 	return o.append(outcome{status: 503, body: SyntheticError("service unavailable", "not_processed")})
+}
+
+// ReturnsEdgeRejection403 scripts the edge-rejection row (ADR-SDK-033): a 403
+// blocked at the edge firewall whose JSON marker body (details.edgeRejection:
+// true + details.reference) is served as text/html, exactly as the production
+// edge serves it. The request never reached the platform → *TransientFailure
+// with IsEdgeRejection set and EdgeReference = SyntheticEdgeReference.
+func (o *MockOperation) ReturnsEdgeRejection403() *MockOperation {
+	return o.append(outcome{status: 403, body: SyntheticEdgeRejection(SyntheticEdgeReference), contentType: "text/html"})
+}
+
+// ReturnsEdgeHTMLPage403 scripts a negative control (ADR-SDK-033): the legacy
+// edge HTML block page — a 403 whose body is not JSON, so no marker can be
+// read. Stays *PermanentRejection.
+func (o *MockOperation) ReturnsEdgeHTMLPage403() *MockOperation {
+	return o.append(outcome{status: 403, body: SyntheticHTMLBlockPage(), contentType: "text/html"})
+}
+
+// ReturnsPlatformForbidden403 scripts a negative control (ADR-SDK-033): the
+// platform's own 403 — a JSON ErrorResponse without the edge marker. Stays
+// *PermanentRejection.
+func (o *MockOperation) ReturnsPlatformForbidden403() *MockOperation {
+	return o.append(outcome{status: 403, body: SyntheticError("forbidden by the platform", "")})
 }
 
 // ReturnsBare503 scripts a 503 WITHOUT the not_processed code → OutcomeUnknown.
@@ -225,8 +253,12 @@ func (m *MockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, next.err
 	}
 
+	contentType := next.contentType
+	if contentType == "" {
+		contentType = "application/json"
+	}
 	header := http.Header{}
-	header.Set("Content-Type", "application/json")
+	header.Set("Content-Type", contentType)
 	header.Set("X-Correlation-ID", correlationID)
 	return &http.Response{
 		StatusCode: next.status,

@@ -44,8 +44,8 @@ verdict rather than a raw error:
 
 | You get | It means | You do |
 | --- | --- | --- |
-| **PermanentRejection** | Received and rejected (400/401/403/404/422) | Fix or decline. Failing over repeats the same rejection anywhere. |
-| **TransientFailure** | **Definitively not processed** (provably never sent, or `503` + `code: not_processed`) | Route to your own gateway immediately. |
+| **PermanentRejection** | Received and rejected (400/401/404/422, or a 403 without the edge marker) | Fix or decline. Failing over repeats the same rejection anywhere. |
+| **TransientFailure** | **Definitively not processed** (provably never sent, `503` + `code: not_processed`, or a `403` blocked at the edge firewall — the typed error says so and carries the firewall reference) | Route to your own gateway immediately. On an edge rejection, charge/authorize may also fix the request content and retry; capture/void/refund/refund-cancel retry the same request. |
 | **OutcomeUnknown** | **May have been processed** (timeout after send, connection reset, ambiguous 5xx) | Reconcile first, then act on the verdict. |
 
 Each language expresses this in its native idiom — exceptions in .NET/Java/PHP/Python, typed
@@ -191,11 +191,15 @@ paths itself — that separation is what keeps the outcome of a payment unambigu
   `Found | NotFoundYet`; a provable `SafeToFailover` verdict arrives with platform P-2 as a minor
   release, which is why every verdict switch keeps a default branch.
 - **Pinning `X-Api-Version: 2.0` narrows the contract.** `ErrorResponse.code` is outside the 2.0
-  documented surface, so fast failover narrows to client-provable never-sent failures. Pin 2.1
-  unless you have a frozen 2.0 integration.
-- **Edge-generated errors are HTML, not `ErrorResponse`.** Front Door and WAF responses fall
-  through the open-string `code` path to `OutcomeUnknown` by design; only RAP-core's own
-  `503 {code: "not_processed"}` licenses immediate failover.
+  documented surface, so a `503` + `not_processed` classifies `OutcomeUnknown` on 2.0 and fast
+  failover narrows to client-provable never-sent failures plus the edge-rejection 403, which is
+  honoured on both pins (ADR-SDK-033). Pin 2.1 unless you have a frozen 2.0 integration.
+- **Two platform-minted signals license immediate failover.** RAP-core's own
+  `503 {code: "not_processed"}`, and since 2026-10-16 the edge firewall's block response: a 403
+  whose JSON body (served as `text/html`) carries `details.edgeRejection: true`, proving the
+  request never reached the platform (ADR-SDK-033). Every other edge-generated error (5xx,
+  the legacy HTML page) falls through the open-string `code` path to `OutcomeUnknown` or stays
+  `PermanentRejection` by design.
 - **This is the RAP SDK.** The Revaly Trust Network has its own separate library for its own API
   and audience (ADR-SDK-017).
 

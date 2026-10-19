@@ -9,8 +9,9 @@ namespace Revaly.Sdk.Errors;
 public enum RapFailureClass
 {
     /// <summary>
-    /// The platform received and rejected the request (HTTP 400/401/403/404/422).
-    /// Fix or decline. Never fail over — the same request fails anywhere.
+    /// The platform received and rejected the request (HTTP 400/401/404/422, or a 403
+    /// without the edge-rejection marker). Fix or decline. Never fail over — the same
+    /// request fails anywhere.
     /// </summary>
     PermanentRejection,
 
@@ -18,7 +19,9 @@ public enum RapFailureClass
     /// The request definitively did not process: either the transport can prove it
     /// was never sent (connection refused, DNS or TLS failure before the request was
     /// accepted), or the platform proved non-dispatch (503 with code
-    /// <c>not_processed</c>). Safe to route to the merchant's own gateway immediately.
+    /// <c>not_processed</c>; a 403 whose body carries <c>details.edgeRejection: true</c>,
+    /// i.e. blocked at the edge firewall — ADR-SDK-033). Safe to route to the merchant's
+    /// own gateway immediately.
     /// </summary>
     TransientFailure,
 

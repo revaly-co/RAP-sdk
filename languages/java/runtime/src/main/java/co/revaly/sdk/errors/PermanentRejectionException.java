@@ -3,9 +3,9 @@ package co.revaly.sdk.errors;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * The request was received by RAP-core and rejected (HTTP 400/401/403/404/422). The payment was NOT
- * processed and the same request fails anywhere — fix or decline, <b>never fail over</b>
- * (failover-contract §2).
+ * The request was received by RAP-core and rejected (HTTP 400/401/404/422, or a 403 without the
+ * edge-rejection marker). The payment was NOT processed and the same request fails anywhere — fix
+ * or decline, <b>never fail over</b> (failover-contract §2).
  */
 public final class PermanentRejectionException extends RapCoreException {
     private static final long serialVersionUID = 1L;
@@ -16,7 +16,9 @@ public final class PermanentRejectionException extends RapCoreException {
             String errorMessage,
             JsonNode details,
             String correlationId,
-            String rawErrorBody) {
+            String rawErrorBody,
+            boolean edgeRejection,
+            String edgeReference) {
         super(
                 RapFailureClass.PERMANENT_REJECTION,
                 buildMessage(
@@ -31,6 +33,8 @@ public final class PermanentRejectionException extends RapCoreException {
                 details,
                 correlationId,
                 rawErrorBody,
-                null);
+                null,
+                edgeRejection,
+                edgeReference);
     }
 }

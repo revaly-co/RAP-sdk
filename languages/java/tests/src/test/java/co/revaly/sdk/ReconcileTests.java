@@ -132,6 +132,33 @@ class ReconcileTests {
     }
 
     @Test
+    void edgeRejectedReadKeepsPollingWithinBudget() throws Exception {
+        // A 403 blocked at the edge never reached the platform (ADR-SDK-033): it is a
+        // transport-class failure of the READ, not a rejection — keep polling.
+        RapMockTransport mock = new RapMockTransport();
+        mock.reconcile(TestClient.MTX).returnsEdgeRejection403().thenFoundApproved();
+        RapClient client = TestClient.client(mock);
+
+        RapReconcileVerdict.Found found =
+                (RapReconcileVerdict.Found) client.reconcile(TestClient.MTX, quickPolicy(3));
+        assertEquals(RapTransactionOutcome.APPROVED, found.getOutcome());
+        assertEquals(2, mock.getRequests().size());
+    }
+
+    @Test
+    void sustainedEdgeRejectedReadsEndAsNotFoundYetWithLastStatus403() throws Exception {
+        RapMockTransport mock = new RapMockTransport();
+        mock.reconcile(TestClient.MTX).returnsEdgeRejection403();
+        RapClient client = TestClient.client(mock);
+
+        RapReconcileVerdict verdict = client.reconcile(TestClient.MTX, quickPolicy(2));
+
+        RapReconcileVerdict.NotFoundYet notFound = (RapReconcileVerdict.NotFoundYet) verdict;
+        assertEquals(403, notFound.getLastHttpStatus());
+        assertEquals(2, mock.getRequests().size());
+    }
+
+    @Test
     void rejectedReadEscapesInsteadOfPolling() {
         RapMockTransport mock = new RapMockTransport();
         mock.reconcile(TestClient.MTX).returnsPermanentRejection(401);

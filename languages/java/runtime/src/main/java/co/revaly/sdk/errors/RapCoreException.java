@@ -28,6 +28,8 @@ public abstract class RapCoreException extends Exception {
     private final transient JsonNode details;
     private final String correlationId;
     private final String rawErrorBody;
+    private final boolean edgeRejection;
+    private final String edgeReference;
 
     RapCoreException(
             RapFailureClass failureClass,
@@ -38,7 +40,9 @@ public abstract class RapCoreException extends Exception {
             JsonNode details,
             String correlationId,
             String rawErrorBody,
-            Throwable cause) {
+            Throwable cause,
+            boolean edgeRejection,
+            String edgeReference) {
         super(message, cause);
         this.failureClass = failureClass;
         this.statusCode = statusCode;
@@ -47,6 +51,8 @@ public abstract class RapCoreException extends Exception {
         this.details = details;
         this.correlationId = correlationId;
         this.rawErrorBody = rawErrorBody;
+        this.edgeRejection = edgeRejection;
+        this.edgeReference = edgeRejection ? edgeReference : null;
     }
 
     /** The failure class assigned by the normative classification algorithm. */
@@ -75,12 +81,34 @@ public abstract class RapCoreException extends Exception {
     }
 
     /**
-     * The opaque {@code details} member of the error body, if any. The SDK never interprets it
-     * (failover-contract §2) and it may contain merchant payload echoes — treat as sensitive when
-     * logging (it is excluded from {@link #getMessage()}).
+     * The opaque {@code details} member of the error body, if any. The SDK reads exactly one key of
+     * it — {@code edgeRejection} on a 403 (ADR-SDK-033, surfaced as {@link #isEdgeRejection()} /
+     * {@link #getEdgeReference()}) — and otherwise never interprets it (failover-contract §2). It
+     * may contain merchant payload echoes — treat as sensitive when logging (it is excluded from
+     * {@link #getMessage()}).
      */
     public JsonNode getDetails() {
         return details;
+    }
+
+    /**
+     * True when the production edge firewall blocked this request before it reached the platform:
+     * an HTTP 403 whose body carries {@code details.edgeRejection: true} (ADR-SDK-033). Such a
+     * failure is a {@link TransientFailureException} — the payment was definitively not processed.
+     * Charge and authorize: fail over, or fix the request content and retry; capture, void, refund
+     * and refund-cancel: retry the same request.
+     */
+    public boolean isEdgeRejection() {
+        return edgeRejection;
+    }
+
+    /**
+     * The edge firewall's tracking reference ({@code details.reference}, equal to the {@code
+     * x-azure-ref} response header) when {@link #isEdgeRejection()} is true; otherwise null. Quote
+     * it to support — it identifies the exact firewall decision.
+     */
+    public String getEdgeReference() {
+        return edgeReference;
     }
 
     /**

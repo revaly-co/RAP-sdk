@@ -67,6 +67,120 @@ final class ClassificationTest extends TestCase
         }
     }
 
+    public function testEdgeRejection403IsTransientFailure(): void
+    {
+        $mock = new RapMockTransport();
+        $mock->charge()->returnsEdgeRejection403();
+        $client = TestClients::withMock($mock);
+
+        try {
+            $client->charge(TestClients::chargeRequest());
+            self::fail('expected TransientFailureException');
+        } catch (TransientFailureException $e) {
+            self::assertSame(RapFailureClass::TransientFailure, $e->getFailureClass());
+            self::assertSame(403, $e->getStatusCode());
+            self::assertTrue($e->isEdgeRejection());
+            self::assertSame(SyntheticData::EDGE_REFERENCE, $e->getEdgeReference());
+            self::assertNull($e->getErrorCode(), 'code stays absent on 4xx');
+            self::assertSame(SyntheticData::DEFAULT_CORRELATION_ID, $e->getCorrelationId());
+            self::assertStringNotContainsString(TestClients::API_KEY, $e->getMessage());
+        }
+    }
+
+    public function testEdgeMarkerIsHonouredOnVersion20PinToo(): void
+    {
+        // Unlike 503 + not_processed, the marker is not part of ErrorResponse.code: the
+        // edge sits in front of the API, so both pins honour it (ADR-SDK-033).
+        $mock = new RapMockTransport();
+        $mock->charge()->returnsEdgeRejection403();
+        $client = TestClients::withMock($mock, apiVersion: '2.0');
+
+        try {
+            $client->charge(TestClients::chargeRequest());
+            self::fail('expected TransientFailureException');
+        } catch (TransientFailureException $e) {
+            self::assertTrue($e->isEdgeRejection());
+        }
+    }
+
+    public function testEdgeHtmlBlockPage403StaysPermanentRejection(): void
+    {
+        $mock = new RapMockTransport();
+        $mock->charge()->returnsEdgeHtmlPage403();
+        $client = TestClients::withMock($mock);
+
+        try {
+            $client->charge(TestClients::chargeRequest());
+            self::fail('expected PermanentRejectionException');
+        } catch (PermanentRejectionException $e) {
+            self::assertSame(403, $e->getStatusCode());
+            self::assertFalse($e->isEdgeRejection());
+            self::assertNull($e->getEdgeReference());
+        }
+    }
+
+    public function testPlatform403WithoutTheMarkerStaysPermanentRejection(): void
+    {
+        $mock = new RapMockTransport();
+        $mock->charge()->returnsPlatformForbidden403();
+        $client = TestClients::withMock($mock);
+
+        try {
+            $client->charge(TestClients::chargeRequest());
+            self::fail('expected PermanentRejectionException');
+        } catch (PermanentRejectionException $e) {
+            self::assertSame(403, $e->getStatusCode());
+            self::assertFalse($e->isEdgeRejection());
+            self::assertNull($e->getEdgeReference());
+        }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function nonMarkerBodies(): iterable
+    {
+        yield 'string "true"' => ['{"details":{"edgeRejection":"true","reference":"x"},"error":"s"}'];
+        yield 'number 1' => ['{"details":{"edgeRejection":1,"reference":"x"},"error":"s"}'];
+        yield 'false' => ['{"details":{"edgeRejection":false,"reference":"x"},"error":"s"}'];
+        yield 'null' => ['{"details":{"edgeRejection":null},"error":"s"}'];
+        yield 'details is a string' => ['{"details":"edgeRejection","error":"s"}'];
+        yield 'details is an array' => ['{"details":[true],"error":"s"}'];
+        yield 'marker at the root' => ['{"edgeRejection":true,"reference":"x","error":"s"}'];
+        yield 'trailing tokens after the JSON' => ['{"details":{"edgeRejection":true}}<html>'];
+        yield 'NaN literal (not JSON)' => ['{"details":{"edgeRejection":true},"n":NaN}'];
+    }
+
+    #[DataProvider('nonMarkerBodies')]
+    public function testOnlyTheExactJsonBooleanMarkerCounts(string $body): void
+    {
+        $mock = new RapMockTransport();
+        $mock->charge()->returns(403, $body);
+        $client = TestClients::withMock($mock);
+
+        try {
+            $client->charge(TestClients::chargeRequest());
+            self::fail('expected PermanentRejectionException');
+        } catch (PermanentRejectionException $e) {
+            self::assertFalse($e->isEdgeRejection());
+            self::assertNull($e->getEdgeReference());
+        }
+    }
+
+    public function testMarkerOnANon403StatusDoesNotChangeClassification(): void
+    {
+        // The marker is read on 403 only: a 500 carrying it is still OutcomeUnknown.
+        $mock = new RapMockTransport();
+        $mock->charge()->returns(500, SyntheticData::edgeRejectionBody('x'));
+        $client = TestClients::withMock($mock);
+
+        try {
+            $client->charge(TestClients::chargeRequest());
+            self::fail('expected OutcomeUnknownException');
+        } catch (OutcomeUnknownException $e) {
+            self::assertFalse($e->isEdgeRejection());
+            self::assertNull($e->getEdgeReference());
+        }
+    }
+
     public function testBare503IsOutcomeUnknown(): void
     {
         $mock = new RapMockTransport();

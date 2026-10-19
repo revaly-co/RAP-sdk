@@ -147,6 +147,25 @@ def test_degraded_reads_carry_last_status_into_not_found_yet():
     assert verdict.last_http_status == 503
 
 
+def test_edge_rejected_read_keeps_polling_within_budget():
+    # A 403 blocked at the edge never reached the platform (ADR-SDK-033): it is a
+    # transport-class failure of the READ, not a rejection — keep polling.
+    mock = RapMockTransport()
+    mock.reconcile().returns_edge_rejection_403().then_found_approved()
+    verdict = _reconcile(mock)
+    assert isinstance(verdict, Found)
+    assert len(mock.recorded_requests) == 2
+
+
+def test_sustained_edge_rejected_reads_end_as_not_found_yet_with_last_status_403():
+    mock = RapMockTransport()
+    mock.reconcile().returns_edge_rejection_403()
+    verdict = _reconcile(mock, ReconcilePolicy(max_attempts=2, overall_budget=30, initial_delay=0))
+    assert isinstance(verdict, NotFoundYet)
+    assert verdict.last_http_status == 403
+    assert len(mock.recorded_requests) == 2
+
+
 def test_non_404_permanent_rejection_escapes():
     # Polling never fixes a rejected read (bad credentials, malformed id).
     mock = RapMockTransport()

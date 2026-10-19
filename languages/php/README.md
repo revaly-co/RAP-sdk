@@ -21,8 +21,8 @@ licenses failover:
 
 | Exception | Meaning | What you do |
 | --- | --- | --- |
-| `PermanentRejectionException` | Received and rejected (400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
-| `TransientFailureException` | **Definitively not processed** (provably never sent, or `503` + `code: not_processed`) | Route to your own gateway immediately. |
+| `PermanentRejectionException` | Received and rejected (400/401/404/422, or a 403 without the edge marker) | Fix or decline — failing over reproduces the same rejection anywhere. |
+| `TransientFailureException` | **Definitively not processed** (provably never sent, `503` + `code: not_processed`, or a `403` blocked at the edge firewall — `isEdgeRejection()`) | Route to your own gateway immediately. On an edge rejection, charge/authorize may also fix the request content and retry; capture/void/refund/refund-cancel retry the same request. Quote `getEdgeReference()` to support. |
 | `OutcomeUnknownException` | **May have been processed** (timeout after send, 500/502/504, bare 503, reset) | **Reconcile before acting** — see the quickstart. |
 
 ## Quickstart (sandbox key → first charge, ≤ 15 minutes)
@@ -90,6 +90,10 @@ try {
     echo "rejected [{$e->getStatusCode()}]: {$e->getApiError()} (ref {$e->getCorrelationId()})\n";
 } catch (TransientFailureException $e) {
     // Definitively not processed — route to your own gateway immediately.
+    // $e->isEdgeRejection(): the edge firewall blocked the request before it reached the
+    // platform; $e->getEdgeReference() identifies that firewall decision for support.
+    // Charge/authorize: fail over (or fix the content and retry);
+    // capture/void/refund/refund-cancel: retry the same request.
     chargeOnFallbackGateway($request);
 } catch (OutcomeUnknownException $e) {
     // May have been processed — reconcile BEFORE acting (double-charge hazard).
@@ -151,7 +155,8 @@ The client pins `X-Api-Version: 2.1` by default; `2.0` is selectable
 (`apiVersion: '2.0'`). **Behavioural difference on 2.0:** the `ErrorResponse.code`
 field is not part of the 2.0 documented contract, so `503` + `code: not_processed`
 classifies as `OutcomeUnknown` (reconcile) instead of `TransientFailureException`
-(immediate failover). Pin 2.1 unless you have a frozen 2.0 integration.
+(immediate failover). Pin 2.1 unless you have a frozen 2.0 integration. The edge-rejection
+marker is honoured on both pins (ADR-SDK-033): the edge sits in front of the API.
 
 ## Testing your failover handler — no network
 
@@ -175,7 +180,10 @@ $requests = $mock->getRequests();                   // recorded, with headers
 ```
 
 Scenario methods cover the whole §2 table: `returnsPermanentRejection(422)`,
-`returnsNotProcessed503()`, `throwsConnectionRefused()`, `throwsDnsFailure()`,
+`returnsNotProcessed503()`, `returnsEdgeRejection403()` (the edge firewall's marker body
+served as `text/html` → `TransientFailureException` with `isEdgeRejection()`), its negative
+controls `returnsEdgeHtmlPage403()` / `returnsPlatformForbidden403()` (→
+`PermanentRejectionException`), `throwsConnectionRefused()`, `throwsDnsFailure()`,
 `throwsSslHandshakeFailure()`, `returnsBare503()`, `returnsServerError()`,
 `returnsBadGateway()`, `returnsGatewayTimeout()`, `throwsTimeoutAfterSend()`,
 `throwsConnectTimeout()`, `throwsConnectionReset()`, plus reconcile scripting
@@ -203,8 +211,9 @@ belongs to your code, against your risk policy.
 - **Every call stands alone** — no cross-request state, no circuit breaker, so behaviour
   under load is the behaviour you tested.
 - **The reconcile poll you bound is the only loop the SDK owns.**
-- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`. Message
-  text and latency are reported to you and excluded from the verdict.
+- **Classification rests on evidence only**: HTTP status, `ErrorResponse.code`, and on a
+  403 the single `details.edgeRejection` key (ADR-SDK-033). Message text and latency are
+  reported to you and excluded from the verdict.
 - **Recovery beyond this boundary belongs to RAP-core** — resubmission and
   `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
 

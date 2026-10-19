@@ -264,8 +264,9 @@ Four habits keep your handler working across SDK minors:
 3. **Branch on class, not status.** Status codes are inputs to the algorithm, and the algorithm can
    gain rows. The three classes are the stable surface.
 4. **Pin `X-Api-Version: 2.1`** (the default). Selecting `2.0` drops `ErrorResponse.code` from the
-   documented surface, which narrows fast failover to provable never-sent failures — worth knowing
-   if you inherit a frozen 2.0 integration.
+   documented surface, which narrows fast failover to provable never-sent failures plus the
+   edge-rejection 403 (honoured on both pins, ADR-SDK-033) — worth knowing if you inherit a
+   frozen 2.0 integration.
 
 Support policy: current and previous minor per package, deprecations announced in release notes and
 registry metadata, a migration guide per major, and security patches on the latest GA of every

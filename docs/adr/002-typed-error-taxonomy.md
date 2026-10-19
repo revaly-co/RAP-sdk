@@ -1,6 +1,6 @@
 # ADR-SDK-002 — Typed Error Taxonomy: HTTP Status + Transport Condition + Scoped Safety Signal
 
-**Status:** Accepted — decided 2026-07-06 (D-2); amended 2026-07-09 by D-7 (ADR-SDK-007); ratified with RFC-046 approval 2026-07-10
+**Status:** Accepted — decided 2026-07-06 (D-2); amended 2026-07-09 by D-7 (ADR-SDK-007); ratified with RFC-046 approval 2026-07-10; **amended 2026-10-18 by ADR-SDK-033** (edge-rejection marker: a 403 carrying `details.edgeRejection: true` is TransientFailure; `details` is opaque except that one key)
 **Source:** RFC-046 §5.2, decisions D-2 and D-7 · resolves PRD-057 Open Question 1
 **Owner:** SC Eng
 **Safety-critical:** yes — this taxonomy is the merchant's failover trigger contract
@@ -10,7 +10,9 @@
 The RAP-core `ErrorResponse` body is `{ error: string, details?: <any> }`. There is historically
 **no machine-readable error code** — callers can only key off HTTP status. (`details` is
 deliberately typeless: the runtime truth is any JSON kind or a raw string; the SDK must treat it as
-opaque and must never re-type it.)
+opaque and must never re-type it. *Amended 2026-10-18, ADR-SDK-033:* on a 403 the SDK reads exactly
+one structured key of it, `details.edgeRejection`, and carries `details.reference` as the edge
+reference; everything else in `details` stays opaque.)
 
 Verified platform facts the taxonomy must respect (validated against the platform service's main
 branch on 2026-07-09; provenance appendix in `../decision-log.md`):
@@ -37,15 +39,17 @@ V1 typed errors key off **HTTP status + transport condition + one scoped safety 
 
 | Error class | Trigger | Payment state at RAP-core | Caller action |
 | --- | --- | --- | --- |
-| **PermanentRejection** | HTTP 400 / 401 / 403 / 404 / 422 | Request received and rejected | Fix or decline. **Never fail over** — the same request will fail anywhere. |
-| **TransientFailure** *(safe to fail over)* | Connection refused, DNS/TLS failure **before the request was accepted** (client-provable never-sent); **503 carrying `code: not_processed`** (circuit-open fast-fail, P-1) | **Definitively not processed** | Route to own gateway immediately — the PRD's first-layer failover path. |
+| **PermanentRejection** | HTTP 400 / 401 / 403 (without the edge marker) / 404 / 422 | Request received and rejected | Fix or decline. **Never fail over** — the same request will fail anywhere. |
+| **TransientFailure** *(safe to fail over)* | Connection refused, DNS/TLS failure **before the request was accepted** (client-provable never-sent); **503 carrying `code: not_processed`** (circuit-open fast-fail, P-1); **403 whose JSON body carries `details.edgeRejection: true`** (blocked at the edge, never reached the platform — ADR-SDK-033) | **Definitively not processed** | Route to own gateway immediately — the PRD's first-layer failover path. On an edge rejection: charge/authorize fail over or fix and retry; capture/void/refund/refund-cancel retry the same request. |
 | **OutcomeUnknown** | Deadline exceeded after send; connection reset mid-flight; 500; 502/504 (edge); **503 without** `code: not_processed` | **May have been processed** | Reconcile before acting (ADR-SDK-003/009). |
 
 Supporting rules:
 
 - `ErrorResponse.error` is carried as the human-readable message — **never parsed or matched on**;
   message strings are not contract.
-- `ErrorResponse.details` is passed through untouched as an opaque value.
+- `ErrorResponse.details` is passed through untouched as an opaque value — except that on a 403
+  the body is parsed (whatever its `Content-Type`) for the single key `details.edgeRejection`,
+  and `details.reference` is surfaced as the edge reference (ADR-SDK-033).
 - The *full* machine-readable error-code taxonomy is deferred (OQ-2, lands before Wave 2 as a 2.1
   contract refinement); when it lands, SDKs expose it in a **minor** release.
 - Unknown/future `code` values must be handled forward-compatibly: an unrecognized code is treated
@@ -93,6 +97,8 @@ Classification algorithm (normative pseudocode; implement idiomatically per lang
 classify(outcome):
   if transport error and request provably never sent        → TransientFailure
      (connection refused; DNS resolution failure; TLS handshake failure)
+  if HTTP status == 403 and body is JSON (any Content-Type)
+     and body.details.edgeRejection == true (JSON boolean)  → TransientFailure  (ADR-SDK-033)
   if HTTP status in {400, 401, 403, 404, 422}               → PermanentRejection
   if HTTP status == 503 and body.code == "not_processed"    → TransientFailure
   if HTTP status >= 500                                     → OutcomeUnknown
@@ -107,4 +113,8 @@ classify(outcome):
   fails on future values (OQ-2 will extend it).
 - Expose the three classes as the ecosystem's native error idiom (exceptions / result types / `err`
   returns) per `../runtime-tdd.md`; each error object carries: class, HTTP status (if any),
-  `code` (if any), message, opaque `details`, correlation id, and the raw response for escalation.
+  `code` (if any), message, opaque `details`, correlation id, the edge-rejection flag and edge
+  reference (ADR-SDK-033), and the raw response for escalation.
+- The edge marker test is exact (ADR-SDK-033): only a JSON parse that yields an object whose
+  `details` object has `edgeRejection` equal to the JSON boolean `true` counts; a failed parse,
+  an HTML page or any other value means "no marker" and the 403 stays PermanentRejection.

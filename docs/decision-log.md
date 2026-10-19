@@ -43,6 +43,15 @@ Every finalized decision from **RFC-046 "RAP Integration SDK"** (internal Conflu
 | OQ-14 | PRD-057 Musts resolved via formal deviation acceptance recorded on the PRD (Charles); approval given ahead as tracked follow-up | 2026-07-10 | Product | ADR-SDK-021 |
 | OQ-15 | Create `rap-sdk` under existing `revaly-co` org (created 2026-06-09, verified); decoupled from org rename; `FlexPay-io` parked permanently | 2026-07-10 | DevOps + Leadership | ADR-SDK-022 |
 
+## RFC revisions after approval
+
+Changes to RFC-046's own tables that were decided elsewhere and carried into this document set as
+RFC revisions (the Confluence copy is updated with the release that ships them).
+
+| ID | Revision | Date | Decided by | RFC anchor | ADR |
+| --- | --- | --- | --- | --- | --- |
+| R-1 | §5.2 failure table: a 403 whose JSON body carries `details.edgeRejection: true` (the edge firewall's block response since 2026-10-16, RFC-071 D8) classifies as **TransientFailure**, not PermanentRejection; no new class; `isEdgeRejection` + `edgeReference` on every typed error; per-operation instruction; reconcile keeps polling on a marker 403 | 2026-10-18 | Dimitri Pankov (SDK author, RFC-071 OQ6) | §5.2 | ADR-SDK-033 (amends ADR-SDK-002, 029) |
+
 Still open: **OQ-2** and the **OQ-3 provisioning residuals** (PyPI org approval; publish-day
 OIDC/webhook + Maven workload-identity bindings via the flip runbook — the NuGet `Revaly.*`
 prefix was reserved 2026-08-03 and the Maven GPG key vaulted 2026-08-06; per-registry table in

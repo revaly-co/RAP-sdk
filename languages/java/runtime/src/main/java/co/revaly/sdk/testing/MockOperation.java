@@ -63,11 +63,42 @@ public final class MockOperation {
         return enqueueBody(status, SyntheticData.errorBody("synthetic rejection", null));
     }
 
+    /**
+     * Negative control (ADR-SDK-033): the legacy edge HTML block page — a 403 whose body is not
+     * JSON, so no marker can be read. Stays PermanentRejection.
+     */
+    public MockOperation returnsEdgeHtmlPage403() {
+        return enqueueBody(403, "text/html", SyntheticData.htmlBlockPage());
+    }
+
+    /**
+     * Negative control (ADR-SDK-033): the platform's own 403 — a JSON {@code ErrorResponse} without
+     * the edge marker. Stays PermanentRejection.
+     */
+    public MockOperation returnsPlatformForbidden403() {
+        return enqueueBody(403, SyntheticData.errorBody("forbidden by the platform", null));
+    }
+
     // ---- TransientFailure rows ---------------------------------------------------
 
     /** 503 with {@code code: not_processed} — provable non-dispatch, immediate failover. */
     public MockOperation returnsNotProcessed503() {
         return enqueueBody(503, SyntheticData.errorBody("platform breaker open", "not_processed"));
+    }
+
+    /**
+     * 403 blocked at the edge firewall (ADR-SDK-033): the JSON marker body ({@code
+     * details.edgeRejection: true} + {@code details.reference}) served as {@code text/html},
+     * exactly as the production edge serves it. The request never reached the platform — {@code
+     * isEdgeRejection()} is true and the class is TransientFailure.
+     */
+    public MockOperation returnsEdgeRejection403() {
+        return returnsEdgeRejection403(SyntheticData.EDGE_REFERENCE);
+    }
+
+    /** {@link #returnsEdgeRejection403()} with a caller-chosen tracking reference. */
+    public MockOperation returnsEdgeRejection403(String reference) {
+        return enqueueBody(403, "text/html", SyntheticData.edgeRejectionBody(reference));
     }
 
     /** Connection refused before the request was sent (never-sent proof). */
@@ -174,8 +205,12 @@ public final class MockOperation {
     // ---- Internals ------------------------------------------------------------------
 
     private MockOperation enqueueBody(int status, String body) {
+        return enqueueBody(status, "application/json", body);
+    }
+
+    private MockOperation enqueueBody(int status, String contentType, String body) {
         Map<String, String> headers = new LinkedHashMap<>();
-        headers.put("Content-Type", "application/json");
+        headers.put("Content-Type", contentType);
         correlationCounter++;
         headers.put("X-Correlation-ID", "mock-corr-" + correlationCounter);
         script.addLast(MockResult.response(status, body, headers));

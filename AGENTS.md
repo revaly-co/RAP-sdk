@@ -46,6 +46,8 @@ how long you waited:
 
 ```
 if transport error and request provably never sent          → TransientFailure
+if HTTP status == 403 and body is JSON (any Content-Type)
+   and body.details.edgeRejection == true (JSON boolean)     → TransientFailure   (ADR-SDK-033)
 if HTTP status in {400, 401, 403, 404, 422}                 → PermanentRejection
 if HTTP status == 503 and body.code == "not_processed"      → TransientFailure
 if HTTP status >= 500                                        → OutcomeUnknown
@@ -56,12 +58,20 @@ Supporting rules:
 
 - `ErrorResponse.code` and `transactionType` are **open strings**, never closed enums. A `code`
   the SDK does not recognize is handled as absent, which resolves to `OutcomeUnknown`.
-- `details` is opaque. Do not parse it for control flow.
+- `details` is opaque, with exactly one exception: on a 403 the runtime reads
+  `details.edgeRejection` (must be the JSON boolean `true`) and carries `details.reference` as
+  the edge reference (ADR-SDK-033). Do not parse anything else in it for control flow.
 - When a language's HTTP stack cannot prove the request was never sent, the outcome is
   `OutcomeUnknown`. The safe-to-fail-over class is reserved for provable non-dispatch.
-- Only RAP-core's own `503 {code: "not_processed"}` licenses immediate failover. Edge (Front
-  Door / WAF) error bodies are HTML rather than `ErrorResponse`, and the edge cannot mint that
-  code; a `504` can fire in about 4 seconds and never implies your deadline elapsed.
+- Two platform-minted signals license immediate failover: RAP-core's own
+  `503 {code: "not_processed"}` and the edge firewall's marker-bearing 403 (its block response
+  since 2026-10-16: a JSON body served as `text/html`, proving the request never reached the
+  platform). The legacy edge HTML page, a JSON 403 without the marker and the platform's own
+  403 stay `PermanentRejection`; a `504` can fire in about 4 seconds and never implies your
+  deadline elapsed. Every typed error exposes the edge flag and reference (`isEdgeRejection`,
+  `edgeReference` in each language's idiom); on an edge rejection, charge and authorize fail
+  over or fix the content and retry, while capture, void, refund and refund-cancel retry the
+  same request.
 
 ### What each class means for calling code
 
@@ -131,7 +141,7 @@ Reconcile symbols: `rap.ReconcileAsync(...)` + `ReconcilePolicy` (.NET) · `clie
 | --- | --- | --- |
 | `apiKey` | required | Merchant-held, injected per request, never persisted or logged |
 | `baseUrl` | `https://api.revaly.co` | Override only for internal targets; the key's scope selects sandbox vs live |
-| `apiVersion` | `"2.1"` | `"2.0"` drops `ErrorResponse.code` from the documented surface, narrowing fast failover to provable never-sent |
+| `apiVersion` | `"2.1"` | `"2.0"` drops `ErrorResponse.code` from the documented surface, narrowing fast failover to provable never-sent plus the edge-rejection 403 (honoured on both pins, ADR-SDK-033) |
 | `connectTimeout` | **10 s** (ADR-SDK-029) | Expiry classifies `TransientFailure` where the stack proves the connect phase. TypeScript has no per-request option (fetch cannot bound connect); Node's undici default is already 10 s. PHP errno 28 stays `OutcomeUnknown` |
 | `overallDeadline` | **75 s** (ADR-SDK-027) | Expiry **after send** classifies `OutcomeUnknown`, never `TransientFailure` |
 | `logger` | ecosystem-native | Values-free at default verbosity |

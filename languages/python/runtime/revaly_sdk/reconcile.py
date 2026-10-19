@@ -149,9 +149,9 @@ class RapReconciler:
 
     Raises a typed failure only for a rejected READ that polling can never fix
     (PermanentRejection other than 404 — bad credentials, malformed id); 404 is
-    the NotFoundYet signal, and degraded reads (5xx/timeouts/transport failures)
-    keep polling within the budget — exactly the window where visibility is
-    widest.
+    the NotFoundYet signal, and degraded reads (5xx/timeouts/transport failures,
+    or a 403 blocked at the edge — ADR-SDK-033) keep polling within the budget —
+    exactly the window where visibility is widest.
     """
 
     def __init__(
@@ -198,13 +198,15 @@ class RapReconciler:
                     self._trace(404, failure.correlation_id, failure.raw_body)
                     self._logger.debug("rap.reconcile not visible yet (404) attempt=%d", attempts)
                 else:
-                    # 400/401/403/422 escape: polling will never fix a rejected
-                    # read (bad credentials, malformed id) — the caller must see it.
+                    # 400/401/422, or a 403 without the edge marker, escape: polling
+                    # will never fix a rejected read (bad credentials, malformed id)
+                    # — the caller must see it.
                     raise
             except RapError as failure:
-                # Degraded read path (5xx/timeout/transport failure on the GET):
-                # the WRITE's status is still unknown — keep polling within the
-                # caller's budget.
+                # Degraded read path (5xx/timeout/transport failure on the GET, or
+                # a 403 blocked at the edge — the read never reached the platform,
+                # ADR-SDK-033): the WRITE's status is still unknown — keep polling
+                # within the caller's budget.
                 if failure.status is not None:
                     last_http_status = failure.status
                 if failure.correlation_id is not None:

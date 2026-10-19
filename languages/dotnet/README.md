@@ -24,7 +24,8 @@ using var rap = new RapClient(new RapClientOptions
     ApiKey = Environment.GetEnvironmentVariable("RAP_API_KEY")!,
     // ApiVersion defaults to "2.1". Selecting "2.0" narrows fast failover: without the
     // ErrorResponse.code contract, a 503 + not_processed classifies OutcomeUnknown
-    // (reconcile) instead of TransientFailure (immediate failover). Keep 2.1.
+    // (reconcile) instead of TransientFailure (immediate failover). Keep 2.1. (The edge
+    // rejection marker is honoured on both pins — ADR-SDK-033.)
     // OverallDeadline defaults to 75 s (telemetry-ratified — ADR-SDK-027); expiry after
     // send classifies OutcomeUnknown, never TransientFailure. Set OverallDeadline to tighten
     // it to your checkout budget, or opt out with Timeout.InfiniteTimeSpan (HttpClient's 100 s
@@ -87,14 +88,19 @@ try
 }
 catch (PermanentRejectionException ex)
 {
-    // Received and rejected (400/401/403/404/422): fix the request or decline.
-    // Failing over reproduces the same rejection at any gateway.
+    // Received and rejected (400/401/404/422, or a 403 without the edge marker): fix the
+    // request or decline. Failing over reproduces the same rejection at any gateway.
     Console.WriteLine($"rejected ({ex.StatusCode}): {ex.ErrorMessage} [correlation {ex.CorrelationId}]");
 }
-catch (TransientFailureException)
+catch (TransientFailureException ex)
 {
-    // Definitively NOT processed (never-sent transport failure, or 503 with
-    // code=not_processed): route this payment to your own gateway immediately.
+    // Definitively NOT processed: a never-sent transport failure, a 503 with
+    // code=not_processed, or a 403 blocked at the edge firewall (ex.IsEdgeRejection —
+    // the request never reached the platform; ex.EdgeReference identifies the firewall
+    // decision for support). Charge and authorize: route to your own gateway now, or fix
+    // the request content and retry. Capture, void, refund and refund-cancel: retry the
+    // same request instead.
+    if (ex.IsEdgeRejection) Console.WriteLine($"blocked at the edge [reference {ex.EdgeReference}]");
     RouteToOwnGateway();
 }
 catch (OutcomeUnknownException ex)
@@ -181,7 +187,9 @@ using var rap = new RapClient(new RapClientOptions
 
 Also available: `ReturnsApproved/Declined/Rejected(status)`, `ReturnsBare503`,
 `Returns500/502/504`, `ReturnsTimeoutAfterSend`, `ReturnsConnectionRefused/DnsFailure/
-TlsFailure/ResetMidFlight`, `ReturnsPending`, and `Stub(method, path)` for anything else.
+TlsFailure/ResetMidFlight`, `ReturnsEdgeRejection403` (→ `TransientFailureException` with
+`IsEdgeRejection`), its negative controls `ReturnsEdgeHtmlPage403` / `ReturnsPlatformForbidden403`
+(→ `PermanentRejectionException`), `ReturnsPending`, and `Stub(method, path)` for anything else.
 `mock.Requests` records every request (the mock also asserts the SDK `User-Agent` is
 present — it is part of the platform's adoption telemetry, ADR-SDK-005).
 
@@ -192,9 +200,10 @@ present — it is part of the platform's adoption telemetry, ADR-SDK-005).
 - **Every call stands alone** — no cross-request state, no circuit breaker, so
   behaviour under load is the behaviour you tested.
 - **The reconcile poll above is the only loop the SDK owns**, and you bound it.
-- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`, via the
-  normative algorithm (`docs/failover-contract.md` §2). Message text and latency are
-  reported to you and excluded from the verdict.
+- **Classification rests on evidence only**: HTTP status, `ErrorResponse.code`, and on a
+  403 the single `details.edgeRejection` key (ADR-SDK-033), via the normative algorithm
+  (`docs/failover-contract.md` §2). Message text and latency are reported to you and
+  excluded from the verdict.
 - **Recovery beyond this boundary belongs to RAP-core** — resubmission and
   `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
 

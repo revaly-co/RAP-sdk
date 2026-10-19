@@ -23,8 +23,10 @@ TDD-level design to finalize in Epic SC-234 build stories without re-opening dec
 | `transport` | real HTTP | Replaceable by the mock transport (§8) |
 
 **[Decided]** Version-pin behaviour: on `"2.0"`, the `ErrorResponse.code` field is not part of the
-documented contract — the fast-failover class narrows to client-provable never-sent failures only.
-This behavioural difference is documented prominently wherever `apiVersion` is described.
+documented contract — the fast-failover class narrows to client-provable never-sent failures plus
+the edge-rejection 403 (ADR-SDK-033: the marker is not part of `code` and the edge sits in front
+of the API, so it is honoured on both pins). This behavioural difference is documented
+prominently wherever `apiVersion` is described.
 
 **[Proposed]** One client object per configuration; thread-safe/shareable per language norms;
 no global singletons.
@@ -42,7 +44,9 @@ platform-aligned end to end after the platform's id-length correction).
 
 **[Decided]** Three classes + classification algorithm per `failover-contract.md` §2. Every typed
 error carries: class, HTTP status (if any), `code` (verbatim, if any), human message (`error`),
-opaque `details`, **correlation id**, raw response reference.
+opaque `details`, **correlation id**, raw response reference, and (ADR-SDK-033, 2026-10-18) the
+edge-rejection flag plus the edge reference (`isEdgeRejection` / `edgeReference` in each
+language's idiom — set only from a 403 whose body carries `details.edgeRejection: true`).
 
 **[Decided]** Error idiom per ecosystem (DX contract §a):
 
@@ -133,7 +137,9 @@ ADR-SDK-031). Quickstart install lines have used the registry installs since the
 
 **[Decided]** First-class test double in every language, no network:
 - simulates the full taxonomy: PermanentRejection statuses, TransientFailure (incl. **503 +
-  `not_processed`**), OutcomeUnknown (timeout-after-send, 500, 502/504, bare 503);
+  `not_processed`** and the **edge-rejection 403** served as `text/html`, with its two negative
+  controls — the legacy HTML block page and the platform's own JSON 403 — ADR-SDK-033),
+  OutcomeUnknown (timeout-after-send, 500, 502/504, bare 503);
 - simulates both reconcile outcomes; post-P-2: pending-then-terminal and pending-then-absent;
 - supports scripting consecutive outcomes (merchants test their suppression/escalation logic);
 - asserts `User-Agent` presence; **synthetic data only** (ADR-SDK-020).

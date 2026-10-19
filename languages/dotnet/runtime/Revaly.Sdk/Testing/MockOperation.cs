@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace Revaly.Sdk.Testing;
 
@@ -66,6 +67,32 @@ public sealed class MockOperation
     /// <summary>PermanentRejection row: 400/401/403/404/422 with a structured error body.</summary>
     public MockOperation ReturnsRejected(int statusCode = 422, string error = "synthetic validation rejection")
         => EnqueueJson((HttpStatusCode)statusCode, $"{{\"error\":\"{error}\"}}");
+
+    /// <summary>
+    /// TransientFailure row (ADR-SDK-033): 403 blocked at the edge firewall. The JSON marker
+    /// body (<c>details.edgeRejection: true</c> + <c>details.reference</c>) is served as
+    /// <c>text/html</c>, exactly as the production edge serves it. The request never reached
+    /// the platform — <see cref="Errors.RapCoreException.IsEdgeRejection"/> is true.
+    /// </summary>
+    public MockOperation ReturnsEdgeRejection403(string reference = SyntheticData.EdgeReference)
+        => EnqueueBody(HttpStatusCode.Forbidden, "text/html",
+            $"{{\"details\":{{\"edgeRejection\":true,\"reference\":{JsonSerializer.Serialize(reference)}}}," +
+            "\"error\":\"synthetic: blocked by the edge firewall; did not reach the payment platform\"}");
+
+    /// <summary>
+    /// PermanentRejection row (negative control, ADR-SDK-033): the legacy edge HTML block page —
+    /// a 403 whose body is not JSON, so no marker can be read.
+    /// </summary>
+    public MockOperation ReturnsEdgeHtmlPage403()
+        => EnqueueBody(HttpStatusCode.Forbidden, "text/html",
+            "<html><head><title>403 Forbidden</title></head><body>synthetic edge block page</body></html>");
+
+    /// <summary>
+    /// PermanentRejection row (negative control, ADR-SDK-033): the platform's own 403 — a JSON
+    /// <c>ErrorResponse</c> without the edge marker.
+    /// </summary>
+    public MockOperation ReturnsPlatformForbidden403()
+        => EnqueueJson(HttpStatusCode.Forbidden, "{\"error\":\"synthetic: forbidden by the platform\"}");
 
     /// <summary>TransientFailure row: 503 with <c>code: not_processed</c> — provable non-dispatch, safe to fail over.</summary>
     public MockOperation ReturnsNotProcessed503()
@@ -140,13 +167,16 @@ public sealed class MockOperation
            "\"currency\":\"USD\",\"amount\":1999}";
 
     private MockOperation EnqueueJson(HttpStatusCode statusCode, string jsonBody)
+        => EnqueueBody(statusCode, "application/json", jsonBody);
+
+    private MockOperation EnqueueBody(HttpStatusCode statusCode, string mediaType, string body)
     {
         _preludes.Enqueue(() => null);
         _outcomes.Enqueue(() =>
         {
             var response = new HttpResponseMessage(statusCode)
             {
-                Content = new StringContent(jsonBody, Encoding.UTF8, "application/json"),
+                Content = new StringContent(body, Encoding.UTF8, mediaType),
             };
             response.Headers.TryAddWithoutValidation(
                 Transport.RapHeaders.CorrelationId, SyntheticData.CorrelationId);

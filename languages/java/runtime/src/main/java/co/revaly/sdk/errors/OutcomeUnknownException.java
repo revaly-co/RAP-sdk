@@ -17,7 +17,9 @@ public final class OutcomeUnknownException extends RapCoreException {
             String errorMessage,
             JsonNode details,
             String correlationId,
-            String rawErrorBody) {
+            String rawErrorBody,
+            boolean edgeRejection,
+            String edgeReference) {
         super(
                 RapFailureClass.OUTCOME_UNKNOWN,
                 buildMessage(
@@ -32,7 +34,9 @@ public final class OutcomeUnknownException extends RapCoreException {
                 details,
                 correlationId,
                 rawErrorBody,
-                null);
+                null,
+                edgeRejection,
+                edgeReference);
     }
 
     OutcomeUnknownException(String detail, Throwable cause) {
@@ -45,6 +49,8 @@ public final class OutcomeUnknownException extends RapCoreException {
                 null,
                 null,
                 null,
-                cause);
+                cause,
+                false,
+                null);
     }
 }

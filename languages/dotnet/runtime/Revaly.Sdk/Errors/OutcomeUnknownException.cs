@@ -18,12 +18,15 @@ public sealed class OutcomeUnknownException : RapCoreException
         JsonElement? details = null,
         string? correlationId = null,
         string? rawErrorBody = null,
-        Exception? innerException = null)
+        Exception? innerException = null,
+        bool isEdgeRejection = false,
+        string? edgeReference = null)
         : base(
             RapFailureClass.OutcomeUnknown,
             BuildMessage(RapFailureClass.OutcomeUnknown, statusCode, code, correlationId,
                 errorMessage ?? "outcome unknown; reconcile before acting — do not blind-fail-over"),
-            statusCode, code, errorMessage, details, correlationId, rawErrorBody, innerException)
+            statusCode, code, errorMessage, details, correlationId, rawErrorBody, innerException,
+            isEdgeRejection, edgeReference)
     {
     }
 }

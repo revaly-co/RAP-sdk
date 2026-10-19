@@ -150,9 +150,10 @@ func delayForAttempt(policy ReconcilePolicy, completedAttempts int) time.Duratio
 // It returns a typed failure only for a rejected READ that polling can never
 // fix (PermanentRejection other than 404 — bad credentials, malformed id);
 // 404 is the NotFoundYet signal, and degraded reads (5xx/timeouts/transport
-// failures) keep polling within the budget — exactly the window where
-// visibility is widest. Context cancellation returns ctx.Err(): a cancelled
-// reconcile proves nothing about the payment.
+// failures, or a 403 blocked at the edge — ADR-SDK-033) keep polling within
+// the budget — exactly the window where visibility is widest. Context
+// cancellation returns ctx.Err(): a cancelled reconcile proves nothing about
+// the payment.
 type reconciler struct {
 	httpClient *http.Client
 	baseURL    string
@@ -194,8 +195,9 @@ func (r *reconciler) reconcile(ctx context.Context, merchantTransactionID string
 		if failure != nil {
 			var rejection *PermanentRejection
 			if errors.As(failure, &rejection) && rejection.Status != 404 {
-				// 400/401/403/422 escape: polling will never fix a rejected
-				// read (bad credentials, malformed id) — the caller must see it.
+				// 400/401/422, or a 403 without the edge marker, escape:
+				// polling will never fix a rejected read (bad credentials,
+				// malformed id) — the caller must see it.
 				return nil, failure
 			}
 			if errors.Is(failure, context.Canceled) || errors.Is(failure, context.DeadlineExceeded) {
@@ -206,9 +208,10 @@ func (r *reconciler) reconcile(ctx context.Context, merchantTransactionID string
 			if lastHTTPStatus == 404 {
 				r.logger.Debug("rap.reconcile not visible yet (404)", "attempt", attempts)
 			} else {
-				// Degraded read (5xx/timeout/transport failure on the GET):
-				// the WRITE's status is still unknown — keep polling within
-				// the caller's budget.
+				// Degraded read (5xx/timeout/transport failure on the GET, or
+				// a 403 blocked at the edge — the read never reached the
+				// platform, ADR-SDK-033): the WRITE's status is still unknown
+				// — keep polling within the caller's budget.
 				r.logger.Warn("rap.reconcile degraded read; continuing within policy",
 					"attempt", attempts, "status", lastHTTPStatus)
 			}

@@ -93,9 +93,10 @@ final class RapClient
      *        every request. Default "2.1"; "2.0" is selectable. Behavioural difference
      *        on "2.0": the `ErrorResponse.code` field is not part of the 2.0 documented
      *        contract, so the fast-failover class narrows to client-provable never-sent
-     *        failures only — a 503 with `code: not_processed` classifies as
-     *        OutcomeUnknown (reconcile) instead of TransientFailure (immediate
-     *        failover). Pin 2.1 unless you have a frozen 2.0 integration.
+     *        failures plus the edge-rejection 403 (ADR-SDK-033, honoured on both pins)
+     *        — a 503 with `code: not_processed` classifies as OutcomeUnknown (reconcile)
+     *        instead of TransientFailure (immediate failover). Pin 2.1 unless you have
+     *        a frozen 2.0 integration.
      * @param float|null $connectTimeout TCP/TLS connection-establishment timeout in
      *        seconds. Default: {@see self::DEFAULT_CONNECT_TIMEOUT_SECONDS} (10 seconds,
      *        ratified from the OQ-11 edge verification — ADR-SDK-029). Pass an explicit

@@ -94,6 +94,36 @@ func TestReconcileKeepsPollingThroughDegradedReads(t *testing.T) {
 	}
 }
 
+// A 403 blocked at the edge never reached the platform (ADR-SDK-033): it is a
+// transport-class failure of the READ, not a rejection — keep polling.
+func TestReconcileKeepsPollingThroughEdgeRejectedReads(t *testing.T) {
+	client, mock := newMockClient(t, nil)
+	mock.Reconcile("mock-mtx-0001").ReturnsEdgeRejection403().ReturnsFoundApproved()
+	verdict, err := client.Reconcile(context.Background(), "mock-mtx-0001", policy(3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found, ok := verdict.(*revaly.Found); !ok || found.Outcome != revaly.TransactionOutcomeApproved {
+		t.Fatalf("verdict %#v, want *Found approved after an edge-rejected read", verdict)
+	}
+	if len(mock.Requests()) != 2 {
+		t.Fatalf("made %d attempts, want 2", len(mock.Requests()))
+	}
+}
+
+func TestReconcileSustainedEdgeRejectionsEndAsNotFoundYet(t *testing.T) {
+	client, mock := newMockClient(t, nil)
+	mock.Reconcile("mock-mtx-0001").ReturnsEdgeRejection403()
+	verdict, err := client.Reconcile(context.Background(), "mock-mtx-0001", policy(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	notFound, ok := verdict.(*revaly.NotFoundYet)
+	if !ok || notFound.Attempts != 2 || notFound.LastHTTPStatus != 403 {
+		t.Fatalf("verdict %#v, want *NotFoundYet with 2 attempts and last status 403", verdict)
+	}
+}
+
 func TestReconcile404ThenFound(t *testing.T) {
 	client, mock := newMockClient(t, nil)
 	mock.Reconcile("mock-mtx-0001").ReturnsNotFound().ReturnsFoundApproved()

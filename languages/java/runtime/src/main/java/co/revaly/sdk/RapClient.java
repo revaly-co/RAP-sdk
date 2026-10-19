@@ -492,9 +492,10 @@ public final class RapClient {
          * The API contract version, pinned via {@code X-Api-Version} on every request. Default
          * {@code "2.1"}; {@code "2.0"} is selectable. <b>Behavioural difference on "2.0":</b> the
          * {@code ErrorResponse.code} field is not part of the 2.0 documented contract, so the
-         * fast-failover class narrows to client-provable never-sent failures only — a 503 with
-         * {@code code: not_processed} classifies as OutcomeUnknown (reconcile) instead of
-         * TransientFailure (immediate failover). Pin 2.1 unless you have a frozen 2.0 integration.
+         * fast-failover class narrows to client-provable never-sent failures plus the
+         * edge-rejection 403 (ADR-SDK-033, honoured on both pins) — a 503 with {@code code:
+         * not_processed} classifies as OutcomeUnknown (reconcile) instead of TransientFailure
+         * (immediate failover). Pin 2.1 unless you have a frozen 2.0 integration.
          */
         public Builder apiVersion(String apiVersion) {
             this.apiVersion = apiVersion;

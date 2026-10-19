@@ -8,12 +8,15 @@ namespace Revaly.Sdk.Classification;
 /// Every rule here is contract, not heuristic:
 /// <code>
 /// if transport error and request provably never sent          → TransientFailure
+/// if HTTP status == 403 and body is JSON (any Content-Type)
+///    and body.details.edgeRejection == true (JSON boolean)     → TransientFailure (ADR-SDK-033)
 /// if HTTP status in {400, 401, 403, 404, 422}                 → PermanentRejection
 /// if HTTP status == 503 and body.code == "not_processed"      → TransientFailure
 /// if HTTP status >= 500                                        → OutcomeUnknown
 /// if deadline exceeded after send / reset / ambiguous          → OutcomeUnknown
 /// </code>
-/// Never classify from <c>error</c> message text; treat <c>details</c> as opaque;
+/// Never classify from <c>error</c> message text; treat <c>details</c> as opaque except
+/// for the single key <c>details.edgeRejection</c> read on a 403 (ADR-SDK-033);
 /// unrecognized <c>code</c> values are treated as absent; when the stack cannot prove
 /// the request was never sent, classify OutcomeUnknown — never guess toward "safe".
 /// </summary>
@@ -68,14 +71,30 @@ internal static class FailureClassifier
     /// <param name="apiVersion">
     /// The pinned <c>X-Api-Version</c>. On <c>"2.0"</c> the <c>ErrorResponse.code</c>
     /// field is not part of the documented contract, so the fast-failover class narrows
-    /// to client-provable never-sent failures only: 503 + <c>not_processed</c> is NOT
-    /// honored and falls through to OutcomeUnknown (runtime-tdd §1 [Decided]).
+    /// to client-provable never-sent failures plus the edge-rejection 403 (ADR-SDK-033,
+    /// honoured on both pins): 503 + <c>not_processed</c> is NOT honored and falls
+    /// through to OutcomeUnknown (runtime-tdd §1 [Decided]).
     /// </param>
     /// <param name="correlationId">The response correlation id, if present.</param>
     internal static RapCoreException ClassifyResponse(
         int statusCode, string? rawBody, string apiVersion, string? correlationId)
     {
         var (code, error, details) = ParseErrorBody(rawBody);
+
+        if (statusCode == 403)
+        {
+            var (isEdgeRejection, edgeReference) = ReadEdgeMarker(details);
+            if (isEdgeRejection)
+            {
+                // Edge rejection (ADR-SDK-033): the edge firewall blocked the request and its
+                // marker proves it never reached the platform — provable non-dispatch, the same
+                // class as connection-refused and 503 + not_processed. Honoured on every API
+                // version pin, because the edge sits in front of the API.
+                return new TransientFailureException(
+                    statusCode, code, error, details, correlationId, rawBody,
+                    isEdgeRejection: true, edgeReference: edgeReference);
+            }
+        }
 
         if (statusCode is 400 or 401 or 403 or 404 or 422)
         {
@@ -95,6 +114,36 @@ internal static class FailureClassifier
         }
 
         return new OutcomeUnknownException(statusCode, code, error, details, correlationId, rawBody);
+    }
+
+    /// <summary>
+    /// Reads the one structured key of <c>details</c> the contract allows (ADR-SDK-033):
+    /// <c>details.edgeRejection</c> must be the JSON boolean <c>true</c> — never the string
+    /// <c>"true"</c>, a number, or anything else. <c>details.reference</c> (the edge's
+    /// tracking reference, equal to the <c>x-azure-ref</c> header) is carried when it is a
+    /// string. The body is parsed regardless of <c>Content-Type</c>: the production edge
+    /// serves this JSON as <c>text/html</c>.
+    /// </summary>
+    internal static (bool IsEdgeRejection, string? EdgeReference) ReadEdgeMarker(JsonElement? details)
+    {
+        if (details is not { ValueKind: JsonValueKind.Object } element)
+        {
+            return (false, null);
+        }
+
+        if (!element.TryGetProperty("edgeRejection", out var marker) || marker.ValueKind != JsonValueKind.True)
+        {
+            return (false, null);
+        }
+
+        string? reference = null;
+        if (element.TryGetProperty("reference", out var referenceElement)
+            && referenceElement.ValueKind == JsonValueKind.String)
+        {
+            reference = referenceElement.GetString();
+        }
+
+        return (true, reference);
     }
 
     /// <summary>

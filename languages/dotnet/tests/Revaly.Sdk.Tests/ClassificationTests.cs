@@ -45,6 +45,109 @@ public class ClassificationTests
     }
 
     [Fact]
+    public async Task Edge_rejected_403_with_marker_is_TransientFailure_safe_to_fail_over()
+    {
+        var mock = new RapMockTransport();
+        mock.Charge().ReturnsEdgeRejection403();
+        using var client = TestClient.Create(mock);
+
+        var ex = await Assert.ThrowsAsync<TransientFailureException>(
+            () => client.Payments.ChargePaymentAsync(TestClient.ChargeRequest()));
+
+        Assert.Equal(403, ex.StatusCode);
+        Assert.True(ex.IsEdgeRejection);
+        Assert.Equal(SyntheticData.EdgeReference, ex.EdgeReference);
+        Assert.Null(ex.Code);
+        Assert.Equal(SyntheticData.CorrelationId, ex.CorrelationId);
+        Assert.DoesNotContain(SyntheticData.TestApiKey, ex.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Edge_marker_is_honoured_on_the_20_pin_too()
+    {
+        // Unlike 503 + not_processed, the marker is not part of ErrorResponse.code: the edge
+        // sits in front of the API, so both pins honour it (ADR-SDK-033).
+        var mock = new RapMockTransport();
+        mock.Charge().ReturnsEdgeRejection403();
+        using var client = TestClient.Create(mock, apiVersion: "2.0");
+
+        var ex = await Assert.ThrowsAsync<TransientFailureException>(
+            () => client.Payments.ChargePaymentAsync(TestClient.ChargeRequest()));
+
+        Assert.True(ex.IsEdgeRejection);
+    }
+
+    [Fact]
+    public async Task Edge_html_block_page_403_stays_PermanentRejection()
+    {
+        var mock = new RapMockTransport();
+        mock.Charge().ReturnsEdgeHtmlPage403();
+        using var client = TestClient.Create(mock);
+
+        var ex = await Assert.ThrowsAsync<PermanentRejectionException>(
+            () => client.Payments.ChargePaymentAsync(TestClient.ChargeRequest()));
+
+        Assert.Equal(403, ex.StatusCode);
+        Assert.False(ex.IsEdgeRejection);
+        Assert.Null(ex.EdgeReference);
+    }
+
+    [Fact]
+    public async Task Platform_403_without_the_marker_stays_PermanentRejection()
+    {
+        var mock = new RapMockTransport();
+        mock.Charge().ReturnsPlatformForbidden403();
+        using var client = TestClient.Create(mock);
+
+        var ex = await Assert.ThrowsAsync<PermanentRejectionException>(
+            () => client.Payments.ChargePaymentAsync(TestClient.ChargeRequest()));
+
+        Assert.Equal(403, ex.StatusCode);
+        Assert.False(ex.IsEdgeRejection);
+        Assert.Null(ex.EdgeReference);
+    }
+
+    [Theory]
+    [InlineData("{\"details\":{\"edgeRejection\":\"true\",\"reference\":\"x\"},\"error\":\"synthetic\"}")]
+    [InlineData("{\"details\":{\"edgeRejection\":1,\"reference\":\"x\"},\"error\":\"synthetic\"}")]
+    [InlineData("{\"details\":{\"edgeRejection\":false,\"reference\":\"x\"},\"error\":\"synthetic\"}")]
+    [InlineData("{\"details\":{\"edgeRejection\":null},\"error\":\"synthetic\"}")]
+    [InlineData("{\"details\":\"edgeRejection\",\"error\":\"synthetic\"}")]
+    [InlineData("{\"details\":[true],\"error\":\"synthetic\"}")]
+    [InlineData("{\"edgeRejection\":true,\"reference\":\"x\",\"error\":\"synthetic\"}")]
+    [InlineData("{\"details\":{\"edgeRejection\":true}}<html>")]
+    [InlineData("{\"details\":{\"edgeRejection\":true},\"n\":NaN}")]
+    public async Task Only_the_exact_json_boolean_marker_counts(string body)
+    {
+        var mock = new RapMockTransport();
+        mock.Charge().Returns(System.Net.HttpStatusCode.Forbidden, body);
+        using var client = TestClient.Create(mock);
+
+        var ex = await Assert.ThrowsAsync<PermanentRejectionException>(
+            () => client.Payments.ChargePaymentAsync(TestClient.ChargeRequest()));
+
+        Assert.False(ex.IsEdgeRejection);
+        Assert.Null(ex.EdgeReference);
+    }
+
+    [Fact]
+    public async Task Marker_on_a_non_403_status_does_not_change_classification()
+    {
+        // The marker is read on 403 only: a 500 carrying it is still OutcomeUnknown.
+        var mock = new RapMockTransport();
+        mock.Charge().Returns(
+            System.Net.HttpStatusCode.InternalServerError,
+            "{\"details\":{\"edgeRejection\":true,\"reference\":\"x\"},\"error\":\"synthetic\"}");
+        using var client = TestClient.Create(mock);
+
+        var ex = await Assert.ThrowsAsync<OutcomeUnknownException>(
+            () => client.Payments.ChargePaymentAsync(TestClient.ChargeRequest()));
+
+        Assert.False(ex.IsEdgeRejection);
+        Assert.Null(ex.EdgeReference);
+    }
+
+    [Fact]
     public async Task Connection_refused_is_TransientFailure_provably_never_sent()
     {
         var mock = new RapMockTransport();

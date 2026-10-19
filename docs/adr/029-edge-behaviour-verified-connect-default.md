@@ -1,7 +1,9 @@
 # ADR-SDK-029 — AFD/WAF edge behaviour verified; connect-timeout default ratified (OQ-11)
 
 **Status:** Accepted (2026-07-21) · closes OQ-11 (`docs/open-items.md`) · amends ADR-SDK-027
-Decision 3 (the connect-default residual assigned there)
+Decision 3 (the connect-default residual assigned there) · **amended 2026-10-18 by ADR-SDK-033:**
+Decision 1's "WAF 403 → PermanentRejection" nuance is superseded for block bodies that carry
+`details.edgeRejection: true` (RFC-071 D8; the edge block body became JSON on 2026-10-16)
 **Drives:** `failover-contract.md` §2/§6 verification state · `runtime-tdd.md` §1 config
 defaults · all six runtimes · unblocks the OQ-11 leg of the ADR-SDK-024 GA sandbox retarget
 
@@ -81,6 +83,17 @@ shape: `403`, `Content-Type: text/html`, a 1,484-byte XHTML page with `x-azure-r
      fallthrough (absent → OutcomeUnknown) is load-bearing and verified. Only the platform's
      own `503 {code: "not_processed"}` licenses fast failover, and it passes through the edge
      unmodified. The edge cannot mint that signal; nothing else may either.
+
+     *Amendment 2026-10-18 (ADR-SDK-033, RFC-071 D8).* Since SC-657 (2026-10-16) the edge's
+     block response is no longer the HTML page probed above: it is a 403 whose JSON body
+     (served as `text/html`) carries `details.edgeRejection: true` and `details.reference`
+     (the `x-azure-ref` tracking reference). A production probe tied each reference to a
+     firewall `Block` row with no origin access, so the platform's edge now **proves**
+     non-dispatch for that one shape. A marker-bearing 403 therefore classifies as
+     **TransientFailure**; a 403 without the marker (the legacy HTML page, a JSON body
+     without the key, the platform's own 403) stays PermanentRejection. The 5xx rows and the
+     `code` rule above are untouched: the marker and `503 {code: "not_processed"}` are the only
+     two platform-minted fast-failover signals.
 2. **Default `connectTimeout` = 10 seconds** in every runtime that can enforce it
    (.NET, Java, PHP, Python, Go); TypeScript absorbs it at documentation level per
    ADR-SDK-028 §4 (the README dispatcher recipe carries the number; undici's own default is
@@ -110,7 +123,9 @@ shape: `403`, `Content-Type: text/html`, a 1,484-byte XHTML page with `x-azure-r
    timeout never fires first. **Ops guardrail:** lowering the edge's origin-response timeout
    below ~100 s (or switching its bot-management rules to Block, or adding WAF custom rules
    whose match reaches the payment paths) changes merchant-visible SDK behaviour and must be
-   flagged to the SDK owners before rollout.
+   flagged to the SDK owners before rollout. *Extended 2026-10-18 (ADR-SDK-033):* so does any
+   change to the edge block response — its status, the `details.edgeRejection` key or the
+   `details.reference` token.
 4. **No OQ-11 residuals remain.** The ADR-SDK-024 GA sandbox retarget now waits only on its
    ADR-SDK-014 parity leg.
 

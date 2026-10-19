@@ -33,11 +33,12 @@ result or exactly one of:
 
 | Class | Meaning | Your action |
 | --- | --- | --- |
-| `*revaly.PermanentRejection` | Received and rejected (HTTP 400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
-| `*revaly.TransientFailure` | **Definitively not processed** (provably never sent, or 503 with `code: not_processed`) | Route to your own gateway immediately. |
+| `*revaly.PermanentRejection` | Received and rejected (HTTP 400/401/404/422, or a 403 without the edge marker) | Fix or decline — failing over reproduces the same rejection anywhere. |
+| `*revaly.TransientFailure` | **Definitively not processed** (provably never sent, 503 with `code: not_processed`, or a 403 blocked at the edge firewall — `IsEdgeRejection`) | Route to your own gateway immediately. On an edge rejection, charge/authorize may also fix the request content and retry; capture/void/refund/refund-cancel retry the same request. Quote `EdgeReference` to support. |
 | `*revaly.OutcomeUnknown` | **May have been processed** (deadline after send, reset mid-flight, other 5xx) | **Reconcile before acting** (below). |
 
-Classification rests on the error **type** and HTTP status alone — message text
+Classification rests on the error **type**, the HTTP status, `ErrorResponse.code`
+and, on a 403, the single `details.edgeRejection` key (ADR-SDK-033) — message text
 and latency are reported to you and excluded from the verdict. Dispatch with
 `errors.As`; the class is the whole contract.
 
@@ -109,6 +110,10 @@ func main() {
 
 	case errors.As(err, &transient):
 		// Provably not processed — this is your fast-failover signal.
+		// transient.IsEdgeRejection: the edge firewall blocked the request before it
+		// reached the platform; transient.EdgeReference identifies that firewall
+		// decision for support. Charge/authorize: fail over (or fix the content and
+		// retry); capture/void/refund/refund-cancel: retry the same request.
 		fmt.Println("not processed — safe to route to your own gateway now")
 
 	case errors.As(err, &unknown):
@@ -166,7 +171,7 @@ func reconcileBeforeActing(client *revaly.Client, merchantTransactionID string) 
 | --- | --- | --- |
 | `APIKey` | — required | Injected per request at the transport; never logged, never in errors |
 | `BaseURL` | `https://api.revaly.co` | Sandbox and live share it (key-scoped); override only for internal targets |
-| `APIVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request. On `"2.0"` the `code` field is not part of the documented contract, so 503 + `not_processed` classifies **OutcomeUnknown** — fast failover narrows to provable never-sent failures |
+| `APIVersion` | `"2.1"` | Pinned via `X-Api-Version` on every request. On `"2.0"` the `code` field is not part of the documented contract, so 503 + `not_processed` classifies **OutcomeUnknown** — fast failover narrows to provable never-sent failures. The edge-rejection marker is honoured on both pins (ADR-SDK-033) |
 | `ConnectTimeout` | 10 s (ADR-SDK-029) | Maps to `net.Dialer.Timeout`; the bound makes connect-phase expiries **provably never-sent** (`TransientFailure`). Zero applies the edge-ratified default; `revaly.NoConnectTimeout` disables it (stdlib dial defaults) |
 | `OverallDeadline` | 75 s (ADR-SDK-027) | Per-call context timeout; expiry **after send** is `OutcomeUnknown`, never `TransientFailure`. Zero applies the telemetry-ratified default; `revaly.NoOverallDeadline` disables it |
 | `Logger` | discard | `*slog.Logger`; output is values-free at every level |
@@ -185,8 +190,9 @@ Cancellation is idiomatic Go: every operation takes a `context.Context`, and
 - **Every call stands alone** — no cross-request state, no circuit breaker, so
   behaviour under load is the behaviour you tested.
 - **The reconcile re-poll you bound is the only loop the runtime owns.**
-- **Classification rests on evidence only**: HTTP status and `ErrorResponse.code`.
-  Message text and latency are reported to you and excluded from the verdict.
+- **Classification rests on evidence only**: HTTP status, `ErrorResponse.code`, and on
+  a 403 the single `details.edgeRejection` key (ADR-SDK-033). Message text and latency
+  are reported to you and excluded from the verdict.
 - **Recovery beyond this boundary belongs to RAP-core** — resubmission and
   `bypassPlatform` are platform-internal, so a payment's outcome stays unambiguous.
 
@@ -215,6 +221,9 @@ if err := mock.RequireUserAgent(); err != nil { t.Fatal(err) } // UA contract he
 
 Scriptable rows: `ReturnsApproved`, `ReturnsDeclined`,
 `ReturnsPermanentRejection(status)`, `ReturnsNotProcessed503`,
+`ReturnsEdgeRejection403` (the edge firewall's marker body served as `text/html`
+→ `*TransientFailure` with `IsEdgeRejection`), its negative controls
+`ReturnsEdgeHTMLPage403` / `ReturnsPlatformForbidden403` (→ `*PermanentRejection`),
 `ReturnsBare503`, `Returns500/502/504`, `FailsBeforeSend` (dial-phase error
 instance), `TimesOutAfterSend`, `ResetsMidFlight`, and for reconcile:
 `ReturnsFoundApproved/Declined`, `ReturnsPending`, `ReturnsNotFound`. Mock

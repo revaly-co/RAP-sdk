@@ -26,10 +26,11 @@ public class QuickstartTests
             // Fix or decline. Never fail over — the same request fails anywhere.
             return $"rejected:{ex.StatusCode}";
         }
-        catch (TransientFailureException)
+        catch (TransientFailureException ex)
         {
-            // Definitively not processed — route to your own gateway immediately.
-            return "failover";
+            // Definitively not processed (never sent, 503 + not_processed, or blocked at the
+            // edge — ex.IsEdgeRejection) — route to your own gateway immediately.
+            return ex.IsEdgeRejection ? $"failover:edge:{ex.EdgeReference}" : "failover";
         }
         catch (OutcomeUnknownException)
         {

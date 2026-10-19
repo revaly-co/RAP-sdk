@@ -92,8 +92,9 @@ internal sealed class RapReconciler
             }
             catch (TransientFailureException ex)
             {
-                // The platform provably did not process this READ; the write status is
-                // still unknown — keep polling within the caller's budget.
+                // The platform provably did not process this READ (503 + not_processed, or a
+                // 403 blocked at the edge firewall — ADR-SDK-033); the write status is still
+                // unknown — keep polling within the caller's budget.
                 lastHttpStatus = ex.StatusCode ?? lastHttpStatus;
                 lastCorrelationId = ex.CorrelationId ?? lastCorrelationId;
             }
@@ -105,9 +106,9 @@ internal sealed class RapReconciler
                 lastCorrelationId = ex.CorrelationId ?? lastCorrelationId;
             }
 
-            // PermanentRejection other than 404 (400/401/403/422) escapes: polling will
-            // never fix a rejected read (bad credentials, malformed id) — the caller
-            // must see it.
+            // PermanentRejection other than 404 (400/401/422, or a 403 without the edge
+            // marker) escapes: polling will never fix a rejected read (bad credentials,
+            // malformed id) — the caller must see it.
 
             if (attempts >= policy.MaxAttempts)
             {

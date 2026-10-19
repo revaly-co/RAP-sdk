@@ -27,3 +27,22 @@ func SyntheticError(message string, code string) string {
 	}
 	return fmt.Sprintf(`{"error":%q,"code":%q}`, message, code)
 }
+
+// SyntheticEdgeReference is the synthetic edge-firewall tracking reference
+// carried by the edge-rejection row (details.reference, the shape of the
+// x-azure-ref header — ADR-SDK-033).
+const SyntheticEdgeReference = "20261016T181449Z-synthetic0000000000000000000000"
+
+// SyntheticEdgeRejection renders the edge firewall's block body (ADR-SDK-033):
+// details.edgeRejection: true plus the tracking reference; the production edge
+// serves it as text/html.
+func SyntheticEdgeRejection(reference string) string {
+	return fmt.Sprintf(`{"details":{"edgeRejection":true,"reference":%q},`+
+		`"error":"synthetic: blocked by the edge firewall; did not reach the payment platform"}`, reference)
+}
+
+// SyntheticHTMLBlockPage renders the legacy edge HTML block page — not JSON,
+// so no marker can be read.
+func SyntheticHTMLBlockPage() string {
+	return `<html><head><title>403 Forbidden</title></head><body>synthetic edge block page</body></html>`
+}

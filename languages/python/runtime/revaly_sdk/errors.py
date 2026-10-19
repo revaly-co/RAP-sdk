@@ -32,8 +32,19 @@ class RapError(Exception):
 
     Every instance carries the class discriminant (``kind``), the HTTP status (if
     any), the verbatim open ``code`` (if any — an open string; OQ-2 adds values
-    later), the server's human ``api_error`` message, opaque ``details``, the
-    ``X-Correlation-ID`` of the response, and the raw response body.
+    later), the server's human ``api_error`` message, opaque ``details`` (the SDK
+    reads exactly one key of it, ``edgeRejection`` on a 403 — ADR-SDK-033), the
+    ``X-Correlation-ID`` of the response, the raw response body, and the
+    edge-rejection flag and reference.
+
+    ``is_edge_rejection`` is True when the production edge firewall blocked the
+    request before it reached the platform (an HTTP 403 whose body carries
+    ``details.edgeRejection: true``). Such a failure is a ``RapTransientFailure`` —
+    the payment was definitively not processed. Charge and authorize: fail over, or
+    fix the request content and retry; capture, void, refund and refund-cancel:
+    retry the same request. ``edge_reference`` is the firewall's tracking reference
+    (``details.reference``, equal to the ``x-azure-ref`` header) — quote it to
+    support; it identifies the exact firewall decision.
     """
 
     kind: ClassVar[str]
@@ -48,6 +59,8 @@ class RapError(Exception):
         details: Any = None,
         correlation_id: Optional[str] = None,
         raw_body: Optional[str] = None,
+        is_edge_rejection: bool = False,
+        edge_reference: Optional[str] = None,
     ) -> None:
         super().__init__(message)
         self.status = status
@@ -56,10 +69,13 @@ class RapError(Exception):
         self.details = details
         self.correlation_id = correlation_id
         self.raw_body = raw_body
+        self.is_edge_rejection = is_edge_rejection
+        self.edge_reference = edge_reference if is_edge_rejection else None
 
 
 class RapPermanentRejection(RapError):
-    """Received and rejected (HTTP 400/401/403/404/422). Fix or decline.
+    """Received and rejected (HTTP 400/401/404/422, or a 403 without the
+    edge-rejection marker). Fix or decline.
 
     **Never fail over** — the same request fails anywhere.
     """
@@ -68,8 +84,10 @@ class RapPermanentRejection(RapError):
 
 
 class RapTransientFailure(RapError):
-    """Definitively not processed (client-provable never-sent, or 503 with
-    ``code: not_processed``). Safe to route to your own gateway immediately."""
+    """Definitively not processed (client-provable never-sent, 503 with
+    ``code: not_processed``, or a 403 blocked at the edge firewall —
+    ``is_edge_rejection``, ADR-SDK-033). Safe to route to your own gateway
+    immediately."""
 
     kind = "TransientFailure"
 
@@ -95,20 +113,42 @@ def classify_response(
     """Classifies a received HTTP response per the failover-contract §2 algorithm.
 
     Returns ``None`` for 2xx. ``code`` is read verbatim as an open string;
-    ``details`` stays opaque; the ``error`` message is carried but NEVER consulted
-    for classification. Statuses outside the normative table (3xx, 409, 429, …)
-    are ambiguous → OutcomeUnknown.
+    ``details`` stays opaque except for the single key ``details.edgeRejection``
+    read on a 403 (ADR-SDK-033); the ``error`` message is carried but NEVER
+    consulted for classification. Statuses outside the normative table (3xx, 409,
+    429, …) are ambiguous → OutcomeUnknown.
 
     Version-pin behaviour (runtime-tdd §1): on ``"2.0"`` the ``code`` field is not
     part of the documented contract, so a 503 with ``not_processed`` still
     classifies OutcomeUnknown — the fast-failover class narrows to client-provable
-    never-sent failures only.
+    never-sent failures plus the edge-rejection 403 (ADR-SDK-033, honoured on both
+    pins).
     """
     if 200 <= status <= 299:
         return None
 
     code, api_error, details = _read_error_body(raw_body)
     correlation_note = f" correlation={correlation_id}" if correlation_id else ""
+
+    if status == 403:
+        is_edge_rejection, edge_reference = _read_edge_marker(details)
+        if is_edge_rejection:
+            # Edge rejection (ADR-SDK-033): the edge firewall blocked the request and
+            # its marker proves it never reached the platform — provable non-dispatch,
+            # the same class as connection-refused and 503 + not_processed. Honoured
+            # on every API version pin, because the edge sits in front of the API.
+            return RapTransientFailure(
+                f"TransientFailure: HTTP 403 edge rejection{correlation_note} — "
+                "blocked at the edge firewall; never reached the platform; safe to fail over",
+                status=status,
+                code=code,
+                api_error=api_error,
+                details=details,
+                correlation_id=correlation_id,
+                raw_body=raw_body,
+                is_edge_rejection=True,
+                edge_reference=edge_reference,
+            )
 
     if status in _PERMANENT_REJECTION_STATUSES:
         return RapPermanentRejection(
@@ -236,6 +276,28 @@ def _chain_contains(exc: BaseException, target: type, _depth: int = 8) -> bool:
     return False
 
 
+def _reject_non_json_constant(token: str) -> Any:
+    raise ValueError(f"{token} is not JSON")
+
+
+def _read_edge_marker(details: Any):
+    """Reads the one structured key of ``details`` the contract allows (ADR-SDK-033).
+
+    ``details.edgeRejection`` must be the JSON boolean ``true`` — never the string
+    ``"true"``, a number, or anything else (``is True``, because ``1 == True`` in
+    Python). ``details.reference`` (the edge's tracking reference, equal to the
+    ``x-azure-ref`` header) is carried when it is a string. The body is parsed
+    regardless of Content-Type: the production edge serves this JSON as
+    ``text/html``.
+    """
+    if not isinstance(details, dict):
+        return False, None
+    if details.get("edgeRejection") is not True:
+        return False, None
+    reference = details.get("reference")
+    return True, reference if isinstance(reference, str) else None
+
+
 def _read_error_body(raw_body: Optional[str]):
     """Leniently reads ErrorResponse fields from the raw body.
 
@@ -246,7 +308,10 @@ def _read_error_body(raw_body: Optional[str]):
     if not raw_body:
         return None, None, None
     try:
-        root = json.loads(raw_body)
+        # parse_constant rejects NaN/Infinity, which the stdlib would otherwise accept
+        # although they are not JSON — "body parses as JSON" then means the same thing
+        # here as in the other five runtimes.
+        root = json.loads(raw_body, parse_constant=_reject_non_json_constant)
     except ValueError:
         return None, None, None
     if not isinstance(root, dict):
