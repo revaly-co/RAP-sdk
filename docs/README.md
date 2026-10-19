@@ -54,6 +54,20 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 
 ## Status snapshot (2026-10-19)
 
+- **v0.8.0 released ×6 (SC-660 AC2, ADR-SDK-033 Decision 9) off `main` cb605b68 — live on all
+  six registries.** The minor release that classifies the edge firewall's marker-bearing 403 as
+  TransientFailure, cut the same day the AC1 prose was pinned (PR #104). Tags `dotnet/v0.8.0`,
+  `java/v0.8.0`, `php/v0.8.0`, `typescript/v0.8.0`, `python/v0.8.0`, `go/v0.8.0` and the Go
+  module tag `languages/go/v0.8.0`, each cut solo after a proof dispatch of stages 1–4 on the
+  merge commit (run 39319465230): every release run green on all 17 jobs, the module-tag run on
+  its 14; NuGet, Maven Central, Packagist, npm, PyPI and the Go proxy (with sum.golang.org) all
+  serve 0.8.0; the release-notes drift check reads 0 findings over 33 releases. Classification
+  rationale (recorded on each annotated tag): minor, because the runtime gains behaviour and two
+  fields and the v2.7.0 → v2.13.0 spec delta is additive or prose only (optional 3DS `context`
+  model, `expiryUpdated` / `cardReplaced`, widened echo bounds, the marker prose). Go moves from
+  v0.7.1 to v0.8.0 and keeps the SC-624 User-Agent fix. Remaining on SC-660: the RFC-046 §5.2
+  table on Confluence (repository copy: `decision-log.md` R-1) and the D12 documentation
+  criteria.
 - **Spec re-pinned v2.12.2 → v2.13.0+98915d8 (tenth pin, SC-660 AC1).** One platform artifact,
   prose only (Backbone PR #392, RFC-071 D8): the `ErrorResponse` `details` description now
   documents the edge firewall's 403 block body (`details.edgeRejection` equal to the JSON
