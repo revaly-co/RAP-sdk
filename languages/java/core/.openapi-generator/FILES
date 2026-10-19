@@ -51,6 +51,7 @@ docs/StoredCredential.md
 docs/StoredCredentialReasonType.md
 docs/StoredCredentialResponse.md
 docs/ThreeDS.md
+docs/ThreeDSContext.md
 docs/TransactionGateway.md
 docs/TransactionGroupResponse.md
 docs/TransactionListItem.md
@@ -125,6 +126,7 @@ src/main/java/co/revaly/sdk/core/model/StoredCredential.java
 src/main/java/co/revaly/sdk/core/model/StoredCredentialReasonType.java
 src/main/java/co/revaly/sdk/core/model/StoredCredentialResponse.java
 src/main/java/co/revaly/sdk/core/model/ThreeDS.java
+src/main/java/co/revaly/sdk/core/model/ThreeDSContext.java
 src/main/java/co/revaly/sdk/core/model/TransactionGateway.java
 src/main/java/co/revaly/sdk/core/model/TransactionGroupResponse.java
 src/main/java/co/revaly/sdk/core/model/TransactionListItem.java

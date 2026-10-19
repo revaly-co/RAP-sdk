@@ -16,5 +16,6 @@ Name | Type | Description | Notes
 **authentication_status** | **string** | Final cardholder authentication status from ACS/3DS Server (TransStatus). Typical: Y, N, U, A, R. | [optional]
 **enrolled_status** | **string** | Enrollment status (legacy 3DS1, Verify Enrollment Response). Typical: Y, N, U. | [optional]
 **server_trans_id** | **string** | 3DS Server transaction ID (UUID, 36 chars). | [optional]
+**context** | [**\Revaly\Sdk\Core\Model\ThreeDSContext**](ThreeDSContext.md) |  | [optional]
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

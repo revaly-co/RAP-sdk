@@ -47,6 +47,7 @@ export * from './StoredCredential';
 export * from './StoredCredentialReasonType';
 export * from './StoredCredentialResponse';
 export * from './ThreeDS';
+export * from './ThreeDSContext';
 export * from './TransactionGateway';
 export * from './TransactionGroupResponse';
 export * from './TransactionListItem';

@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 **DisableSMSNotification** | **bool** | Whether SMS notifications are disabled for recovery | [optional] 
 **DisableEmailNotification** | **bool** | Whether email notifications are disabled for recovery | [optional] 
 **RetryCount** | **int** | Number of retry attempts for this billing cycle (initial attempt is 0) | [optional] 
-**PaymentReferenceData** | **string** | Reference data received when a payment failed. This data should be returned on retry transactions for the same payment. | [optional] 
+**PaymentReferenceData** | **string** | Reference data received when a payment failed. This data should be returned on retry transactions for the same payment. The value is the reference Revaly returned on the failed attempt and must be echoed unchanged (base64, at most 60 characters as produced). | [optional] 
 **DateFirstAttempt** | **DateTime** | Date and time of the first transaction attempt for this billing cycle. Required when retry count is greater than 0. | [optional] 
 
 [[Back to Model list]](../../README.md#documentation-for-models) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to README]](../../README.md)

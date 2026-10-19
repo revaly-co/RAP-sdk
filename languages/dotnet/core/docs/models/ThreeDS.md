@@ -17,6 +17,7 @@ Name | Type | Description | Notes
 **AuthenticationStatus** | **string** | Final cardholder authentication status from ACS/3DS Server (TransStatus). Typical: Y, N, U, A, R. | [optional] 
 **EnrolledStatus** | **string** | Enrollment status (legacy 3DS1, Verify Enrollment Response). Typical: Y, N, U. | [optional] 
 **ServerTransId** | **Guid** | 3DS Server transaction ID (UUID, 36 chars). | [optional] 
+**Context** | [**ThreeDSContext**](ThreeDSContext.md) |  | [optional] 
 
 [[Back to Model list]](../../README.md#documentation-for-models) [[Back to API list]](../../README.md#documentation-for-api-endpoints) [[Back to README]](../../README.md)
 

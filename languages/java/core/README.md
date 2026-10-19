@@ -2,7 +2,7 @@
 
 Revaly
 
-- API version: 2.7.0
+- API version: 2.12.2
 
 - Generator version: 7.23.0
 
@@ -233,6 +233,7 @@ Class | Method | HTTP request | Description
  - [StoredCredentialReasonType](docs/StoredCredentialReasonType.md)
  - [StoredCredentialResponse](docs/StoredCredentialResponse.md)
  - [ThreeDS](docs/ThreeDS.md)
+ - [ThreeDSContext](docs/ThreeDSContext.md)
  - [TransactionGateway](docs/TransactionGateway.md)
  - [TransactionGroupResponse](docs/TransactionGroupResponse.md)
  - [TransactionListItem](docs/TransactionListItem.md)

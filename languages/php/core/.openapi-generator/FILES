@@ -53,6 +53,7 @@ docs/Model/StoredCredential.md
 docs/Model/StoredCredentialReasonType.md
 docs/Model/StoredCredentialResponse.md
 docs/Model/ThreeDS.md
+docs/Model/ThreeDSContext.md
 docs/Model/TransactionGateway.md
 docs/Model/TransactionGroupResponse.md
 docs/Model/TransactionListItem.md
@@ -117,6 +118,7 @@ lib/Model/StoredCredential.php
 lib/Model/StoredCredentialReasonType.php
 lib/Model/StoredCredentialResponse.php
 lib/Model/ThreeDS.php
+lib/Model/ThreeDSContext.php
 lib/Model/TransactionGateway.php
 lib/Model/TransactionGroupResponse.php
 lib/Model/TransactionListItem.php

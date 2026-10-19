@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.7.0
+API version: 2.12.2
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -28,10 +28,14 @@ type PaymentMethodResponse struct {
 	PaymentMethodId NullableString `json:"paymentMethodId,omitempty"`
 	// Masked credit card number
 	CreditCardNumber NullableString `json:"creditCardNumber,omitempty"`
-	// Credit card expiry month
+	// Credit card expiry month, two digits.  On a **charge or authorize** response this is the expiry month you sent (a one-digit month is returned padded to two digits), unless this API holds a newer, confirmed expiry for the same card: from the card vault's Account Updater, or from the real-time account updater of Chase Orbital or Worldpay Litle. Then it is the newer month. When the Account Updater has replaced the card behind the vault token you presented, the response returns the replacement's `vaultToken` with `cardReplaced`; the expiry month is the replacement card's when this API holds a confirmed expiry for that card, and otherwise the month you sent. A newer expiry is never a date this API estimated, never earlier than the expiry you sent for the same card, and never part of a card number. When you sent no expiry and nothing newer is known, the field is omitted. For a `gatewayPaymentMethodId`, it can be the expiry recorded for that payment method rather than the one you sent.  The **single-transaction reads** and the transaction-group reads return the value recorded when the transaction was processed. The paged list reports this field only for payment method operations. On the stored payment method endpoints (`/paymentmethods` show, list) it is the expiry stored on the payment method, which a newer expiry returned on a transaction does not update.
 	ExpiryMonth NullableString `json:"expiryMonth,omitempty" validate:"regexp=^(0[1-9]|1[0-2])$"`
-	// Credit card expiry year
+	// Credit card expiry year.  On a **charge or authorize** response this is the expiry year you sent, unless this API holds a newer, confirmed expiry for the same card: from the card vault's Account Updater, or from the real-time account updater of Chase Orbital or Worldpay Litle. Then it is the newer year. When the Account Updater has replaced the card behind the vault token you presented, the response returns the replacement's `vaultToken` with `cardReplaced`; the expiry year is the replacement card's when this API holds a confirmed expiry for that card, and otherwise the year you sent. A newer expiry is never a date this API estimated, never earlier than the expiry you sent for the same card, and never part of a card number. When you sent no expiry and nothing newer is known, the field is omitted. For a `gatewayPaymentMethodId`, it can be the expiry recorded for that payment method rather than the one you sent.  The **single-transaction reads** and the transaction-group reads return the value recorded when the transaction was processed. The paged list reports this field only for payment method operations. On the stored payment method endpoints (`/paymentmethods` show, list) it is the expiry stored on the payment method, which a newer expiry returned on a transaction does not update.
 	ExpiryYear NullableString `json:"expiryYear,omitempty" validate:"regexp=^20[0-9]{2}$"`
+	// `true` when the expiry this response returns in `expiryMonth` and `expiryYear` differs from the expiry you sent, because this API holds a newer, confirmed expiry for the card (see `expiryMonth`). Present, and then `true`, only on the payment method nested inside a **charge or authorize** response; omitted otherwise, and never `false`.  The **single-transaction reads** and the transaction-group reads return the value recorded when the transaction was processed. Always omitted on follow-up responses (capture, void, refund, refund-cancel) and on the stored payment method endpoints (`/paymentmethods` show, list).
+	ExpiryUpdated NullableBool `json:"expiryUpdated,omitempty"`
+	// `true` when this API learned that the card behind this payment method was replaced: the card vault's Account Updater replaced the card behind the vault token you presented (the response then returns the replacement's `vaultToken`), or the real-time account updater of Chase Orbital or Worldpay Litle reported a replacement card. A replacement card's expiry is returned in `expiryMonth` and `expiryYear` only with `cardReplaced`, and only when this API holds a confirmed expiry for that card. Present, and then `true`, only on the payment method nested inside a **charge or authorize** response; omitted otherwise, and never `false`. Gateway-specific response blocks are passed through as received and are not covered by `cardReplaced`.  The **single-transaction reads** and the transaction-group reads return the value recorded when the transaction was processed. Always omitted on follow-up responses (capture, void, refund, refund-cancel) and on the stored payment method endpoints (`/paymentmethods` show, list).
+	CardReplaced NullableBool `json:"cardReplaced,omitempty"`
 	// Masked card verification value
 	Cvv NullableString `json:"cvv,omitempty"`
 	// Cardholder's first name
@@ -251,6 +255,90 @@ func (o *PaymentMethodResponse) SetExpiryYearNil() {
 // UnsetExpiryYear ensures that no value is present for ExpiryYear, not even an explicit nil
 func (o *PaymentMethodResponse) UnsetExpiryYear() {
 	o.ExpiryYear.Unset()
+}
+
+// GetExpiryUpdated returns the ExpiryUpdated field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *PaymentMethodResponse) GetExpiryUpdated() bool {
+	if o == nil || IsNil(o.ExpiryUpdated.Get()) {
+		var ret bool
+		return ret
+	}
+	return *o.ExpiryUpdated.Get()
+}
+
+// GetExpiryUpdatedOk returns a tuple with the ExpiryUpdated field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PaymentMethodResponse) GetExpiryUpdatedOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.ExpiryUpdated.Get(), o.ExpiryUpdated.IsSet()
+}
+
+// HasExpiryUpdated returns a boolean if a field has been set.
+func (o *PaymentMethodResponse) HasExpiryUpdated() bool {
+	if o != nil && o.ExpiryUpdated.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetExpiryUpdated gets a reference to the given NullableBool and assigns it to the ExpiryUpdated field.
+func (o *PaymentMethodResponse) SetExpiryUpdated(v bool) {
+	o.ExpiryUpdated.Set(&v)
+}
+// SetExpiryUpdatedNil sets the value for ExpiryUpdated to be an explicit nil
+func (o *PaymentMethodResponse) SetExpiryUpdatedNil() {
+	o.ExpiryUpdated.Set(nil)
+}
+
+// UnsetExpiryUpdated ensures that no value is present for ExpiryUpdated, not even an explicit nil
+func (o *PaymentMethodResponse) UnsetExpiryUpdated() {
+	o.ExpiryUpdated.Unset()
+}
+
+// GetCardReplaced returns the CardReplaced field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *PaymentMethodResponse) GetCardReplaced() bool {
+	if o == nil || IsNil(o.CardReplaced.Get()) {
+		var ret bool
+		return ret
+	}
+	return *o.CardReplaced.Get()
+}
+
+// GetCardReplacedOk returns a tuple with the CardReplaced field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PaymentMethodResponse) GetCardReplacedOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.CardReplaced.Get(), o.CardReplaced.IsSet()
+}
+
+// HasCardReplaced returns a boolean if a field has been set.
+func (o *PaymentMethodResponse) HasCardReplaced() bool {
+	if o != nil && o.CardReplaced.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetCardReplaced gets a reference to the given NullableBool and assigns it to the CardReplaced field.
+func (o *PaymentMethodResponse) SetCardReplaced(v bool) {
+	o.CardReplaced.Set(&v)
+}
+// SetCardReplacedNil sets the value for CardReplaced to be an explicit nil
+func (o *PaymentMethodResponse) SetCardReplacedNil() {
+	o.CardReplaced.Set(nil)
+}
+
+// UnsetCardReplaced ensures that no value is present for CardReplaced, not even an explicit nil
+func (o *PaymentMethodResponse) UnsetCardReplaced() {
+	o.CardReplaced.Unset()
 }
 
 // GetCvv returns the Cvv field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -1010,6 +1098,12 @@ func (o PaymentMethodResponse) ToMap() (map[string]interface{}, error) {
 	}
 	if o.ExpiryYear.IsSet() {
 		toSerialize["expiryYear"] = o.ExpiryYear.Get()
+	}
+	if o.ExpiryUpdated.IsSet() {
+		toSerialize["expiryUpdated"] = o.ExpiryUpdated.Get()
+	}
+	if o.CardReplaced.IsSet() {
+		toSerialize["cardReplaced"] = o.CardReplaced.Get()
 	}
 	if o.Cvv.IsSet() {
 		toSerialize["cvv"] = o.Cvv.Get()

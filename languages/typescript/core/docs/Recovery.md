@@ -31,7 +31,7 @@ const example = {
   "disableSMSNotification": false,
   "disableEmailNotification": false,
   "retryCount": 0,
-  "paymentReferenceData": ref_original_12345,
+  "paymentReferenceData": AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKis=,
   "dateFirstAttempt": 2025-01-15T10:30Z,
 } satisfies Recovery
 

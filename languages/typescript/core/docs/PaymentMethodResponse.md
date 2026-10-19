@@ -11,6 +11,8 @@ Name | Type
 `creditCardNumber` | string
 `expiryMonth` | string
 `expiryYear` | string
+`expiryUpdated` | boolean
+`cardReplaced` | boolean
 `cvv` | string
 `firstName` | string
 `lastName` | string
@@ -41,6 +43,8 @@ const example = {
   "creditCardNumber": ****-****-****-4242,
   "expiryMonth": 12,
   "expiryYear": 2025,
+  "expiryUpdated": true,
+  "cardReplaced": true,
   "cvv": ***,
   "firstName": John,
   "lastName": Doe,
