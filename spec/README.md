@@ -9,11 +9,11 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.12.2+cec0b33`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.12.2%2Bcec0b33) (platform repo) |
-| Spec version | 2.12.2 |
-| Source commit | `cec0b338645cdb7c26ea1307c0a7dd16caf240cd` |
+| Release | [`spec/v2.13.0+98915d8`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.13.0%2B98915d8) (platform repo) |
+| Spec version | 2.13.0 |
+| Source commit | `98915d8fe0b27df33e7117866674a4b8e8a22bbb` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `5b06118180d006328f30e182ca65c7d0d28a0a00837ae2276222f3a8c5622322` |
+| sha256 (`openapi.bundled.yaml`) | `ac8db33744bd9328b636329320362f58af2c690876cacc1965db30341eb66364` |
 | Pinned | 2026-10-19 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
@@ -37,7 +37,18 @@ to 1,024 and `paymentReferenceData` documented as the base64 reference Revaly re
 (SC-659); optional 3DS `context` block (STR-262, RFC-068); the `context.acceptHeader` example
 no longer carries `*/`, which closed the .NET core's generated doc comment (SC-660, Backbone
 PR #388); `context` / `context.channel` prose states how Backbone records the channel
-(STR-258, Backbone PRs #367 / #391); no error-code, verdict or enum change).
+(STR-258, Backbone PRs #367 / #391); no error-code, verdict or enum change) →
+`v2.13.0+98915d8` (2026-10-19 — the SC-660 AC1 prose, Backbone PR #392: the `ErrorResponse`
+`details` description documents the edge firewall's 403 block body (`details.edgeRejection`
+equal to the JSON boolean `true` means the request never reached the platform and its
+`merchantTransactionId` was not consumed; `details.reference` is the edge tracking reference;
+the body is served as `text/html`, so every 403 body is parsed as JSON; the match is on the
+marker, never on the `error` sentence; a 403 without the marker is final) and carries the
+per-operation instruction; `code` stays documented as absent on every 4xx, the edge 403
+included; the 403 and 409 descriptions gain the matching prose. `details` stays typeless; no
+shape, bound, enum, status or error-code change; the bundle differs from v2.12.2 in exactly
+five lines. This is the pin that ADR-SDK-033 Decision 9 requires before the minor release of
+all six packages).
 
 Eight published artifacts were never consumed and are superseded rather than skipped:
 `v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), and `v2.8.0+95bd397`,
@@ -54,7 +65,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.12.2+cec0b33" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.13.0+98915d8" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

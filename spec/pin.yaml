@@ -4,48 +4,46 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.12.2+cec0b33
-specVersion: 2.12.2
-sourceCommit: cec0b338645cdb7c26ea1307c0a7dd16caf240cd
+releaseTag: spec/v2.13.0+98915d8
+specVersion: 2.13.0
+sourceCommit: 98915d8fe0b27df33e7117866674a4b8e8a22bbb
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: 5b06118180d006328f30e182ca65c7d0d28a0a00837ae2276222f3a8c5622322
+  openapi.bundled.yaml: ac8db33744bd9328b636329320362f58af2c690876cacc1965db30341eb66364
 pinnedAt: "2026-10-19"
 notes: >-
-  Ninth pin (was spec/v2.7.0+7a05e7b). Absorbs seven platform artifacts in one bump
-  (v2.8.0 to v2.12.2; v2.8.0 to v2.11.0 were published while the SDK was on v2.7.0, and
-  v2.12.0 / v2.12.1 were superseded the same day; none was skipped). All additive or prose;
-  the platform breaking-change gate passed on every one. (1) SC-636 (v2.8.0): the recordRefund notify prose adds a 422 for a transaction no
-  gateway approved (declined, failed, or never sent); 422 already classifies as
-  PermanentRejection, no shape change. (2) SC-640 (v2.9.0): expiryMonth / expiryYear
-  descriptions on the response payment method state when the returned expiry is newer than
-  the one sent (Account Updater, Chase Orbital / Worldpay Litle real-time updaters); prose
-  only. (3) SC-653 (v2.10.0): two new optional nullable booleans on the response payment
-  method, expiryUpdated and cardReplaced, present (and then true) only inside a charge or
-  authorize response; additive. (4) SC-659 (v2.11.0): previous-transaction gatewayMessage /
-  avsMessage / cvvMessage maxLength 255 -> 1024 (echo fields, never rejected by the
-  platform); paymentReferenceData description states the value is the base64 reference
-  Revaly returned (at most 60 characters as produced), maxLength 500 unchanged; the 17
-  examples switch from free text to a base64 string. (5) STR-262 (v2.12.0): a new optional
-  nullable `context` object on ThreeDS (RFC-068 shopper device and browser context, 12
-  optional properties) passed through to the gateway layer; additive request-side field.
-  (6) SC-660 (v2.12.1, Backbone PR #388): the context.acceptHeader example ends
-  image/avif,image/webp instead of */*;q=0.8, because the `*/` closed the doc comment the .NET
-  generichost generator wraps around examples and broke the .NET core build (CS1519 in
-  ThreeDSContext.cs); example only. (7) STR-258 (v2.12.2, Backbone PRs #367 / #391): the
-  context and context.channel descriptions state that Backbone records only the channel,
-  reduced to BROWSER, MOBILE_APP, SDK, POS or OTHER; channel stays an open string, prose only.
-  No new error codes, transaction types or reconcile verdicts; no enum introduced or narrowed;
-  no status code moves between failover classes, so the failover classification surface is
-  untouched (failover-contract §2). The SDK quickstarts send none of the new fields. All four
-  platform gates pass; provenance ciRunId 39263511915. Prior pin history: v2.1.2+9af661b
-  (first pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
-  v2.2.0+1e59620 (additive statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID
-  response header documented) -> v2.3.0+80cc897 (validation reality matches the published
-  contract) -> v2.4.0+4ce73e2 (nested vaultToken on charge/authorize, lookup unions oneOf ->
-  anyOf, 404 on charge/authorize) -> v2.6.0+abf71b6 (flat vaultToken on TransactionListItem,
-  nested vaultToken on the transaction reads, recordRefund documented for gateway-routed
-  transactions) -> v2.7.0+7a05e7b (bypassPlatform deprecated, true refused with 404).
+  Tenth pin (was spec/v2.12.2+cec0b33). One platform artifact, v2.13.0 (SC-660 AC1, RFC-071
+  D8, Backbone PR #392), prose only; the bundle differs from v2.12.2 in exactly five lines: the
+  version and four descriptions. (1) The ErrorResponse `details` description documents the edge
+  firewall's 403 block body: `details.edgeRejection` equal to the JSON boolean `true` means the
+  request never reached the payment platform and its merchantTransactionId was not consumed;
+  `details.reference` is the edge tracking reference (equal to the `x-azure-ref` header); the
+  body is served as text/html, so every 403 body is parsed as JSON regardless of content type;
+  the match is on the marker and never on the `error` sentence; a 403 without the marker is
+  final; and the per-operation instruction (charge and authorize resubmit with corrected content
+  or fail over, never both for one id, and fail over only when no earlier submission may have
+  reached the platform; capture, void, refund, refund-cancel, payment-method and notify calls
+  never fail over, confirm state with a lookup, then resubmit once). (2) The `code` description
+  states it stays absent on every 4xx, the edge 403 included. (3) The 403 (Forbidden)
+  description tells the edge block apart from the platform's own rejection. (4) The 409
+  (Conflict) description adds the rule for a resubmission after an edge block. `details` stays
+  typeless; no response object is added; no shape, bound, enum, status or error-code change, so
+  the failover classification surface is untouched (failover-contract §2) and the
+  marker-reading classification already on main (ADR-SDK-033, PR #103) is unchanged by this
+  pin. This is the pin that ADR-SDK-033 Decision 9 requires before the minor release of all six
+  packages: the generated reference now carries the marker's meaning. All four platform gates
+  pass; provenance ciRunId 39314638502. Prior pin history: v2.1.2+9af661b (first pin, int64
+  maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) -> v2.2.0+1e59620
+  (additive statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID response header
+  documented) -> v2.3.0+80cc897 (validation reality matches the published contract) ->
+  v2.4.0+4ce73e2 (nested vaultToken on charge/authorize, lookup unions oneOf -> anyOf, 404 on
+  charge/authorize) -> v2.6.0+abf71b6 (flat vaultToken on TransactionListItem, nested vaultToken
+  on the transaction reads, recordRefund documented for gateway-routed transactions) ->
+  v2.7.0+7a05e7b (bypassPlatform deprecated, true refused with 404) -> v2.12.2+cec0b33 (seven
+  artifacts absorbed, v2.8.0 to v2.12.2: recordRefund 422 prose, returned-expiry prose,
+  expiryUpdated / cardReplaced, echo bounds to 1024 with base64 reference examples, the optional
+  3DS context block, the acceptHeader example without a comment terminator, the channel
+  recording prose).
