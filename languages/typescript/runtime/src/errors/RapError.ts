@@ -12,7 +12,11 @@ export interface RapErrorOptions {
     code?: string;
     /** The server's human-readable `error` message. Never used for classification. */
     apiError?: string;
-    /** The server's `details` field — opaque by contract; never inspected by the runtime. */
+    /**
+     * The server's `details` field — opaque by contract. The runtime reads exactly one key
+     * of it, `edgeRejection` on a 403 (ADR-SDK-033, surfaced as `isEdgeRejection` /
+     * `edgeReference`), and never inspects the rest.
+     */
     details?: unknown;
     /** `X-Correlation-ID` of the response; joins merchant tickets to RAP-core telemetry. */
     correlationId?: string;
@@ -20,6 +24,13 @@ export interface RapErrorOptions {
     rawBody?: string;
     /** The underlying transport failure, when there is one. */
     cause?: unknown;
+    /**
+     * True when the production edge firewall blocked this request before it reached the
+     * platform: an HTTP 403 whose body carries `details.edgeRejection: true` (ADR-SDK-033).
+     */
+    isEdgeRejection?: boolean;
+    /** The edge firewall's tracking reference (`details.reference`, equal to the `x-azure-ref` header). */
+    edgeReference?: string;
 }
 
 /**
@@ -39,6 +50,20 @@ export abstract class RapError extends Error {
     readonly details?: unknown;
     readonly correlationId?: string;
     readonly rawBody?: string;
+    /**
+     * True when the production edge firewall blocked this request before it reached the
+     * platform: an HTTP 403 whose body carries `details.edgeRejection: true` (ADR-SDK-033).
+     * Such a failure is a `RapTransientFailure` — the payment was definitively not
+     * processed. Charge and authorize: fail over, or fix the request content and retry;
+     * capture, void, refund and refund-cancel: retry the same request.
+     */
+    readonly isEdgeRejection: boolean;
+    /**
+     * The edge firewall's tracking reference (`details.reference`, equal to the
+     * `x-azure-ref` response header) when `isEdgeRejection` is true; otherwise undefined.
+     * Quote it to support — it identifies the exact firewall decision.
+     */
+    readonly edgeReference?: string;
 
     constructor(message: string, options: RapErrorOptions = {}) {
         super(message, options.cause !== undefined ? { cause: options.cause } : undefined);
@@ -48,14 +73,18 @@ export abstract class RapError extends Error {
         this.details = options.details;
         this.correlationId = options.correlationId;
         this.rawBody = options.rawBody;
+        this.isEdgeRejection = options.isEdgeRejection === true;
+        if (this.isEdgeRejection && options.edgeReference !== undefined) {
+            this.edgeReference = options.edgeReference;
+        }
         // Restore the prototype chain for environments that transpile class extends.
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 /**
- * Received and rejected (HTTP 400/401/403/404/422). Fix or decline. **Never fail
- * over** — the same request fails anywhere.
+ * Received and rejected (HTTP 400/401/404/422, or a 403 without the edge-rejection
+ * marker). Fix or decline. **Never fail over** — the same request fails anywhere.
  */
 export class RapPermanentRejection extends RapError {
     override readonly name: string = 'RapPermanentRejection';
@@ -63,8 +92,9 @@ export class RapPermanentRejection extends RapError {
 }
 
 /**
- * Definitively not processed (client-provable never-sent, or 503 with
- * `code: not_processed`). Safe to route to your own gateway immediately.
+ * Definitively not processed (client-provable never-sent, 503 with
+ * `code: not_processed`, or a 403 blocked at the edge firewall — `isEdgeRejection`,
+ * ADR-SDK-033). Safe to route to your own gateway immediately.
  */
 export class RapTransientFailure extends RapError {
     override readonly name: string = 'RapTransientFailure';

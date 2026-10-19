@@ -29,9 +29,10 @@ public sealed class RapClientOptions
     /// Default <c>"2.1"</c>; <c>"2.0"</c> is selectable.
     /// <b>Behavioural difference on "2.0":</b> the <c>ErrorResponse.code</c> field is not
     /// part of the 2.0 documented contract, so the fast-failover class narrows to
-    /// client-provable never-sent failures only — a 503 with <c>code: not_processed</c>
-    /// classifies as OutcomeUnknown (reconcile) instead of TransientFailure (immediate
-    /// failover). Pin 2.1 unless you have a frozen 2.0 integration.
+    /// client-provable never-sent failures plus the edge-rejection 403 (ADR-SDK-033,
+    /// honoured on both pins) — a 503 with <c>code: not_processed</c> classifies as
+    /// OutcomeUnknown (reconcile) instead of TransientFailure (immediate failover).
+    /// Pin 2.1 unless you have a frozen 2.0 integration.
     /// </summary>
     public string ApiVersion { get; init; } = "2.1";
 

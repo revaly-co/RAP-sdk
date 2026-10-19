@@ -1,7 +1,8 @@
 # RAP Integration SDK — Failover & Reconciliation Contract
 
 **Source:** RFC-046 §5 (Approved 2026-07-10, v10) · ADR-SDK-002 (taxonomy), 003 (reconcile),
-004 (trust boundary), 007 (P-1 signal), 008 (P-2 reservation), 009 (V1 verdicts)
+004 (trust boundary), 007 (P-1 signal), 008 (P-2 reservation), 009 (V1 verdicts), 033 (edge
+rejection marker, RFC-071 D8 — revised 2026-10-18)
 **Safety-critical.** This document is the contract every runtime implements and every quickstart
 teaches. When in doubt, the rule is: **only promise what the platform can prove.**
 
@@ -20,26 +21,44 @@ RAP-core, once at the merchant's gateway. Every rule below derives from that haz
 
 | Class | Trigger | Payment state at RAP-core | Caller action |
 | --- | --- | --- | --- |
-| **PermanentRejection** | HTTP 400 / 401 / 403 / 404 / 422 | Received and rejected | Fix or decline — failing over reproduces the same rejection anywhere. |
-| **TransientFailure** *(safe to fail over)* | Client-provable never-sent (connection refused; DNS or TLS failure before the request was accepted); **503 with `code: not_processed`** | **Definitively not processed** | Route to own gateway immediately (the PRD's first-layer failover path). |
+| **PermanentRejection** | HTTP 400 / 401 / 403 (without the edge marker) / 404 / 422 | Received and rejected | Fix or decline — failing over reproduces the same rejection anywhere. |
+| **TransientFailure** *(safe to fail over)* | Client-provable never-sent (connection refused; DNS or TLS failure before the request was accepted); **503 with `code: not_processed`**; **403 whose JSON body carries `details.edgeRejection: true`** (blocked at the edge; never reached the platform — ADR-SDK-033) | **Definitively not processed** | Route to own gateway immediately (the PRD's first-layer failover path). On an edge rejection: charge and authorize fail over or fix the content and retry; capture, void, refund and refund-cancel retry the same request. |
 | **OutcomeUnknown** | Deadline exceeded after send; connection reset mid-flight; 500; 502/504 (edge); **503 without `code: not_processed`** | **May have been processed** | **Reconcile before acting** (§3). |
 
 Classification algorithm (normative):
 
 ```
 if transport error and request provably never sent          → TransientFailure
+if HTTP status == 403 and body is JSON (any Content-Type)
+   and body.details.edgeRejection == true (JSON boolean)     → TransientFailure   (ADR-SDK-033)
 if HTTP status in {400, 401, 403, 404, 422}                 → PermanentRejection
 if HTTP status == 503 and body.code == "not_processed"      → TransientFailure
 if HTTP status >= 500                                        → OutcomeUnknown
 if deadline exceeded after send / reset / ambiguous          → OutcomeUnknown
 ```
 
-Rules the algorithm rests on: classification takes exactly two inputs, HTTP status and
-`ErrorResponse.code`; `details` is carried through as opaque; `code` is read as an open string, so
-an unrecognized value is handled as absent and resolves to OutcomeUnknown; and where a language's
-HTTP stack cannot prove the request was never sent, the outcome is OutcomeUnknown. The
-safe-to-fail-over class is reserved for non-dispatch the transport or the platform can prove.
+Rules the algorithm rests on: classification takes exactly three inputs — HTTP status,
+`ErrorResponse.code`, and on a 403 the single structured key `details.edgeRejection`; the rest of
+`details` is carried through as opaque; `code` is read as an open string, so an unrecognized value
+is handled as absent and resolves to OutcomeUnknown; and where a language's HTTP stack cannot
+prove the request was never sent, the outcome is OutcomeUnknown. The safe-to-fail-over class is
+reserved for non-dispatch the transport or the platform can prove.
 (Verbatim prohibitions: [Appendix A](#appendix-a--normative-prohibitions-verbatim) §A1.)
+
+**Edge rejection (RFC-071 D8, ADR-SDK-033, revised 2026-10-18).** The production edge firewall
+blocks a request it judges hostile with a 403 whose body is
+`{"details":{"edgeRejection":true,"reference":"<tracking reference>"},"error":"…"}`, served as
+`Content-Type: text/html` (the edge cannot set another type), with no `code`. The marker proves
+the request never reached the platform (each reference joins a firewall `Block` row and no origin
+access row), so the runtime JSON-parses **every** 403 body regardless of content type and, when
+`details.edgeRejection` is the JSON boolean `true`, classifies TransientFailure. Every typed
+error carries `isEdgeRejection` and `edgeReference` (the `details.reference` value, equal to the
+`x-azure-ref` header) so the merchant can quote the exact firewall decision to support. Any
+other 403 — the legacy HTML block page, a JSON body without the marker, the platform's own 403 —
+stays PermanentRejection. The marker is honoured on both API version pins (2.0 and 2.1) because
+the edge sits in front of the API. Per-operation instruction: charge and authorize were never
+accepted, so fail over or correct the content and retry; capture, void, refund and refund-cancel
+retry the same request.
 
 Why 503 needs the `code`: the platform maps upstream 502/503/504-after-dispatch **and** its own
 circuit-breaker-open case to the same bare 503. Only `code: not_processed` (emitted solely for
@@ -67,6 +86,11 @@ Procedure:
    merchant policy. A merchant who chooses to fail over anyway owns that decision in *their* code
    against *their* risk policy; the docs say plainly that the contract does not support it, so the
    choice is made knowingly.
+
+A degraded read (5xx, timeout or transport failure on the GET) keeps polling within the caller's
+budget, because visibility is widest exactly when RAP-core is degraded. A 403 carrying the edge
+marker on the GET (ADR-SDK-033) is the same kind of event — the read never reached the platform —
+and also keeps polling; any other non-404 PermanentRejection on the GET ends the loop.
 
 **GA (post-P-2):** the platform writes a synchronous intent reservation before gateway dispatch and
 surfaces it as a *pending* state on the same GET. Then: not found **after the reservation window
@@ -159,8 +183,9 @@ and test (verbatim prohibitions: §A3):
   way on every call, because there is no breaker state, suppression window, or hidden retry to
   carry between requests. The one loop in the product is the explicit, caller-bounded reconcile
   re-poll.
-- **Safety derives from evidence only** — HTTP status and `ErrorResponse.code`. Message strings,
-  latency, and wait lengths are recorded for the operator and excluded from classification.
+- **Safety derives from evidence only** — HTTP status, `ErrorResponse.code`, and on a 403 the
+  single `details.edgeRejection` key (ADR-SDK-033). Message strings, latency, and wait lengths
+  are recorded for the operator and excluded from classification.
 
 ## 6. Verification obligations
 
@@ -168,10 +193,17 @@ and test (verbatim prohibitions: §A3):
   against live Front Door / WAF behaviour (30-day production edge census + live probes; full
   evidence in the ADR). Two verified nuances: an edge **504 can fire in ~4 s** (AFD's
   origin-connect bound) — a 504 never implies the deadline elapsed, classification stays
-  status-only; and edge-generated error bodies are **HTML, never `ErrorResponse`** — the
-  open-string `code` fallthrough (absent → OutcomeUnknown) is load-bearing. Only the
-  platform's own `503 {code: "not_processed"}` licenses fast failover; it passes through the
-  edge unmodified, and the edge cannot mint it.
+  status-only; and edge-generated error bodies were **HTML, never `ErrorResponse`** — the
+  open-string `code` fallthrough (absent → OutcomeUnknown) is load-bearing. The platform's
+  own `503 {code: "not_processed"}` passes through the edge unmodified, and the edge cannot
+  mint it. *Superseded in part 2026-10-18 (ADR-SDK-033):* the edge **block** response is now
+  a JSON marker body, and a marker-bearing 403 is the second platform-minted fast-failover
+  signal (next bullet); the 5xx rows and the `code` rule are unchanged.
+- **RFC-071 D8 — edge block body verified 2026-10-16 (SC-657; ADR-SDK-033):** since that date
+  the edge's block response is a 403 with the JSON marker body above, served as `text/html`,
+  and a production probe tied each `details.reference` to a firewall `Block` row with no origin
+  access. The marker row of the §2 table rests on that evidence; the 5xx rows and the `code`
+  rule are unchanged.
 - **Mock transport** (DX contract §d) must simulate every row of the §2 table, both §3 verdicts,
   and — post-P-2 — pending-then-terminal and pending-then-absent scenarios: a merchant must be
   able to unit-test their failover handler with no network.
@@ -194,6 +226,16 @@ and this appendix could be read differently, **this appendix governs**.
 Further: `ErrorResponse.code` and `transactionType` are **open strings, never closed enums**. Only
 the platform's own `503 {code: "not_processed"}` licenses fast failover; the edge cannot mint it,
 and edge-generated error bodies are **HTML, never `ErrorResponse`**.
+
+*Amended 2026-10-18 (ADR-SDK-033, RFC-071 D8) — the two edges above narrow as follows, and
+nothing else in A1 moves.* "Treat `details` as opaque" holds except for exactly one structured
+key: on a 403, `details.edgeRejection` equal to the JSON boolean `true` is read (and
+`details.reference` is carried as the edge reference); the rest of `details` stays opaque and is
+never re-typed. "Edge-generated error bodies are HTML, never `ErrorResponse`" is superseded for
+the edge **block** response, which since 2026-10-16 is a JSON marker body served as `text/html`;
+a marker-bearing 403 is the second and only other platform-minted fast-failover signal, and it
+proves non-dispatch the same way `503 {code: "not_processed"}` does. The `error` sentence is
+still never read.
 
 ### A2 — Reconcile verdicts (§3)
 

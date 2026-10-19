@@ -138,6 +138,29 @@ describe('NotFoundYet and the poll loop', () => {
         expect(mock.requests).toHaveLength(2);
     });
 
+    test('a 403 blocked at the edge on the GET keeps polling (the read never reached the platform)', async () => {
+        const mock = new RapMockTransport();
+        mock.reconcile(MTX).returnsEdgeRejection403().thenFoundApproved();
+
+        const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy(3));
+
+        expect(verdict.kind).toBe('Found');
+        expect(mock.requests).toHaveLength(2);
+    });
+
+    test('sustained edge rejections on the GET end as NotFoundYet with lastHttpStatus 403', async () => {
+        const mock = new RapMockTransport();
+        mock.reconcile(MTX).returnsEdgeRejection403();
+
+        const verdict = await mockedClient(mock).reconcile(MTX, immediatePolicy(2));
+
+        expect(verdict.kind).toBe('NotFoundYet');
+        if (verdict.kind === 'NotFoundYet') {
+            expect(verdict.lastHttpStatus).toBe(403);
+            expect(verdict.attempts).toBe(2);
+        }
+    });
+
     test('transport failures on the GET keep polling within the budget', async () => {
         const mock = new RapMockTransport();
         mock.reconcile(MTX).throwsConnectionRefused().thenFoundApproved();

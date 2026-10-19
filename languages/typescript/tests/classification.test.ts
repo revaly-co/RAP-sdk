@@ -66,6 +66,53 @@ describe('PermanentRejection rows', () => {
 
         expect(failure.details).toEqual({ field: ['amount'] });
     });
+
+    test('the legacy edge HTML block page (403, not JSON) stays PermanentRejection', async () => {
+        const mock = new RapMockTransport();
+        mock.charge().returnsEdgeHtmlPage403();
+
+        const failure = await chargeFailure(mock);
+
+        expect(failure).toBeInstanceOf(RapPermanentRejection);
+        expect(failure.status).toBe(403);
+        expect(failure.isEdgeRejection).toBe(false);
+        expect(failure.edgeReference).toBeUndefined();
+    });
+
+    test("the platform's own 403 (JSON without the marker) stays PermanentRejection", async () => {
+        const mock = new RapMockTransport();
+        mock.charge().returnsPlatformForbidden403();
+
+        const failure = await chargeFailure(mock);
+
+        expect(failure).toBeInstanceOf(RapPermanentRejection);
+        expect(failure.status).toBe(403);
+        expect(failure.isEdgeRejection).toBe(false);
+        expect(failure.edgeReference).toBeUndefined();
+    });
+
+    for (const [label, body] of [
+        ['the string "true"', '{"details":{"edgeRejection":"true","reference":"x"},"error":"s"}'],
+        ['the number 1', '{"details":{"edgeRejection":1,"reference":"x"},"error":"s"}'],
+        ['false', '{"details":{"edgeRejection":false,"reference":"x"},"error":"s"}'],
+        ['null', '{"details":{"edgeRejection":null},"error":"s"}'],
+        ['details as a string', '{"details":"edgeRejection","error":"s"}'],
+        ['details as an array', '{"details":[true],"error":"s"}'],
+        ['the marker at the root', '{"edgeRejection":true,"reference":"x","error":"s"}'],
+        ['trailing tokens after the JSON', '{"details":{"edgeRejection":true}}<html>'],
+        ['a NaN literal (not JSON)', '{"details":{"edgeRejection":true},"n":NaN}'],
+    ] as const) {
+        test(`${label} is not the edge marker — a 403 stays PermanentRejection`, async () => {
+            const mock = new RapMockTransport();
+            mock.charge().returns(403, body);
+
+            const failure = await chargeFailure(mock);
+
+            expect(failure).toBeInstanceOf(RapPermanentRejection);
+            expect(failure.isEdgeRejection).toBe(false);
+            expect(failure.edgeReference).toBeUndefined();
+        });
+    }
 });
 
 describe('TransientFailure rows', () => {
@@ -88,6 +135,41 @@ describe('TransientFailure rows', () => {
 
         expect(failure).toBeInstanceOf(RapOutcomeUnknown);
         expect(failure.code).toBe('not_processed');
+    });
+
+    test('403 carrying the edge marker (served as text/html) classifies TransientFailure', async () => {
+        const mock = new RapMockTransport();
+        mock.charge().returnsEdgeRejection403();
+
+        const failure = await chargeFailure(mock);
+
+        expect(failure).toBeInstanceOf(RapTransientFailure);
+        expect(failure.status).toBe(403);
+        expect(failure.isEdgeRejection).toBe(true);
+        expect(failure.edgeReference).toBe(SyntheticData.EDGE_REFERENCE);
+        expect(failure.code).toBeUndefined();
+        expect(failure.correlationId).toBe(SyntheticData.DEFAULT_CORRELATION_ID);
+    });
+
+    test('the edge marker is honoured on apiVersion 2.0 too (the edge sits in front of the API)', async () => {
+        const mock = new RapMockTransport();
+        mock.charge().returnsEdgeRejection403();
+
+        const failure = await chargeFailure(mock, { apiVersion: '2.0' });
+
+        expect(failure).toBeInstanceOf(RapTransientFailure);
+        expect(failure.isEdgeRejection).toBe(true);
+    });
+
+    test('the marker on a non-403 status does not change classification', async () => {
+        const mock = new RapMockTransport();
+        mock.charge().returns(500, SyntheticData.edgeRejectionBody('x'));
+
+        const failure = await chargeFailure(mock);
+
+        expect(failure).toBeInstanceOf(RapOutcomeUnknown);
+        expect(failure.isEdgeRejection).toBe(false);
+        expect(failure.edgeReference).toBeUndefined();
     });
 
     test('connection refused (happy-eyeballs AggregateError) is provably never sent', async () => {

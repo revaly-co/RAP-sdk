@@ -85,6 +85,16 @@ class MockOperation:
         """One of the §2 PermanentRejection statuses (400/401/403/404/422)."""
         return self._push_body(status, synthetic_data.error_body("synthetic rejection"))
 
+    def returns_edge_html_page_403(self) -> "MockOperation":
+        """Negative control (ADR-SDK-033): the legacy edge HTML block page — a 403
+        whose body is not JSON, so no marker can be read. Stays PermanentRejection."""
+        return self._push_body(403, synthetic_data.html_block_page(), {"Content-Type": "text/html"})
+
+    def returns_platform_forbidden_403(self) -> "MockOperation":
+        """Negative control (ADR-SDK-033): the platform's own 403 — a JSON
+        ErrorResponse without the edge marker. Stays PermanentRejection."""
+        return self._push_body(403, synthetic_data.error_body("forbidden by the platform"))
+
     # ---- TransientFailure rows (§2) -----------------------------------------
 
     def returns_not_processed_503(self) -> "MockOperation":
@@ -92,6 +102,18 @@ class MockOperation:
         (immediate failover)."""
         return self._push_body(
             503, synthetic_data.error_body("temporarily unable to process", "not_processed")
+        )
+
+    def returns_edge_rejection_403(
+        self, reference: str = synthetic_data.EDGE_REFERENCE
+    ) -> "MockOperation":
+        """403 blocked at the edge firewall (ADR-SDK-033): the JSON marker body
+        (``details.edgeRejection: true`` + ``details.reference``) served as
+        ``text/html``, exactly as the production edge serves it. The request never
+        reached the platform — ``is_edge_rejection`` is True and the class is
+        TransientFailure."""
+        return self._push_body(
+            403, synthetic_data.edge_rejection_body(reference), {"Content-Type": "text/html"}
         )
 
     def throws_connection_refused(self) -> "MockOperation":

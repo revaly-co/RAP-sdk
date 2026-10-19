@@ -25,7 +25,9 @@ public abstract class RapCoreException : Exception
         JsonElement? details,
         string? correlationId,
         string? rawErrorBody,
-        Exception? innerException)
+        Exception? innerException,
+        bool isEdgeRejection,
+        string? edgeReference)
         : base(message, innerException)
     {
         Class = failureClass;
@@ -35,6 +37,8 @@ public abstract class RapCoreException : Exception
         Details = details;
         CorrelationId = correlationId;
         RawErrorBody = rawErrorBody;
+        IsEdgeRejection = isEdgeRejection;
+        EdgeReference = isEdgeRejection ? edgeReference : null;
     }
 
     /// <summary>The failure class assigned by the normative classification algorithm.</summary>
@@ -56,11 +60,30 @@ public abstract class RapCoreException : Exception
     public string? ErrorMessage { get; }
 
     /// <summary>
-    /// The opaque <c>details</c> member of the error body, if any. The SDK never
-    /// interprets it (failover-contract §2) and it may contain merchant payload echoes —
-    /// treat as sensitive when logging (it is excluded from <see cref="Exception.Message"/>).
+    /// The opaque <c>details</c> member of the error body, if any. The SDK reads exactly one
+    /// key of it — <c>edgeRejection</c> on a 403 (ADR-SDK-033, surfaced as
+    /// <see cref="IsEdgeRejection"/> / <see cref="EdgeReference"/>) — and otherwise never
+    /// interprets it (failover-contract §2). It may contain merchant payload echoes — treat
+    /// as sensitive when logging (it is excluded from <see cref="Exception.Message"/>).
     /// </summary>
     public JsonElement? Details { get; }
+
+    /// <summary>
+    /// True when the production edge firewall blocked this request before it reached the
+    /// platform: an HTTP 403 whose body carries <c>details.edgeRejection: true</c>
+    /// (ADR-SDK-033). Such a failure is a <see cref="TransientFailureException"/> — the
+    /// payment was definitively not processed. Charge and authorize: fail over, or fix the
+    /// request content and retry; capture, void, refund and refund-cancel: retry the same
+    /// request.
+    /// </summary>
+    public bool IsEdgeRejection { get; }
+
+    /// <summary>
+    /// The edge firewall's tracking reference (<c>details.reference</c>, equal to the
+    /// <c>x-azure-ref</c> response header) when <see cref="IsEdgeRejection"/> is true;
+    /// otherwise null. Quote it to support — it identifies the exact firewall decision.
+    /// </summary>
+    public string? EdgeReference { get; }
 
     /// <summary>
     /// The request correlation id (<c>X-Correlation-ID</c> response header), when a

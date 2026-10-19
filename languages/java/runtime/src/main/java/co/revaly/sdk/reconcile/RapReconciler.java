@@ -71,8 +71,8 @@ public final class RapReconciler {
      *
      * @throws RapCoreException only for a rejected READ that polling can never fix
      *     (PermanentRejection other than 404 — bad credentials, malformed id); 404 is the
-     *     NotFoundYet signal, and degraded reads (5xx/timeouts/transport) keep polling within the
-     *     budget.
+     *     NotFoundYet signal, and degraded reads (5xx/timeouts/transport, or a 403 blocked at the
+     *     edge — ADR-SDK-033) keep polling within the budget.
      * @throws InterruptedException when the calling thread is interrupted — the java cancellation
      *     idiom for a blocking helper; no verdict is implied.
      */
@@ -132,11 +132,13 @@ public final class RapReconciler {
                             FailureClassifier.classifyResponse(
                                     response.statusCode(), body, apiVersion, correlationId);
                     if (classified.getFailureClass() == RapFailureClass.PERMANENT_REJECTION) {
-                        // 400/401/403/422 escape: polling will never fix a rejected read
-                        // (bad credentials, malformed id) — the caller must see it.
+                        // 400/401/422, or a 403 without the edge marker, escape: polling will
+                        // never fix a rejected read (bad credentials, malformed id) — the
+                        // caller must see it.
                         throw classified;
                     }
-                    // Degraded read path (5xx/timeout on the GET) — exactly the window
+                    // Degraded read path (5xx/timeout on the GET, or a 403 blocked at the edge
+                    // — the read never reached the platform, ADR-SDK-033) — exactly the window
                     // where visibility is widest; keep polling within the budget.
                     LOG.warn(
                             "rap.reconcile attempt {} degraded read [status={} class={}]; continuing within policy",

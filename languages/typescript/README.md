@@ -17,8 +17,8 @@ The SDK classifies every failure so you never have to guess:
 
 | Class | Meaning | What you do |
 | --- | --- | --- |
-| `RapPermanentRejection` | Received and rejected (400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
-| `RapTransientFailure` | **Definitively not processed** (provably never sent, or `503` + `code: not_processed`) | Route to your own gateway immediately. |
+| `RapPermanentRejection` | Received and rejected (400/401/404/422, or a 403 without the edge marker) | Fix or decline — failing over reproduces the same rejection anywhere. |
+| `RapTransientFailure` | **Definitively not processed** (provably never sent, `503` + `code: not_processed`, or a `403` blocked at the edge firewall — `isEdgeRejection`) | Route to your own gateway immediately. On an edge rejection, charge/authorize may also fix the request content and retry; capture/void/refund/refund-cancel retry the same request. Quote `edgeReference` to support. |
 | `RapOutcomeUnknown` | **May have been processed** (timeout after send, reset, 5xx) | **Reconcile before acting** — see below. |
 
 ## Quickstart (sandbox key → first charge, ≤ 15 minutes)
@@ -80,6 +80,10 @@ try {
         console.log('rejected', failure.status, failure.apiError, failure.correlationId);
     } else if (failure instanceof RapTransientFailure) {
         // Definitively not processed — route to your own gateway immediately.
+        // failure.isEdgeRejection: the edge firewall blocked the request before it reached
+        // the platform; failure.edgeReference identifies that firewall decision for
+        // support. Charge/authorize: fail over (or fix the content and retry);
+        // capture/void/refund/refund-cancel: retry the same request.
         routeToOwnGateway();
     } else if (failure instanceof RapOutcomeUnknown) {
         // May have been processed — reconcile BEFORE acting (double-charge hazard).
@@ -162,7 +166,8 @@ Requests pin `X-Api-Version: 2.1` by default. `"2.0"` is selectable
 (`apiVersion: '2.0'`) but narrows the contract: `ErrorResponse.code` is not part of the
 2.0 documented surface, so a `503` + `not_processed` classifies `RapOutcomeUnknown`
 (reconcile) instead of `RapTransientFailure` (immediate failover). Pin 2.1 unless you
-have a frozen 2.0 integration.
+have a frozen 2.0 integration. The edge-rejection marker is honoured on both pins
+(ADR-SDK-033): the edge sits in front of the API.
 
 ## Testing your failover handler — no network
 
@@ -182,7 +187,10 @@ mock.charge().returnsBare503().throwsConnectionRefused().returnsApproved();
 ```
 
 Scenario methods mirror the contract: `returnsPermanentRejection(status)`,
-`returnsNotProcessed503()`, `throwsConnectionRefused()`, `throwsDnsFailure()`,
+`returnsNotProcessed503()`, `returnsEdgeRejection403()` (the edge firewall's marker body
+served as `text/html` → `RapTransientFailure` with `isEdgeRejection`), its negative
+controls `returnsEdgeHtmlPage403()` / `returnsPlatformForbidden403()` (→
+`RapPermanentRejection`), `throwsConnectionRefused()`, `throwsDnsFailure()`,
 `throwsSslHandshakeFailure()`, `throwsConnectTimeout()`, `throwsTimeoutAfterSend()`,
 `throwsConnectionReset()`, `returnsBare503()`, `returnsServerError()`,
 `hangsUntilAborted()`, `pending()`, and raw escapes `returns(...)` / `throwsIo(...)`.

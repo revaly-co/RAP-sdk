@@ -102,6 +102,37 @@ public class ReconcileTests
     }
 
     [Fact]
+    public async Task Edge_rejected_reads_keep_polling_within_the_budget()
+    {
+        // A 403 blocked at the edge never reached the platform (ADR-SDK-033): it is a
+        // transport-class failure of the READ, not a rejection — keep polling.
+        var mock = new RapMockTransport();
+        mock.Reconcile(SyntheticData.MerchantTransactionId)
+            .ReturnsEdgeRejection403()
+            .ReturnsApproved();
+        using var client = TestClient.Create(mock);
+
+        var verdict = await client.ReconcileAsync(SyntheticData.MerchantTransactionId, QuickPolicy(3));
+
+        Assert.IsType<FoundVerdict>(verdict);
+        Assert.Equal(2, mock.Requests.Count);
+    }
+
+    [Fact]
+    public async Task Sustained_edge_rejected_reads_end_as_NotFoundYet_with_last_status_403()
+    {
+        var mock = new RapMockTransport();
+        mock.Reconcile(SyntheticData.MerchantTransactionId).ReturnsEdgeRejection403();
+        using var client = TestClient.Create(mock);
+
+        var verdict = await client.ReconcileAsync(SyntheticData.MerchantTransactionId, QuickPolicy(2));
+
+        var notFound = Assert.IsType<NotFoundYetVerdict>(verdict);
+        Assert.Equal(403, notFound.LastHttpStatus);
+        Assert.Equal(2, mock.Requests.Count);
+    }
+
+    [Fact]
     public async Task Rejected_reads_other_than_404_escape_immediately()
     {
         var mock = new RapMockTransport();

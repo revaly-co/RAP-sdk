@@ -49,8 +49,8 @@ final class RapReconciler
      *
      * @throws RapCoreException only for a rejected READ that polling can never fix
      *         (PermanentRejection other than 404 — bad credentials, malformed id); 404
-     *         is the NotFoundYet signal, and degraded reads (5xx/timeouts/transport)
-     *         keep polling within the budget.
+     *         is the NotFoundYet signal, and degraded reads (5xx/timeouts/transport, or
+     *         a 403 blocked at the edge — ADR-SDK-033) keep polling within the budget.
      */
     public function reconcile(string $merchantTransactionId, ReconcilePolicy $policy): RapReconcileVerdict
     {
@@ -114,12 +114,14 @@ final class RapReconciler
                         $correlationId,
                     );
                     if ($classified->getFailureClass() === RapFailureClass::PermanentRejection) {
-                        // 400/401/403/422 escape: polling will never fix a rejected read
-                        // (bad credentials, malformed id) — the caller must see it.
+                        // 400/401/422, or a 403 without the edge marker, escape: polling
+                        // will never fix a rejected read (bad credentials, malformed id) —
+                        // the caller must see it.
                         throw $classified;
                     }
-                    // Degraded read path (5xx/timeout on the GET) — exactly the window
-                    // where visibility is widest; keep polling within the budget.
+                    // Degraded read path (5xx/timeout on the GET, or a 403 blocked at the
+                    // edge — the read never reached the platform, ADR-SDK-033) — exactly
+                    // the window where visibility is widest; keep polling within the budget.
                     $this->logger->warning(
                         'rap.reconcile attempt {attempt} degraded read [status={status} class={class}]; continuing within policy',
                         [

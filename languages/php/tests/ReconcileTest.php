@@ -156,6 +156,31 @@ final class ReconcileTest extends TestCase
         self::assertSame(RapTransactionOutcome::Unknown, $verdict->getOutcome());
     }
 
+    public function testEdgeRejectedReadKeepsPollingWithinBudget(): void
+    {
+        // A 403 blocked at the edge never reached the platform (ADR-SDK-033): it is a
+        // transport-class failure of the READ, not a rejection — keep polling.
+        $mock = new RapMockTransport();
+        $mock->reconcile(self::MTX)->returnsEdgeRejection403()->thenFoundApproved();
+
+        $verdict = TestClients::withMock($mock)->reconcile(self::MTX, self::policy());
+
+        self::assertInstanceOf(Found::class, $verdict);
+        self::assertCount(2, $mock->getRequests());
+    }
+
+    public function testSustainedEdgeRejectedReadsEndAsNotFoundYetWithLastStatus403(): void
+    {
+        $mock = new RapMockTransport();
+        $mock->reconcile(self::MTX)->returnsEdgeRejection403();
+
+        $verdict = TestClients::withMock($mock)->reconcile(self::MTX, self::policy(maxAttempts: 2));
+
+        self::assertInstanceOf(NotFoundYet::class, $verdict);
+        self::assertSame(403, $verdict->getLastHttpStatus());
+        self::assertCount(2, $mock->getRequests());
+    }
+
     public function testRejectedReadEscapesAsPermanentRejection(): void
     {
         // Polling never fixes bad credentials — the caller must see it (§3).

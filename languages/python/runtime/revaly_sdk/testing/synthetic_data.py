@@ -12,6 +12,9 @@ from typing import Any, Dict, Optional
 DEFAULT_CORRELATION_ID = "corr-synthetic-0001"
 DEFAULT_MERCHANT_TRANSACTION_ID = "mtx_synthetic_0001"
 DEFAULT_TRANSACTION_ID = "06SYNTHETIC00000000000000001"
+# The synthetic edge-firewall tracking reference carried by the edge-rejection row
+# (``details.reference``, the shape of the ``x-azure-ref`` header — ADR-SDK-033).
+EDGE_REFERENCE = "20261016T181449Z-synthetic0000000000000000000000"
 
 
 def transaction_dict(transaction_status: int) -> Dict[str, Any]:
@@ -57,3 +60,22 @@ def error_body(message: str, code: Optional[str] = None) -> str:
     if code is not None:
         body["code"] = code
     return json.dumps(body)
+
+
+def edge_rejection_body(reference: str = EDGE_REFERENCE) -> str:
+    """The edge firewall's block body (ADR-SDK-033): ``details.edgeRejection: true``
+    plus the tracking reference; the production edge serves it as ``text/html``."""
+    return json.dumps(
+        {
+            "details": {"edgeRejection": True, "reference": reference},
+            "error": "synthetic: blocked by the edge firewall; did not reach the payment platform",
+        }
+    )
+
+
+def html_block_page() -> str:
+    """The legacy edge HTML block page — not JSON, so no marker can be read."""
+    return (
+        "<html><head><title>403 Forbidden</title></head>"
+        "<body>synthetic edge block page</body></html>"
+    )

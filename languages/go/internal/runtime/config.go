@@ -54,8 +54,9 @@ type Config struct {
 	// APIVersion defaults to DefaultAPIVersion ("2.1"); "2.0" is selectable.
 	// On "2.0" the ErrorResponse.code field is not part of the documented
 	// contract, so the fast-failover class narrows to client-provable
-	// never-sent failures only — a 503 with code=not_processed classifies
-	// OutcomeUnknown under that pin.
+	// never-sent failures plus the edge-rejection 403 (ADR-SDK-033, honoured
+	// on both pins) — a 503 with code=not_processed classifies OutcomeUnknown
+	// under that pin.
 	APIVersion string
 
 	// ConnectTimeout bounds the dial phase (TCP connect). Zero applies

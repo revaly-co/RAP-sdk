@@ -3,7 +3,7 @@
 Six server-side SDKs (**.NET, Java, PHP, TypeScript, Python, Go**) for the **RAP V2 API**
 (RAP-core, `api.revaly.co`), per **RFC-046** (Approved 2026-07-10 v10; SC-215, Epic SC-234).
 One monorepo, one deterministic pipeline consuming only gated spec artifacts, one merchant-facing
-failover contract. `docs/` is the complete, self-contained design set (32 ADRs + 11 design docs) —
+failover contract. `docs/` is the complete, self-contained design set (33 ADRs + 11 design docs) —
 **docs are the source of truth; this file is the enforcement summary.**
 
 **Namespace:** the repo lives at **`revaly-co/RAP-sdk`** — the org migration landed 2026-07-17

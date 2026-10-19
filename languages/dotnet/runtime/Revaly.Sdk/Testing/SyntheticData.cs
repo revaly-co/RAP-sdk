@@ -25,4 +25,10 @@ public static class SyntheticData
 
     /// <summary>The synthetic correlation id stamped on every mock response.</summary>
     public const string CorrelationId = "corr_synthetic_0001";
+
+    /// <summary>
+    /// The synthetic edge-firewall tracking reference carried by the edge-rejection row
+    /// (<c>details.reference</c>, the shape of the <c>x-azure-ref</c> header — ADR-SDK-033).
+    /// </summary>
+    public const string EdgeReference = "20261016T181449Z-synthetic0000000000000000000000";
 }

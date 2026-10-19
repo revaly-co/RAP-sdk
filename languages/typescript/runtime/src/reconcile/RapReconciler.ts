@@ -40,8 +40,9 @@ export class RapReconciler {
      *
      * Throws a typed failure only for a rejected READ that polling can never fix
      * (PermanentRejection other than 404 — bad credentials, malformed id); 404 is the
-     * NotFoundYet signal, and degraded reads (5xx/timeouts/transport failures) keep
-     * polling within the budget — exactly the window where visibility is widest.
+     * NotFoundYet signal, and degraded reads (5xx/timeouts/transport failures, or a 403
+     * blocked at the edge — ADR-SDK-033) keep polling within the budget — exactly the
+     * window where visibility is widest.
      */
     async reconcile(
         merchantTransactionId: string,
@@ -91,13 +92,15 @@ export class RapReconciler {
                     this.trace(path, 404, failure.correlationId, failure.rawBody);
                     this.logger.debug('rap.reconcile not visible yet (404)', { attempt: attempts });
                 } else if (failure instanceof RapPermanentRejection) {
-                    // 400/401/403/422 escape: polling will never fix a rejected read
-                    // (bad credentials, malformed id) — the caller must see it.
+                    // 400/401/422, or a 403 without the edge marker, escape: polling will
+                    // never fix a rejected read (bad credentials, malformed id) — the
+                    // caller must see it.
                     throw failure;
                 } else if (failure instanceof RapError) {
-                    // Degraded read path (5xx/timeout/transport failure/unreadable 2xx
-                    // on the GET): the WRITE's status is still unknown — keep polling
-                    // within the caller's budget.
+                    // Degraded read path (5xx/timeout/transport failure/unreadable 2xx on
+                    // the GET, or a 403 blocked at the edge — the read never reached the
+                    // platform, ADR-SDK-033): the WRITE's status is still unknown — keep
+                    // polling within the caller's budget.
                     if (failure.status !== undefined) {
                         lastHttpStatus = failure.status;
                     }

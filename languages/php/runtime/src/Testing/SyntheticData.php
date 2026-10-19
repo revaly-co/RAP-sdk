@@ -14,6 +14,12 @@ final class SyntheticData
     public const DEFAULT_TRANSACTION_ID = 'txn-synthetic-1';
     public const DEFAULT_CORRELATION_ID = 'corr-synthetic-1';
 
+    /**
+     * The synthetic edge-firewall tracking reference carried by the edge-rejection row
+     * (`details.reference`, the shape of the `x-azure-ref` header — ADR-SDK-033).
+     */
+    public const EDGE_REFERENCE = '20261016T181449Z-synthetic0000000000000000000000';
+
     private function __construct()
     {
     }
@@ -67,5 +73,24 @@ final class SyntheticData
         }
 
         return json_encode($body, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The edge firewall's block body (ADR-SDK-033): `details.edgeRejection: true` plus the
+     * tracking reference; the production edge serves it as `text/html`.
+     */
+    public static function edgeRejectionBody(string $reference = self::EDGE_REFERENCE): string
+    {
+        return json_encode([
+            'details' => ['edgeRejection' => true, 'reference' => $reference],
+            'error' => 'synthetic: blocked by the edge firewall; did not reach the payment platform',
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    /** The legacy edge HTML block page — not JSON, so no marker can be read. */
+    public static function htmlBlockPage(): string
+    {
+        return '<html><head><title>403 Forbidden</title></head>'
+            . '<body>synthetic edge block page</body></html>';
     }
 }

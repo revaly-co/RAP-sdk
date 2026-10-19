@@ -1,5 +1,6 @@
 package co.revaly.sdk.errors;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -15,15 +16,18 @@ import javax.net.ssl.SSLHandshakeException;
  *
  * <pre>
  * if transport error and request provably never sent          → TransientFailure
+ * if HTTP status == 403 and body is JSON (any Content-Type)
+ *    and body.details.edgeRejection == true (JSON boolean)     → TransientFailure (ADR-SDK-033)
  * if HTTP status in {400, 401, 403, 404, 422}                 → PermanentRejection
  * if HTTP status == 503 and body.code == "not_processed"      → TransientFailure
  * if HTTP status &gt;= 500                                        → OutcomeUnknown
  * if deadline exceeded after send / reset / ambiguous          → OutcomeUnknown
  * </pre>
  *
- * Never classify from {@code error} message text; treat {@code details} as opaque; unrecognized
- * {@code code} values are treated as absent; when the stack cannot prove the request was never
- * sent, classify OutcomeUnknown — never guess toward "safe".
+ * Never classify from {@code error} message text; treat {@code details} as opaque except for the
+ * single key {@code details.edgeRejection} read on a 403 (ADR-SDK-033); unrecognized {@code code}
+ * values are treated as absent; when the stack cannot prove the request was never sent, classify
+ * OutcomeUnknown — never guess toward "safe".
  */
 public final class FailureClassifier {
 
@@ -31,8 +35,11 @@ public final class FailureClassifier {
     public static final String NOT_PROCESSED = "not_processed";
 
     // Plain mapper for raw-body reads only (open strings — repo rule 5); reads are
-    // thread-safe and no core modules are needed.
-    private static final ObjectMapper RAW = new ObjectMapper();
+    // thread-safe and no core modules are needed. Trailing tokens fail the parse, so
+    // "body parses as JSON" means the same thing here as in the other five runtimes
+    // (a body that is not wholly JSON carries no code and no marker).
+    private static final ObjectMapper RAW =
+            new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
     private static final int MAX_CAUSE_DEPTH = 8;
 
@@ -46,13 +53,33 @@ public final class FailureClassifier {
      * @param rawBody the raw response body (may be null/empty)
      * @param apiVersion the pinned {@code X-Api-Version}. On {@code "2.0"} the {@code
      *     ErrorResponse.code} field is not part of the documented contract, so the fast-failover
-     *     class narrows to client-provable never-sent failures only: 503 + {@code not_processed} is
-     *     NOT honored and falls through to OutcomeUnknown (runtime-tdd §1 [Decided]).
+     *     class narrows to client-provable never-sent failures plus the edge-rejection 403
+     *     (ADR-SDK-033, honoured on both pins): 503 + {@code not_processed} is NOT honored and
+     *     falls through to OutcomeUnknown (runtime-tdd §1 [Decided]).
      * @param correlationId the response correlation id, if present
      */
     public static RapCoreException classifyResponse(
             int statusCode, String rawBody, String apiVersion, String correlationId) {
         ParsedError parsed = parseErrorBody(rawBody);
+
+        if (statusCode == 403) {
+            EdgeMarker edge = readEdgeMarker(parsed.details);
+            if (edge.isEdgeRejection) {
+                // Edge rejection (ADR-SDK-033): the edge firewall blocked the request and its
+                // marker proves it never reached the platform — provable non-dispatch, the same
+                // class as connection-refused and 503 + not_processed. Honoured on every API
+                // version pin, because the edge sits in front of the API.
+                return new TransientFailureException(
+                        statusCode,
+                        parsed.code,
+                        parsed.error,
+                        parsed.details,
+                        correlationId,
+                        rawBody,
+                        true,
+                        edge.reference);
+            }
+        }
 
         if (statusCode == 400
                 || statusCode == 401
@@ -60,16 +87,70 @@ public final class FailureClassifier {
                 || statusCode == 404
                 || statusCode == 422) {
             return new PermanentRejectionException(
-                    statusCode, parsed.code, parsed.error, parsed.details, correlationId, rawBody);
+                    statusCode,
+                    parsed.code,
+                    parsed.error,
+                    parsed.details,
+                    correlationId,
+                    rawBody,
+                    false,
+                    null);
         }
 
         if (statusCode == 503 && NOT_PROCESSED.equals(parsed.code) && !"2.0".equals(apiVersion)) {
             return new TransientFailureException(
-                    statusCode, parsed.code, parsed.error, parsed.details, correlationId, rawBody);
+                    statusCode,
+                    parsed.code,
+                    parsed.error,
+                    parsed.details,
+                    correlationId,
+                    rawBody,
+                    false,
+                    null);
         }
 
         return new OutcomeUnknownException(
-                statusCode, parsed.code, parsed.error, parsed.details, correlationId, rawBody);
+                statusCode,
+                parsed.code,
+                parsed.error,
+                parsed.details,
+                correlationId,
+                rawBody,
+                false,
+                null);
+    }
+
+    /**
+     * Reads the one structured key of {@code details} the contract allows (ADR-SDK-033): {@code
+     * details.edgeRejection} must be the JSON boolean {@code true} — never the string {@code
+     * "true"}, a number, or anything else. {@code details.reference} (the edge's tracking
+     * reference, equal to the {@code x-azure-ref} header) is carried when it is textual. The body
+     * is parsed regardless of {@code Content-Type}: the production edge serves this JSON as {@code
+     * text/html}.
+     */
+    static EdgeMarker readEdgeMarker(JsonNode details) {
+        if (details == null || !details.isObject()) {
+            return EdgeMarker.NONE;
+        }
+        JsonNode marker = details.get("edgeRejection");
+        if (marker == null || !marker.isBoolean() || !marker.booleanValue()) {
+            return EdgeMarker.NONE;
+        }
+        JsonNode reference = details.get("reference");
+        return new EdgeMarker(
+                true, reference != null && reference.isTextual() ? reference.asText() : null);
+    }
+
+    static final class EdgeMarker {
+        static final EdgeMarker NONE = new EdgeMarker(false, null);
+
+        final boolean isEdgeRejection;
+        final String reference;
+
+        EdgeMarker(boolean isEdgeRejection, String reference) {
+            this.isEdgeRejection = isEdgeRejection;
+            this.reference = reference;
+        }
     }
 
     /**

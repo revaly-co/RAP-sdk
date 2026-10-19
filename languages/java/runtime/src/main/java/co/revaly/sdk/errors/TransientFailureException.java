@@ -4,10 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * The payment was definitively NOT processed at RAP-core: either the transport can prove the
- * request was never sent (connection refused, DNS or TLS failure before acceptance), or the
- * platform answered 503 with {@code code: not_processed} (provable non-dispatch). <b>Safe to fail
- * over</b> — route the payment to your own gateway immediately (failover-contract §2, the PRD's
- * first-layer failover path).
+ * request was never sent (connection refused, DNS or TLS failure before acceptance), the platform
+ * answered 503 with {@code code: not_processed} (provable non-dispatch), or the edge firewall
+ * blocked the request with a 403 carrying {@code details.edgeRejection: true} ({@link
+ * #isEdgeRejection()}, ADR-SDK-033). <b>Safe to fail over</b> — route the payment to your own
+ * gateway immediately (failover-contract §2, the PRD's first-layer failover path).
  */
 public final class TransientFailureException extends RapCoreException {
     private static final long serialVersionUID = 1L;
@@ -18,7 +19,9 @@ public final class TransientFailureException extends RapCoreException {
             String errorMessage,
             JsonNode details,
             String correlationId,
-            String rawErrorBody) {
+            String rawErrorBody,
+            boolean edgeRejection,
+            String edgeReference) {
         super(
                 RapFailureClass.TRANSIENT_FAILURE,
                 buildMessage(
@@ -26,14 +29,19 @@ public final class TransientFailureException extends RapCoreException {
                         statusCode,
                         code,
                         correlationId,
-                        "definitively not processed; safe to fail over"),
+                        edgeRejection
+                                ? "blocked at the edge firewall; never reached the platform — safe"
+                                        + " to fail over"
+                                : "definitively not processed; safe to fail over"),
                 statusCode,
                 code,
                 errorMessage,
                 details,
                 correlationId,
                 rawErrorBody,
-                null);
+                null,
+                edgeRejection,
+                edgeReference);
     }
 
     TransientFailureException(String detail, Throwable cause) {
@@ -46,6 +54,8 @@ public final class TransientFailureException extends RapCoreException {
                 null,
                 null,
                 null,
-                cause);
+                cause,
+                false,
+                null);
     }
 }

@@ -40,13 +40,27 @@ type RapError struct {
 	// APIError is the server's human `error` message — carried, never
 	// consulted for classification.
 	APIError string
-	// Details is the ErrorResponse.details payload, treated as opaque.
+	// Details is the ErrorResponse.details payload, treated as opaque except
+	// for the single key edgeRejection read on a 403 (ADR-SDK-033, surfaced as
+	// IsEdgeRejection / EdgeReference).
 	Details any
 	// CorrelationID joins this failure to RAP-core telemetry ("" when the
 	// request never produced a response).
 	CorrelationID string
 	// RawBody is the raw response body ("" when there was none).
 	RawBody string
+	// IsEdgeRejection is true when the production edge firewall blocked this
+	// request before it reached the platform: an HTTP 403 whose body carries
+	// details.edgeRejection: true (ADR-SDK-033). Such a failure is a
+	// *TransientFailure — the payment was definitively not processed. Charge
+	// and authorize: fail over, or fix the request content and retry; capture,
+	// void, refund and refund-cancel: retry the same request.
+	IsEdgeRejection bool
+	// EdgeReference is the edge firewall's tracking reference
+	// (details.reference, equal to the x-azure-ref response header) when
+	// IsEdgeRejection is true; "" otherwise. Quote it to support — it
+	// identifies the exact firewall decision.
+	EdgeReference string
 
 	message string
 	cause   error
@@ -58,12 +72,14 @@ func (e *RapError) Error() string { return e.message }
 // failures), so errors.As/Is reach the original chain.
 func (e *RapError) Unwrap() error { return e.cause }
 
-// PermanentRejection: received and rejected (HTTP 400/401/403/404/422). Fix or
-// decline. **Never fail over** — the same request fails anywhere.
+// PermanentRejection: received and rejected (HTTP 400/401/404/422, or a 403
+// without the edge-rejection marker). Fix or decline. **Never fail over** — the
+// same request fails anywhere.
 type PermanentRejection struct{ RapError }
 
-// TransientFailure: definitively not processed (client-provable never-sent, or
-// 503 with code "not_processed"). Safe to route to your own gateway
+// TransientFailure: definitively not processed (client-provable never-sent,
+// 503 with code "not_processed", or a 403 blocked at the edge firewall —
+// IsEdgeRejection, ADR-SDK-033). Safe to route to your own gateway
 // immediately.
 type TransientFailure struct{ RapError }
 
@@ -76,14 +92,16 @@ var permanentRejectionStatuses = map[int]bool{400: true, 401: true, 403: true, 4
 
 // ClassifyResponse classifies a received HTTP response per the
 // failover-contract §2 algorithm. Returns nil for 2xx. Code is read verbatim
-// as an open string; Details stays opaque; the error message is carried but
-// NEVER consulted for classification. Statuses outside the normative table
-// (3xx, 409, 429, …) are ambiguous → OutcomeUnknown.
+// as an open string; Details stays opaque except for the single key
+// details.edgeRejection read on a 403 (ADR-SDK-033); the error message is
+// carried but NEVER consulted for classification. Statuses outside the
+// normative table (3xx, 409, 429, …) are ambiguous → OutcomeUnknown.
 //
 // Version-pin behaviour (runtime-tdd §1): on "2.0" the code field is not part
 // of the documented contract, so a 503 with not_processed still classifies
 // OutcomeUnknown — the fast-failover class narrows to client-provable
-// never-sent failures only.
+// never-sent failures plus the edge-rejection 403 (ADR-SDK-033, honoured on
+// both pins).
 //
 // The body is parsed leniently HERE, never through the core's ErrorResponse
 // model: the generated model rejects unknown fields, so an additive platform
@@ -105,6 +123,21 @@ func ClassifyResponse(status int, rawBody string, correlationID string, apiVersi
 		Details:       details,
 		CorrelationID: correlationID,
 		RawBody:       rawBody,
+	}
+
+	if status == 403 {
+		if isEdge, reference := readEdgeMarker(details); isEdge {
+			// Edge rejection (ADR-SDK-033): the edge firewall blocked the
+			// request and its marker proves it never reached the platform —
+			// provable non-dispatch, the same class as connection-refused and
+			// 503 + not_processed. Honoured on every API version pin, because
+			// the edge sits in front of the API.
+			base.Kind = "TransientFailure"
+			base.IsEdgeRejection = true
+			base.EdgeReference = reference
+			base.message = fmt.Sprintf("TransientFailure: HTTP 403 edge rejection%s — blocked at the edge firewall; never reached the platform; safe to fail over", correlationNote)
+			return &TransientFailure{base}
+		}
 	}
 
 	if permanentRejectionStatuses[status] {
@@ -184,6 +217,25 @@ func isTyped(err error) bool {
 	var tf *TransientFailure
 	var ou *OutcomeUnknown
 	return errors.As(err, &pr) || errors.As(err, &tf) || errors.As(err, &ou)
+}
+
+// readEdgeMarker reads the one structured key of details the contract allows
+// (ADR-SDK-033): details.edgeRejection must be the JSON boolean true — never
+// the string "true", a number, or anything else. details.reference (the
+// edge's tracking reference, equal to the x-azure-ref header) is carried when
+// it is a string. The body is parsed regardless of Content-Type: the
+// production edge serves this JSON as text/html.
+func readEdgeMarker(details any) (isEdgeRejection bool, reference string) {
+	object, ok := details.(map[string]any)
+	if !ok {
+		return false, ""
+	}
+	marker, ok := object["edgeRejection"].(bool)
+	if !ok || !marker {
+		return false, ""
+	}
+	reference, _ = object["reference"].(string)
+	return true, reference
 }
 
 // readErrorBody leniently reads ErrorResponse fields from the raw body.

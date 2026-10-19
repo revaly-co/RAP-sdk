@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net"
 	"regexp"
+	"strings"
 	"testing"
 
 	revaly "github.com/revaly-co/rap-sdk/languages/go"
@@ -86,6 +87,111 @@ func TestNotProcessed503IsTransientFailure(t *testing.T) {
 	}
 }
 
+// A 403 whose JSON body (served as text/html) carries details.edgeRejection:
+// true was blocked at the edge and never reached the platform — provable
+// non-dispatch → TransientFailure, with the firewall reference (ADR-SDK-033).
+func TestEdgeRejection403IsTransientFailure(t *testing.T) {
+	client, mock := newMockClient(t, nil)
+	mock.Charge().ReturnsEdgeRejection403()
+	_, err := client.Charge(context.Background(), chargeRequest("mock-mtx-0001"))
+	var transient *revaly.TransientFailure
+	if !errors.As(err, &transient) {
+		t.Fatalf("got %T (%v), want *TransientFailure", err, err)
+	}
+	if transient.Status != 403 || !transient.IsEdgeRejection {
+		t.Fatalf("status=%d edge=%v, want 403/true", transient.Status, transient.IsEdgeRejection)
+	}
+	if transient.EdgeReference != raptest.SyntheticEdgeReference {
+		t.Fatalf("EdgeReference=%q, want %q", transient.EdgeReference, raptest.SyntheticEdgeReference)
+	}
+	if transient.Code != "" {
+		t.Fatalf("Code=%q, want absent on 4xx", transient.Code)
+	}
+	if transient.CorrelationID == "" {
+		t.Fatal("correlation id missing on the typed error")
+	}
+	if strings.Contains(err.Error(), syntheticKey) {
+		t.Fatal("the API key leaked into the error message")
+	}
+}
+
+// Unlike 503 + not_processed, the marker is not part of ErrorResponse.code:
+// the edge sits in front of the API, so both pins honour it (ADR-SDK-033).
+func TestEdgeMarkerIsHonouredOnVersion20PinToo(t *testing.T) {
+	client, mock := newMockClient(t, func(cfg *revaly.Config) { cfg.APIVersion = "2.0" })
+	mock.Charge().ReturnsEdgeRejection403()
+	_, err := client.Charge(context.Background(), chargeRequest("mock-mtx-0001"))
+	var transient *revaly.TransientFailure
+	if !errors.As(err, &transient) || !transient.IsEdgeRejection {
+		t.Fatalf("got %T (%v), want *TransientFailure with IsEdgeRejection under the 2.0 pin", err, err)
+	}
+}
+
+// Every other 403 stays PermanentRejection: the legacy HTML block page, the
+// platform's own JSON 403, and any body whose marker is not the JSON boolean
+// true (ADR-SDK-033 negative controls).
+func TestEdge403NegativeControlsStayPermanentRejection(t *testing.T) {
+	cases := map[string]func(*raptest.MockOperation) *raptest.MockOperation{
+		"legacy HTML block page": func(o *raptest.MockOperation) *raptest.MockOperation { return o.ReturnsEdgeHTMLPage403() },
+		"platform 403 without marker": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsPlatformForbidden403()
+		},
+		"marker is the string true": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":{"edgeRejection":"true","reference":"x"},"error":"s"}`)
+		},
+		"marker is the number 1": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":{"edgeRejection":1,"reference":"x"},"error":"s"}`)
+		},
+		"marker is false": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":{"edgeRejection":false,"reference":"x"},"error":"s"}`)
+		},
+		"marker is null": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":{"edgeRejection":null},"error":"s"}`)
+		},
+		"details is a string": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":"edgeRejection","error":"s"}`)
+		},
+		"details is an array": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":[true],"error":"s"}`)
+		},
+		"marker at the root": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"edgeRejection":true,"reference":"x","error":"s"}`)
+		},
+		"trailing tokens after the JSON": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":{"edgeRejection":true}}<html>`)
+		},
+		"NaN literal (not JSON)": func(o *raptest.MockOperation) *raptest.MockOperation {
+			return o.ReturnsStatus(403, `{"details":{"edgeRejection":true},"n":NaN}`)
+		},
+	}
+	for name, script := range cases {
+		client, mock := newMockClient(t, nil)
+		script(mock.Charge())
+		_, err := client.Charge(context.Background(), chargeRequest("mock-mtx-0001"))
+		var rejection *revaly.PermanentRejection
+		if !errors.As(err, &rejection) {
+			t.Fatalf("%s: got %T (%v), want *PermanentRejection", name, err, err)
+		}
+		if rejection.Status != 403 || rejection.IsEdgeRejection || rejection.EdgeReference != "" {
+			t.Fatalf("%s: status=%d edge=%v ref=%q, want 403/false/empty", name, rejection.Status, rejection.IsEdgeRejection, rejection.EdgeReference)
+		}
+	}
+}
+
+// The marker is read on 403 only: a 500 carrying it is still OutcomeUnknown.
+func TestMarkerOnANon403StatusDoesNotChangeClassification(t *testing.T) {
+	client, mock := newMockClient(t, nil)
+	mock.Charge().ReturnsStatus(500, raptest.SyntheticEdgeRejection("x"))
+	_, err := client.Charge(context.Background(), chargeRequest("mock-mtx-0001"))
+	var unknown *revaly.OutcomeUnknown
+	if !errors.As(err, &unknown) {
+		t.Fatalf("got %T (%v), want *OutcomeUnknown", err, err)
+	}
+	if unknown.IsEdgeRejection || unknown.EdgeReference != "" {
+		t.Fatalf("edge=%v ref=%q on a 500, want false/empty", unknown.IsEdgeRejection, unknown.EdgeReference)
+	}
+}
+
 func TestOutcomeUnknownStatuses(t *testing.T) {
 	cases := map[string]func(*raptest.MockOperation) *raptest.MockOperation{
 		"bare 503":         func(o *raptest.MockOperation) *raptest.MockOperation { return o.ReturnsBare503() },
@@ -109,8 +215,8 @@ func TestOutcomeUnknownStatuses(t *testing.T) {
 }
 
 // On the "2.0" pin the code field is not part of the documented contract — the
-// fast-failover class narrows to client-provable never-sent failures only
-// (runtime-tdd §1).
+// fast-failover class narrows to client-provable never-sent failures plus the
+// edge-rejection 403 (runtime-tdd §1; ADR-SDK-033).
 func TestVersion20NarrowsNotProcessedToOutcomeUnknown(t *testing.T) {
 	client, mock := newMockClient(t, func(cfg *revaly.Config) { cfg.APIVersion = "2.0" })
 	mock.Charge().ReturnsNotProcessed503()

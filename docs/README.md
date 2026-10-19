@@ -19,7 +19,7 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 
 | Document | Purpose |
 | --- | --- |
-| [`adr/`](adr/README.md) | **32 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
+| [`adr/`](adr/README.md) | **33 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
 | [`architecture.md`](architecture.md) | System architecture: components, data flow, trust boundary, repo shape |
 | [`failover-contract.md`](failover-contract.md) | The merchant-facing failover & reconciliation contract, with sequence diagrams — the safety core of the product. Appendix A carries the normative prohibitions verbatim |
 | [`failover-cookbook.md`](failover-cookbook.md) | Task-oriented recipes for integrators: handling each outcome, choosing a reconcile policy, testing offline, debugging with correlation ids |
@@ -54,6 +54,27 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 
 ## Status snapshot (2026-10-19)
 
+- **Edge-rejection marker implemented in all six runtimes (SC-660 AC2 → ADR-SDK-033; on
+  `main`, unreleased).** Since 2026-10-16 the production edge firewall answers a blocked
+  request with a 403 whose JSON body carries `details.edgeRejection: true` and
+  `details.reference` (served as `text/html`), and a production probe tied each reference to
+  a firewall block row with no origin access. Every runtime now JSON-parses every 403 body
+  regardless of content type and classifies a marker-bearing 403 as **TransientFailure**
+  instead of PermanentRejection; every typed error gains the edge-rejection flag and the
+  firewall reference; the reconcile helper keeps polling on such a read; the mock transport
+  gains the row plus two negative controls (the legacy HTML block page and the platform's own
+  JSON 403) in every language; the quickstarts carry the per-operation instruction (charge and
+  authorize fail over or fix and retry; capture, void, refund and refund-cancel retry the same
+  request). No fourth class, no change to the developer-experience commitments, no log-line
+  or scrubber change, and the marker is honoured on both API pins. ADR-SDK-002 and
+  ADR-SDK-029 are amended, `failover-contract.md` §2/§3/§6/A1 revised, `AGENTS.md` and the
+  root README updated, and the RFC-046 §5.2 revision is recorded in `decision-log.md`.
+  The "body parses as JSON" test is made equally strict everywhere (Jackson now fails on
+  trailing tokens; Python's parser rejects `NaN`/`Infinity`), so a body that is not wholly
+  JSON carries no marker in any language. Verified locally: .NET 84/84 (+ `dotnet format`),
+  Java 99/99 (+ spotless), PHP 107/107 (+ lint, strict PSR-4), TypeScript 131/131
+  (+ typecheck, eslint), Python 160/160 (+ ruff), Go build/vet/test/gofmt/staticcheck clean. The minor release ×6 is cut only after the
+  SC-660 AC1 specification prose is pinned (`open-items.md`, platform dependencies).
 - **Spec re-pinned v2.7.0 → v2.12.2+cec0b33 (ninth pin, issue #101, SC-660).** One bump
   absorbs seven platform artifacts, from v2.8.0 to v2.12.2. All are additive or prose-only,
   and the platform's breaking-change gate passed on each one. They add a documented 422 on

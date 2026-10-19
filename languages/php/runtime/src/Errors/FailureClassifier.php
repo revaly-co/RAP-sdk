@@ -12,14 +12,17 @@ use GuzzleHttp\Exception\RequestException;
  * here is contract, not heuristic:
  *
  *     if transport error and request provably never sent          → TransientFailure
+ *     if HTTP status == 403 and body is JSON (any Content-Type)
+ *        and body.details.edgeRejection == true (JSON boolean)     → TransientFailure (ADR-SDK-033)
  *     if HTTP status in {400, 401, 403, 404, 422}                 → PermanentRejection
  *     if HTTP status == 503 and body.code == "not_processed"      → TransientFailure
  *     if HTTP status >= 500                                       → OutcomeUnknown
  *     if deadline exceeded after send / reset / ambiguous         → OutcomeUnknown
  *
- * Never classify from `error` message text; treat `details` as opaque; unrecognized
- * `code` values are treated as absent; when the stack cannot prove the request was never
- * sent, classify OutcomeUnknown — never guess toward "safe".
+ * Never classify from `error` message text; treat `details` as opaque except for the
+ * single key `details.edgeRejection` read on a 403 (ADR-SDK-033); unrecognized `code`
+ * values are treated as absent; when the stack cannot prove the request was never sent,
+ * classify OutcomeUnknown — never guess toward "safe".
  *
  * `code` is read from the RAW body as an OPEN string — deliberately never through the
  * generated core's ErrorResponse model, whose setter coerces unrecognized wire values to
@@ -73,8 +76,9 @@ final class FailureClassifier
      *
      * @param string $apiVersion the pinned X-Api-Version. On "2.0" the
      *        `ErrorResponse.code` field is not part of the documented contract, so the
-     *        fast-failover class narrows to client-provable never-sent failures only:
-     *        503 + `not_processed` is NOT honored and falls through to OutcomeUnknown
+     *        fast-failover class narrows to client-provable never-sent failures plus the
+     *        edge-rejection 403 (ADR-SDK-033, honoured on both pins): 503 +
+     *        `not_processed` is NOT honored and falls through to OutcomeUnknown
      *        (runtime-tdd §1 [Decided]).
      */
     public static function classifyResponse(
@@ -84,6 +88,27 @@ final class FailureClassifier
         ?string $correlationId,
     ): RapCoreException {
         [$code, $error, $details] = self::parseErrorBody($rawBody);
+
+        if ($statusCode === 403) {
+            [$isEdgeRejection, $edgeReference] = self::readEdgeMarker($details);
+            if ($isEdgeRejection) {
+                // Edge rejection (ADR-SDK-033): the edge firewall blocked the request and its
+                // marker proves it never reached the platform — provable non-dispatch, the
+                // same class as connection-refused and 503 + not_processed. Honoured on every
+                // API version pin, because the edge sits in front of the API.
+                return new TransientFailureException(
+                    '[403] blocked at the edge firewall; never reached the platform — safe to fail over',
+                    $statusCode,
+                    $code,
+                    $error,
+                    $details,
+                    $correlationId,
+                    $rawBody,
+                    isEdgeRejection: true,
+                    edgeReference: $edgeReference,
+                );
+            }
+        }
 
         if (in_array($statusCode, [400, 401, 403, 404, 422], true)) {
             return new PermanentRejectionException(
@@ -156,6 +181,29 @@ final class FailureClassifier
             ),
             previous: $reason,
         );
+    }
+
+    /**
+     * Reads the one structured key of `details` the contract allows (ADR-SDK-033):
+     * `details.edgeRejection` must be the JSON boolean `true` — never the string "true",
+     * a number, or anything else. `details.reference` (the edge's tracking reference,
+     * equal to the `x-azure-ref` header) is carried when it is a string. The body is
+     * parsed regardless of Content-Type: the production edge serves this JSON as
+     * `text/html`.
+     *
+     * @return array{0: bool, 1: ?string}
+     */
+    public static function readEdgeMarker(mixed $details): array
+    {
+        if (!$details instanceof \stdClass) {
+            return [false, null];
+        }
+        if (($details->edgeRejection ?? null) !== true) {
+            return [false, null];
+        }
+        $reference = $details->reference ?? null;
+
+        return [true, is_string($reference) ? $reference : null];
     }
 
     /**

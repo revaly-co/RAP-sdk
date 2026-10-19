@@ -30,8 +30,8 @@ one correct reaction:
 
 | You caught | What it means | What you do |
 | --- | --- | --- |
-| `PermanentRejectionException` | Received and rejected (400/401/403/404/422) | Fix or decline — failing over reproduces the same rejection anywhere. |
-| `TransientFailureException` | **Definitively not processed** (provably never sent, or 503 + `code: not_processed`) | Route to your own gateway immediately. |
+| `PermanentRejectionException` | Received and rejected (400/401/404/422, or a 403 without the edge marker) | Fix or decline — failing over reproduces the same rejection anywhere. |
+| `TransientFailureException` | **Definitively not processed** (provably never sent, 503 + `code: not_processed`, or a 403 blocked at the edge firewall — `isEdgeRejection()`) | Route to your own gateway immediately. On an edge rejection, charge/authorize may also fix the request content and retry; capture/void/refund/refund-cancel retry the same request. Quote `getEdgeReference()` to support. |
 | `OutcomeUnknownException` | **May have been processed** (deadline after send, 5xx, ambiguous) | **Reconcile before acting** (below). |
 
 ## Quickstart (sandbox key → first charge, ≤ 15 minutes)
@@ -97,6 +97,10 @@ public class Quickstart {
 
         } catch (TransientFailureException e) {
             // Definitively NOT processed at RAP-core — safe to fail over immediately.
+            // e.isEdgeRejection(): the edge firewall blocked the request before it reached
+            // the platform; e.getEdgeReference() identifies that firewall decision for
+            // support. Charge/authorize: fail over (or fix the content and retry);
+            // capture/void/refund/refund-cancel: retry the same request.
             routeToOwnGateway(request);
 
         } catch (OutcomeUnknownException e) {
@@ -177,7 +181,8 @@ and treat expiry there exactly like any `OutcomeUnknown`: reconcile, never resub
 The client pins `X-Api-Version: 2.1` by default (recommended). If you pin `"2.0"`, the
 `ErrorResponse.code` field is not part of that contract, so the fast-failover class
 narrows to client-provable never-sent failures only — a 503 with `code: not_processed`
-classifies as `OutcomeUnknown` (reconcile) instead of `TransientFailure`.
+classifies as `OutcomeUnknown` (reconcile) instead of `TransientFailure`. The edge-rejection
+marker is honoured on both pins (ADR-SDK-033): the edge sits in front of the API.
 
 ## Testing your failover handler — no network
 
@@ -203,7 +208,10 @@ RapClient client = RapClient.builder()
 ```
 
 Scriptable outcomes include: `returnsApproved/Declined/ErrorOutcome`,
-`returnsPermanentRejection(status)`, `returnsNotProcessed503`, `returnsBare503`,
+`returnsPermanentRejection(status)`, `returnsNotProcessed503`, `returnsEdgeRejection403`
+(the edge firewall's marker body served as `text/html` → `TransientFailureException` with
+`isEdgeRejection()`), its negative controls `returnsEdgeHtmlPage403` /
+`returnsPlatformForbidden403` (→ `PermanentRejectionException`), `returnsBare503`,
 `returnsServerError/BadGateway/GatewayTimeout`, `throwsConnectionRefused/ConnectTimeout/
 SslHandshakeFailure` (never-sent proofs), `throwsTimeoutAfterSend/ConnectionReset`
 (ambiguous), `notFoundYet(n)`, `pending()`, and a `returns(status, body, headers)` escape

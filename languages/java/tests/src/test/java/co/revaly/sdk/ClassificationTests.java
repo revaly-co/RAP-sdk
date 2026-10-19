@@ -13,6 +13,8 @@ import co.revaly.sdk.errors.RapCoreException;
 import co.revaly.sdk.errors.RapFailureClass;
 import co.revaly.sdk.errors.TransientFailureException;
 import co.revaly.sdk.testing.RapMockTransport;
+import co.revaly.sdk.testing.SyntheticData;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -52,6 +54,114 @@ class ClassificationTests {
         assertEquals(503, e.getStatusCode());
         assertEquals("not_processed", e.getCode());
         assertNotNull(e.getCorrelationId());
+    }
+
+    @Test
+    void edgeRejection403ClassifiesTransientFailure() {
+        RapMockTransport mock = new RapMockTransport();
+        mock.charge().returnsEdgeRejection403();
+        RapClient client = TestClient.client(mock);
+
+        TransientFailureException e =
+                assertThrows(
+                        TransientFailureException.class,
+                        () -> client.charge(TestClient.paymentRequest()));
+        assertEquals(403, e.getStatusCode());
+        assertTrue(e.isEdgeRejection());
+        assertEquals(SyntheticData.EDGE_REFERENCE, e.getEdgeReference());
+        assertNull(e.getCode(), "code stays absent on 4xx");
+        assertNotNull(e.getCorrelationId());
+        assertFalse(e.toString().contains(TestClient.API_KEY));
+    }
+
+    @Test
+    void edgeMarkerIsHonouredOnVersion20PinToo() {
+        // Unlike 503 + not_processed, the marker is not part of ErrorResponse.code: the edge
+        // sits in front of the API, so both pins honour it (ADR-SDK-033).
+        RapMockTransport mock = new RapMockTransport();
+        mock.charge().returnsEdgeRejection403();
+        RapClient client = TestClient.client(mock, "2.0");
+
+        TransientFailureException e =
+                assertThrows(
+                        TransientFailureException.class,
+                        () -> client.charge(TestClient.paymentRequest()));
+        assertTrue(e.isEdgeRejection());
+    }
+
+    @Test
+    void edgeHtmlBlockPage403StaysPermanentRejection() {
+        RapMockTransport mock = new RapMockTransport();
+        mock.charge().returnsEdgeHtmlPage403();
+        RapClient client = TestClient.client(mock);
+
+        PermanentRejectionException e =
+                assertThrows(
+                        PermanentRejectionException.class,
+                        () -> client.charge(TestClient.paymentRequest()));
+        assertEquals(403, e.getStatusCode());
+        assertFalse(e.isEdgeRejection());
+        assertNull(e.getEdgeReference());
+    }
+
+    @Test
+    void platform403WithoutTheMarkerStaysPermanentRejection() {
+        RapMockTransport mock = new RapMockTransport();
+        mock.charge().returnsPlatformForbidden403();
+        RapClient client = TestClient.client(mock);
+
+        PermanentRejectionException e =
+                assertThrows(
+                        PermanentRejectionException.class,
+                        () -> client.charge(TestClient.paymentRequest()));
+        assertEquals(403, e.getStatusCode());
+        assertFalse(e.isEdgeRejection());
+        assertNull(e.getEdgeReference());
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "{\"details\":{\"edgeRejection\":\"true\",\"reference\":\"x\"},\"error\":\"s\"}",
+                "{\"details\":{\"edgeRejection\":1,\"reference\":\"x\"},\"error\":\"s\"}",
+                "{\"details\":{\"edgeRejection\":false,\"reference\":\"x\"},\"error\":\"s\"}",
+                "{\"details\":{\"edgeRejection\":null},\"error\":\"s\"}",
+                "{\"details\":\"edgeRejection\",\"error\":\"s\"}",
+                "{\"details\":[true],\"error\":\"s\"}",
+                "{\"edgeRejection\":true,\"reference\":\"x\",\"error\":\"s\"}",
+                "{\"details\":{\"edgeRejection\":true}}<html>",
+                "{\"details\":{\"edgeRejection\":true},\"n\":NaN}"
+            })
+    void onlyTheExactJsonBooleanMarkerCounts(String body) {
+        RapMockTransport mock = new RapMockTransport();
+        mock.charge().returns(403, body, Map.of("Content-Type", "application/json"));
+        RapClient client = TestClient.client(mock);
+
+        PermanentRejectionException e =
+                assertThrows(
+                        PermanentRejectionException.class,
+                        () -> client.charge(TestClient.paymentRequest()));
+        assertFalse(e.isEdgeRejection());
+        assertNull(e.getEdgeReference());
+    }
+
+    @Test
+    void markerOnANon403StatusDoesNotChangeClassification() {
+        // The marker is read on 403 only: a 500 carrying it is still OutcomeUnknown.
+        RapMockTransport mock = new RapMockTransport();
+        mock.charge()
+                .returns(
+                        500,
+                        SyntheticData.edgeRejectionBody("x"),
+                        Map.of("Content-Type", "application/json"));
+        RapClient client = TestClient.client(mock);
+
+        OutcomeUnknownException e =
+                assertThrows(
+                        OutcomeUnknownException.class,
+                        () -> client.charge(TestClient.paymentRequest()));
+        assertFalse(e.isEdgeRejection());
+        assertNull(e.getEdgeReference());
     }
 
     @Test

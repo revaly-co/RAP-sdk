@@ -60,11 +60,37 @@ export class MockOperation {
         return this.pushBody(status, SyntheticData.errorBody('synthetic rejection'));
     }
 
+    /**
+     * Negative control (ADR-SDK-033): the legacy edge HTML block page — a 403 whose body
+     * is not JSON, so no marker can be read. Stays PermanentRejection.
+     */
+    returnsEdgeHtmlPage403(): this {
+        return this.pushBody(403, SyntheticData.htmlBlockPage(), { 'Content-Type': 'text/html' });
+    }
+
+    /**
+     * Negative control (ADR-SDK-033): the platform's own 403 — a JSON ErrorResponse
+     * without the edge marker. Stays PermanentRejection.
+     */
+    returnsPlatformForbidden403(): this {
+        return this.pushBody(403, SyntheticData.errorBody('forbidden by the platform'));
+    }
+
     // ---- TransientFailure rows (§2) ----------------------------------------------
 
     /** 503 + `code: not_processed` — the provable non-dispatch signal (immediate failover). */
     returnsNotProcessed503(): this {
         return this.pushBody(503, SyntheticData.errorBody('temporarily unable to process', 'not_processed'));
+    }
+
+    /**
+     * 403 blocked at the edge firewall (ADR-SDK-033): the JSON marker body
+     * (`details.edgeRejection: true` + `details.reference`) served as `text/html`, exactly
+     * as the production edge serves it. The request never reached the platform —
+     * `isEdgeRejection` is true and the class is TransientFailure.
+     */
+    returnsEdgeRejection403(reference: string = SyntheticData.EDGE_REFERENCE): this {
+        return this.pushBody(403, SyntheticData.edgeRejectionBody(reference), { 'Content-Type': 'text/html' });
     }
 
     /**
