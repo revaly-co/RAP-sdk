@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **DisableSMSNotification** | Pointer to **NullableBool** | Whether SMS notifications are disabled for recovery | [optional] 
 **DisableEmailNotification** | Pointer to **NullableBool** | Whether email notifications are disabled for recovery | [optional] 
 **RetryCount** | Pointer to **NullableInt32** | Number of retry attempts for this billing cycle (initial attempt is 0) | [optional] 
-**PaymentReferenceData** | Pointer to **NullableString** | Reference data received when a payment failed. This data should be returned on retry transactions for the same payment. | [optional] 
+**PaymentReferenceData** | Pointer to **NullableString** | Reference data received when a payment failed. This data should be returned on retry transactions for the same payment. The value is the reference Revaly returned on the failed attempt and must be echoed unchanged (base64, at most 60 characters as produced). | [optional] 
 **DateFirstAttempt** | Pointer to **NullableTime** | Date and time of the first transaction attempt for this billing cycle. Required when retry count is greater than 0. | [optional] 
 
 ## Methods

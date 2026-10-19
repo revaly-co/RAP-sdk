@@ -7,13 +7,13 @@ Name | Type | Description | Notes
 **TransactionDate** | Pointer to **NullableTime** | Date of the previous transaction | [optional] 
 **MerchantAccountReferenceId** | Pointer to **NullableString** | Merchant account reference ID from the previous transaction | [optional] 
 **GatewayCode** | Pointer to **NullableString** | Gateway response code from the previous transaction | [optional] 
-**GatewayMessage** | Pointer to **NullableString** | Gateway response message from the previous transaction | [optional] 
+**GatewayMessage** | Pointer to **NullableString** | Gateway response message from the previous transaction. The value is an echo of a Revaly response and is never rejected by the platform. | [optional] 
 **GatewayMessageKey** | Pointer to **NullableString** | Gateway message key from the previous transaction | [optional] 
 **TransactionStatus** | Pointer to **NullableInt32** | Previous status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional] 
 **AvsCode** | Pointer to **NullableString** | AVS code from the previous transaction | [optional] 
-**AvsMessage** | Pointer to **NullableString** | AVS message from the previous transaction | [optional] 
+**AvsMessage** | Pointer to **NullableString** | AVS message from the previous transaction. The value is an echo of a Revaly response and is never rejected by the platform. | [optional] 
 **CvvCode** | Pointer to **NullableString** | CVV code from the previous transaction | [optional] 
-**CvvMessage** | Pointer to **NullableString** | CVV message from the previous transaction | [optional] 
+**CvvMessage** | Pointer to **NullableString** | CVV message from the previous transaction. The value is an echo of a Revaly response and is never rejected by the platform. | [optional] 
 
 ## Methods
 

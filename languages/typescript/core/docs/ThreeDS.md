@@ -19,6 +19,7 @@ Name | Type
 `authenticationStatus` | string
 `enrolledStatus` | string
 `serverTransId` | string
+`context` | [ThreeDSContext](ThreeDSContext.md)
 
 ## Example
 
@@ -39,6 +40,7 @@ const example = {
   "authenticationStatus": Y,
   "enrolledStatus": Y,
   "serverTransId": 6ba7b811-9dad-11d1-80b4-00c04fd430c8,
+  "context": null,
 } satisfies ThreeDS
 
 console.log(example)

@@ -52,6 +52,7 @@ docs/models/StoredCredential.md
 docs/models/StoredCredentialReasonType.md
 docs/models/StoredCredentialResponse.md
 docs/models/ThreeDS.md
+docs/models/ThreeDSContext.md
 docs/models/TransactionGateway.md
 docs/models/TransactionGroupResponse.md
 docs/models/TransactionListItem.md
@@ -134,6 +135,7 @@ src/Revaly.Sdk.Core/Model/StoredCredential.cs
 src/Revaly.Sdk.Core/Model/StoredCredentialReasonType.cs
 src/Revaly.Sdk.Core/Model/StoredCredentialResponse.cs
 src/Revaly.Sdk.Core/Model/ThreeDS.cs
+src/Revaly.Sdk.Core/Model/ThreeDSContext.cs
 src/Revaly.Sdk.Core/Model/TransactionGateway.cs
 src/Revaly.Sdk.Core/Model/TransactionGroupResponse.cs
 src/Revaly.Sdk.Core/Model/TransactionListItem.cs

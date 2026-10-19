@@ -52,6 +52,28 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-10-19)
+
+- **Spec re-pinned v2.7.0 → v2.12.2+cec0b33 (ninth pin, issue #101, SC-660).** One bump
+  absorbs seven platform artifacts, from v2.8.0 to v2.12.2. All are additive or prose-only,
+  and the platform's breaking-change gate passed on each one. They add a documented 422 on
+  `recordRefund` for a transaction no gateway approved (SC-636), prose on returned card expiry
+  (SC-640), and the optional response booleans `expiryUpdated` and `cardReplaced` (SC-653).
+  The previous-transaction echo fields widen to 1,024 characters and `paymentReferenceData` is
+  documented as the base64 reference Revaly returns (SC-659). An optional 3DS `context` block
+  adds a new `ThreeDSContext` model in every language (STR-262), followed by an example fix and
+  prose on how its `channel` value is recorded (SC-660, STR-258). The release adds no error
+  codes, transaction types, reconcile verdicts or enums, and no status code changes failover
+  class, so classification, quickstarts and smoke suites are untouched. The v2.12.0 artifact
+  on its own was not a usable pin: its `acceptHeader` example contained `*/`, which closed the
+  doc comment that the .NET generator puts around examples, so the .NET core failed to build.
+  The example was corrected at source in Backbone PR #388 (v2.12.1), and v2.12.2 (Backbone
+  PR #391) carries that fix plus the STR-258 prose. Verified locally against the regenerated
+  cores: .NET builds with 0 errors (the two known CS0612 core warnings) and passes 68/68;
+  Java core compiles and the runtime passes 83/83; PHP manifests, PSR-4 and lint are clean and
+  91/91 pass; TypeScript strict core `tsc` is clean and 115/115 pass; Python passes 144/144;
+  Go build, vet and tests are clean.
+
 ## Status snapshot (2026-10-06)
 
 - **Nightly contract smoke restored (SC-648).** The stage-4 smoke failed on all six languages

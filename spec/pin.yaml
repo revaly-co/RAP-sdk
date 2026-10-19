@@ -4,34 +4,48 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.7.0+7a05e7b
-specVersion: 2.7.0
-sourceCommit: 7a05e7bfdc6cb49a91d1ec7fefdef307355022bd
+releaseTag: spec/v2.12.2+cec0b33
+specVersion: 2.12.2
+sourceCommit: cec0b338645cdb7c26ea1307c0a7dd16caf240cd
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: f7bc364c69a588ab237b1ce91bfa47fdb04c9efc9607fa4be8f00e76d85f7f49
-pinnedAt: "2026-10-01"
+  openapi.bundled.yaml: 5b06118180d006328f30e182ca65c7d0d28a0a00837ae2276222f3a8c5622322
+pinnedAt: "2026-10-19"
 notes: >-
-  Eighth pin (was spec/v2.6.0+abf71b6). Deprecation-only delta, no shape change (18 changed
-  lines): (1) bypassPlatform on PaymentRequest (charge) and AuthorizeRequest (authorize) is now
-  `deprecated: true`. Sending true is refused with 404 before the request reaches any payment
-  processor; it previously bypassed the primary processor and ran only the fallback flow. Type
-  (boolean), default (false) and optionality are unchanged, so no request shape moves; the
-  generators surface the deprecation as language-native markers on the property. (2) The
-  chargePayment / authorizePayment 404 prose changes from "originates from the
-  fallback-processor path" to "also returned when the deprecated bypassPlatform is true". The
-  declared `responses` sets are unchanged, so no generated response type moves. The SDK never
-  sends bypassPlatform (ADR-SDK-003/004) and 404 already classifies as PermanentRejection
-  (failover-contract §2), so the failover classification surface is untouched. No new error
-  codes, transaction types, or reconcile verdicts; no enum introduced or narrowed. All four
-  platform gates pass; provenance ciRunId 35909352679. Prior pin history: v2.1.2+9af661b (first
-  pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
+  Ninth pin (was spec/v2.7.0+7a05e7b). Absorbs seven platform artifacts in one bump
+  (v2.8.0 to v2.12.2; v2.8.0 to v2.11.0 were published while the SDK was on v2.7.0, and
+  v2.12.0 / v2.12.1 were superseded the same day; none was skipped). All additive or prose;
+  the platform breaking-change gate passed on every one. (1) SC-636 (v2.8.0): the recordRefund notify prose adds a 422 for a transaction no
+  gateway approved (declined, failed, or never sent); 422 already classifies as
+  PermanentRejection, no shape change. (2) SC-640 (v2.9.0): expiryMonth / expiryYear
+  descriptions on the response payment method state when the returned expiry is newer than
+  the one sent (Account Updater, Chase Orbital / Worldpay Litle real-time updaters); prose
+  only. (3) SC-653 (v2.10.0): two new optional nullable booleans on the response payment
+  method, expiryUpdated and cardReplaced, present (and then true) only inside a charge or
+  authorize response; additive. (4) SC-659 (v2.11.0): previous-transaction gatewayMessage /
+  avsMessage / cvvMessage maxLength 255 -> 1024 (echo fields, never rejected by the
+  platform); paymentReferenceData description states the value is the base64 reference
+  Revaly returned (at most 60 characters as produced), maxLength 500 unchanged; the 17
+  examples switch from free text to a base64 string. (5) STR-262 (v2.12.0): a new optional
+  nullable `context` object on ThreeDS (RFC-068 shopper device and browser context, 12
+  optional properties) passed through to the gateway layer; additive request-side field.
+  (6) SC-660 (v2.12.1, Backbone PR #388): the context.acceptHeader example ends
+  image/avif,image/webp instead of */*;q=0.8, because the `*/` closed the doc comment the .NET
+  generichost generator wraps around examples and broke the .NET core build (CS1519 in
+  ThreeDSContext.cs); example only. (7) STR-258 (v2.12.2, Backbone PRs #367 / #391): the
+  context and context.channel descriptions state that Backbone records only the channel,
+  reduced to BROWSER, MOBILE_APP, SDK, POS or OTHER; channel stays an open string, prose only.
+  No new error codes, transaction types or reconcile verdicts; no enum introduced or narrowed;
+  no status code moves between failover classes, so the failover classification surface is
+  untouched (failover-contract §2). The SDK quickstarts send none of the new fields. All four
+  platform gates pass; provenance ciRunId 39263511915. Prior pin history: v2.1.2+9af661b
+  (first pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
   v2.2.0+1e59620 (additive statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID
   response header documented) -> v2.3.0+80cc897 (validation reality matches the published
   contract) -> v2.4.0+4ce73e2 (nested vaultToken on charge/authorize, lookup unions oneOf ->
   anyOf, 404 on charge/authorize) -> v2.6.0+abf71b6 (flat vaultToken on TransactionListItem,
   nested vaultToken on the transaction reads, recordRefund documented for gateway-routed
-  transactions).
+  transactions) -> v2.7.0+7a05e7b (bypassPlatform deprecated, true refused with 404).

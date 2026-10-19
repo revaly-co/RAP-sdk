@@ -54,6 +54,7 @@ docs/StoredCredential.md
 docs/StoredCredentialReasonType.md
 docs/StoredCredentialResponse.md
 docs/ThreeDS.md
+docs/ThreeDSContext.md
 docs/TransactionGateway.md
 docs/TransactionGroupResponse.md
 docs/TransactionListItem.md
@@ -111,6 +112,7 @@ models/StoredCredential.ts
 models/StoredCredentialReasonType.ts
 models/StoredCredentialResponse.ts
 models/ThreeDS.ts
+models/ThreeDSContext.ts
 models/TransactionGateway.ts
 models/TransactionGroupResponse.ts
 models/TransactionListItem.ts

@@ -16,6 +16,7 @@ Name | Type | Description | Notes
 **AuthenticationStatus** | Pointer to **NullableString** | Final cardholder authentication status from ACS/3DS Server (TransStatus). Typical: Y, N, U, A, R. | [optional] 
 **EnrolledStatus** | Pointer to **NullableString** | Enrollment status (legacy 3DS1, Verify Enrollment Response). Typical: Y, N, U. | [optional] 
 **ServerTransId** | Pointer to **NullableString** | 3DS Server transaction ID (UUID, 36 chars). | [optional] 
+**Context** | Pointer to [**NullableThreeDSContext**](ThreeDSContext.md) |  | [optional] 
 
 ## Methods
 
@@ -456,6 +457,41 @@ HasServerTransId returns a boolean if a field has been set.
 `func (o *ThreeDS) UnsetServerTransId()`
 
 UnsetServerTransId ensures that no value is present for ServerTransId, not even an explicit nil
+### GetContext
+
+`func (o *ThreeDS) GetContext() ThreeDSContext`
+
+GetContext returns the Context field if non-nil, zero value otherwise.
+
+### GetContextOk
+
+`func (o *ThreeDS) GetContextOk() (*ThreeDSContext, bool)`
+
+GetContextOk returns a tuple with the Context field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetContext
+
+`func (o *ThreeDS) SetContext(v ThreeDSContext)`
+
+SetContext sets Context field to given value.
+
+### HasContext
+
+`func (o *ThreeDS) HasContext() bool`
+
+HasContext returns a boolean if a field has been set.
+
+### SetContextNil
+
+`func (o *ThreeDS) SetContextNil(b bool)`
+
+ SetContextNil sets the value for Context to be an explicit nil
+
+### UnsetContext
+`func (o *ThreeDS) UnsetContext()`
+
+UnsetContext ensures that no value is present for Context, not even an explicit nil
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

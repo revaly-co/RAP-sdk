@@ -51,6 +51,7 @@ docs/StoredCredential.md
 docs/StoredCredentialReasonType.md
 docs/StoredCredentialResponse.md
 docs/ThreeDS.md
+docs/ThreeDSContext.md
 docs/TransactionGateway.md
 docs/TransactionGroupResponse.md
 docs/TransactionListItem.md
@@ -120,6 +121,7 @@ revaly_sdk_core/models/stored_credential.py
 revaly_sdk_core/models/stored_credential_reason_type.py
 revaly_sdk_core/models/stored_credential_response.py
 revaly_sdk_core/models/three_ds.py
+revaly_sdk_core/models/three_ds_context.py
 revaly_sdk_core/models/transaction_gateway.py
 revaly_sdk_core/models/transaction_group_response.py
 revaly_sdk_core/models/transaction_list_item.py
