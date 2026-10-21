@@ -90,8 +90,9 @@ env:
   # generator image (hard-pinned — they determine committed bytes), stage 3 emits no
   # committed artifacts, so patch drift cannot change repo content, and floating patches
   # keep compiler security fixes flowing. Floors set by the generated manifests: csproj
-  # targets net10.0; pom targets source/target 11; composer requires php ^8.1; pyproject
-  # requires-python >=3.9; go.mod directive is 1.21.
+  # targets net10.0; pom targets source/target 11; the php runtime composer.json requires
+  # ^8.2 (the generated core manifest keeps the generator's ^8.1 and is not shipped);
+  # pyproject requires-python >=3.9; go.mod directive is 1.21.
   DOTNET_SDK_VERSION: 10.0.x
   JDK_VERSION: "21"
   PHP_VERSION: "8.3"

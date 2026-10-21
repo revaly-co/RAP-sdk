@@ -9,7 +9,9 @@ ships inside it as `Revaly\Sdk\Core`.
 > generated read-only mirror `revaly-co/rap-sdk-php`). GitHub release artifacts remain
 > the provenance anchor and fallback channel.
 
-Requires PHP 8.1+ with `ext-curl`, `ext-json`, `ext-mbstring`; HTTP via Guzzle 7.
+Requires PHP 8.2+ with `ext-curl`, `ext-json`, `ext-mbstring`; HTTP via Guzzle 7.
+PHP 8.1 is end of life and receives no fix for CVE-2026-109618 and CVE-2026-109619, so
+run at least PHP 8.2.35, 8.3.36, 8.4.27 or 8.5.12.
 
 ## Why the error classes matter (read this first)
 
