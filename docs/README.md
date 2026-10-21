@@ -52,6 +52,18 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-10-21)
+
+- **PHP SDK minimum raised from 8.1 to 8.2 (on `main`, unreleased).** Two critical PHP
+  remote code execution vulnerabilities, CVE-2026-109618 and CVE-2026-109619, were disclosed
+  on 2026-10-20 and 2026-10-21. PHP fixed them in 8.2.35, 8.3.36, 8.4.27 and 8.5.12; PHP 8.1
+  is end of life and gets no fix. `languages/php/composer.json` now requires `php: ^8.2`, so
+  Composer no longer installs the SDK on a runtime that cannot be patched. The quickstart
+  states the patched floors. Requirements change only: no runtime code changed, and the
+  generated core is untouched (its manifest and the `PHP version 8.1` docblock banners are
+  generator defaults; changing them is an ADR-SDK-023 template revision). It ships with the
+  next PHP release, called out as a breaking change for PHP 8.1 users.
+
 ## Status snapshot (2026-10-19)
 
 - **v0.8.0 released ×6 (SC-660 AC2, ADR-SDK-033 Decision 9) off `main` cb605b68 — live on all
