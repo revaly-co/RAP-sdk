@@ -52,6 +52,21 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-10-28)
+
+- **Nightly contract smoke no longer needs a re-run when staging is cold (SC-824).** Between
+  2026-09-19 and 2026-10-28, 11 nightlies needed a manual re-run or stayed red. Eight of them
+  failed the same way: `charge-approved` in several languages hit the 15-second deadline on the
+  Backbone staging step, most recently in run 40641561481. No SDK code was at fault. Backbone
+  staging telemetry shows the Olympus staging charge route is cold after the overnight idle
+  period. The first charges spent 24.5 seconds there, even after the existing reconcile warm-up
+  had finished. The advisory preflight in all six suites now also sends one throwaway charge
+  under the 90-second warm-up budget and prints how long it took. No scenario or deadline
+  changed. The dispatched run on the fix branch (40721525191) was green on all 17 jobs, with the
+  charge warm-up taking 1.7 to 5.4 seconds on warm daytime staging. The cold case is proven
+  only by the first 06:00 UTC nightly after merge. Details and residual risk are in ADR-SDK-024
+  §"Preflight now warms the charge path".
+
 ## Status snapshot (2026-10-21)
 
 - **PHP SDK minimum raised from 8.1 to 8.2 (on `main`, unreleased).** Two critical PHP

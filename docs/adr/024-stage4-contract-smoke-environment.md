@@ -539,3 +539,56 @@ commit:
 The nightly is the detector for both. Two durable alternatives were identified and not taken in
 this change: pointing the staging routing id at a Stripe test-mode gateway, where the card number
 alone declines, or finding a decline trigger native to the CyberSource sandbox.
+
+---
+
+## Preflight now warms the charge path as well as the reconcile path (2026-10-28, SC-824)
+
+**What happened.** The nightly went red on 2026-10-28 (run 40641561481) on `charge-approved`
+in typescript, php, python and go, with OutcomeUnknown after the scenarios' 15-second deadline.
+This was the most frequent reason a nightly needed a manual re-run. Between 2026-09-19 and
+2026-10-28, 11 nightlies were re-run or stayed red. Eight of them failed the same way, on
+2026-09-19, 09-23, 09-26, 09-27, 10-08, 10-24, 10-27 and 10-28. In every one of the eight, only
+step 2 (Backbone staging) failed and step 1 (prod sandbox) passed. No SDK and no repository
+change was involved. Stage 4 is blocking on release tags, so a release cut while staging was
+cold would have stopped for all six languages.
+
+**Root cause.** The same cold Olympus staging App Service (`olympustest-staging`, Basic B2,
+one worker) that the 2026-08-06 reconcile warm-up (pull request 5) addressed is also cold on
+the charge route. That warm-up exercises only the reconcile lookup. Backbone staging telemetry
+for run 40641561481:
+
+- The reconcile warm-ups took 5 to 36 seconds and all came back at 06:05:31Z.
+- The four charges sent at that moment spent 24.5 seconds in Olympus staging's
+  `POST /v1/gateways/charge`.
+- The clients had already given up at 15 seconds, and Backbone recorded HTTP 499.
+- Charges sent in the following 25 seconds took 9.6, 5.9, 2.8 and 1.7 seconds as the route
+  warmed.
+
+The java and dotnet suites passed that night, most likely because their step 2 started 16 to
+20 seconds after the others, once the route had begun to warm.
+
+**Change made.** In all six suites, the advisory preflight now sends one throwaway charge after
+the reconcile warm-up, under the same 90-second budget. It is built exactly like the
+`charge-approved` request, with a fresh `warm` id. Like the reconcile warm-up, it asserts
+nothing, can never fail the suite, and prints `WARM charge path ready in N s` (or `not confirmed
+after N s (<type>)`), so the cold cost stays visible in every run log. No scenario, assertion,
+deadline or ordering changed. Each run now sends two more approved test charges per language:
+one on the prod sandbox key-scope and one on staging.
+
+**What is verified and what is inferred.** Verified: the failing step and row in the eight
+first attempts; the server-side timings above, from `AppRequests` and `AppDependencies` in
+`logbackbone-shared`; the six suites' stage-3 lint and build gates, run locally; and the run
+dispatched on the fix branch (40721525191). That run was green on all 17 jobs. Every suite printed
+both WARM lines on both steps, with the charge warm-up taking 1.7 to 5.4 seconds, followed by 8 of
+8 on staging and 7 of 8 with 1 expected skip on the prod sandbox. Inferred: that one
+completed charge leaves the route warm for the scenarios. On 2026-10-28, charges after the first
+completed one took 1.7 to 5.9 seconds, which supports this. The cold case can only be proven by
+a 06:00 UTC nightly after merge, because a daytime dispatched run finds staging already warm.
+
+**Residual risk.** This fix does not cover three of the eleven re-run nightlies. Two failed
+on a runner network error before the request was sent (ENETUNREACH on 2026-10-12, a connection
+error on 2026-10-15). One was an approved test card that the staging gateway declined
+(2026-09-29). Removing the cold start at its source, with more than one Olympus staging worker
+or a keep-warm ping on the charge route, is an Olympus infrastructure change outside this
+repository.
