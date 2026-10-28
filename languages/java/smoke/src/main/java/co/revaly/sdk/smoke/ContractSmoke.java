@@ -89,6 +89,11 @@ public final class ContractSmoke {
         String run() throws Exception;
     }
 
+    /** One advisory warm-up call: its result is discarded. */
+    private interface WarmCall {
+        void run() throws Exception;
+    }
+
     /** A scenario assertion failure (values-free message). */
     private static final class SmokeFailure extends RuntimeException {
         SmokeFailure(String message) {
@@ -378,23 +383,27 @@ public final class ContractSmoke {
                         .connectTimeout(Duration.ofSeconds(5))
                         .overallDeadline(WARMUP_DEADLINE)
                         .build();
-        long warmStarted = System.nanoTime();
-        String warmDetail;
-        try {
-            warmClient.reconcile(
-                    freshId("warmup"),
-                    new ReconcilePolicy(1, WARMUP_DEADLINE, Duration.ofMillis(500)));
-            warmDetail = String.format("ready in %.1fs", warmElapsedSeconds(warmStarted));
-        } catch (Exception warmFailure) {
-            warmDetail =
-                    String.format(
-                            "not confirmed after %.1fs (%s)",
-                            warmElapsedSeconds(warmStarted),
-                            warmFailure.getClass().getSimpleName());
-        }
+        String warmReconcile =
+                warm(
+                        () ->
+                                warmClient.reconcile(
+                                        freshId("warmup"),
+                                        new ReconcilePolicy(
+                                                1, WARMUP_DEADLINE, Duration.ofMillis(500))));
+        String warmCharge =
+                warm(
+                        () ->
+                                warmClient.charge(
+                                        buildCharge(
+                                                freshId("warm"),
+                                                TEST_PAN,
+                                                "2027",
+                                                routingId,
+                                                true)));
 
         System.out.printf("RAP contract smoke (java): %d scenarios%n", scenarios.size());
-        System.out.printf("WARM reconcile path %s%n", warmDetail);
+        System.out.printf("WARM reconcile path %s%n", warmReconcile);
+        System.out.printf("WARM charge path %s%n", warmCharge);
         int failures = 0;
         int skips = 0;
         for (Map.Entry<String, Scenario> entry : scenarios.entrySet()) {
@@ -507,8 +516,30 @@ public final class ContractSmoke {
      * first reported NotFoundYet with no HTTP status. That warm-up cost is an environment property,
      * not SDK behaviour, so it is paid ONCE before the scenarios, which keeps every scenario assert
      * strict instead of loosening the 404 check into a timeout tolerance.
+     *
+     * <p>The charge path is cold on its own, behind the reconcile path: on nightly 40641561481
+     * (2026-10-28) the first charges after a warm reconcile spent 24.5 s in Olympus staging's POST
+     * /v1/gateways/charge, so charge-approved hit its 15 s deadline as OutcomeUnknown in four
+     * suites — the same red as 8 of the 11 nightlies re-run since 2026-09-19. One throwaway
+     * approved charge under the same budget pays that cost too.
      */
     private static final Duration WARMUP_DEADLINE = Duration.ofSeconds(90);
+
+    /**
+     * Runs one advisory warm-up call: asserts nothing and never throws. The detail carries the
+     * elapsed time, plus the exception type name only when the path did not answer.
+     */
+    private static String warm(WarmCall call) {
+        long started = System.nanoTime();
+        try {
+            call.run();
+            return String.format("ready in %.1fs", warmElapsedSeconds(started));
+        } catch (Exception warmFailure) {
+            return String.format(
+                    "not confirmed after %.1fs (%s)",
+                    warmElapsedSeconds(started), warmFailure.getClass().getSimpleName());
+        }
+    }
 
     private static double warmElapsedSeconds(long startedNanos) {
         return (System.nanoTime() - startedNanos) / 1_000_000_000.0;

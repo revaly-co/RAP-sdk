@@ -374,21 +374,22 @@ func main() {
 		ConnectTimeout:  5 * time.Second,
 		OverallDeadline: warmupDeadline,
 	})
-	warmCtx, cancelWarm := context.WithTimeout(context.Background(), warmupDeadline)
-	warmStarted := time.Now()
-	_, warmErr := warmClient.Reconcile(warmCtx, freshID("warmup"), revaly.ReconcilePolicy{
-		MaxAttempts:   1,
-		OverallBudget: warmupDeadline,
-		InitialDelay:  500 * time.Millisecond,
+	warmReconcile := warm(func(ctx context.Context) error {
+		_, err := warmClient.Reconcile(ctx, freshID("warmup"), revaly.ReconcilePolicy{
+			MaxAttempts:   1,
+			OverallBudget: warmupDeadline,
+			InitialDelay:  500 * time.Millisecond,
+		})
+		return err
 	})
-	cancelWarm()
-	warmDetail := fmt.Sprintf("ready in %.1fs", time.Since(warmStarted).Seconds())
-	if warmErr != nil {
-		warmDetail = fmt.Sprintf("not confirmed after %.1fs (%T)", time.Since(warmStarted).Seconds(), warmErr)
-	}
+	warmCharge := warm(func(ctx context.Context) error {
+		_, err := warmClient.Charge(ctx, buildCharge(freshID("warm"), testPAN, "2027", true))
+		return err
+	})
 
 	fmt.Printf("RAP contract smoke (go): %d scenarios\n", len(scenarios))
-	fmt.Printf("WARM reconcile path %s\n", warmDetail)
+	fmt.Printf("WARM reconcile path %s\n", warmReconcile)
+	fmt.Printf("WARM charge path %s\n", warmCharge)
 	failures, skips := 0, 0
 	for _, s := range scenarios {
 		detail, err := s.run(context.Background())
@@ -424,8 +425,28 @@ const (
 	// property, not SDK behaviour, so it is paid ONCE before the scenarios,
 	// which keeps every scenario assert strict instead of loosening the 404
 	// check into a timeout tolerance.
+	//
+	// The charge path is cold on its own, behind the reconcile path: on nightly
+	// 40641561481 (2026-10-28) the first charges after a warm reconcile spent
+	// 24.5 s in Olympus staging's POST /v1/gateways/charge, so charge-approved
+	// hit its 15 s deadline as OutcomeUnknown in four suites — the same red as
+	// 8 of the 11 nightlies re-run since 2026-09-19. One throwaway approved
+	// charge under the same budget pays that cost too.
 	warmupDeadline = 90 * time.Second
 )
+
+// warm runs one advisory warm-up call under the warm-up budget: it asserts
+// nothing and never fails the suite. The detail carries the elapsed time, plus
+// the error type only when the path did not answer.
+func warm(run func(ctx context.Context) error) string {
+	ctx, cancel := context.WithTimeout(context.Background(), warmupDeadline)
+	defer cancel()
+	started := time.Now()
+	if err := run(ctx); err != nil {
+		return fmt.Sprintf("not confirmed after %.1fs (%T)", time.Since(started).Seconds(), err)
+	}
+	return fmt.Sprintf("ready in %.1fs", time.Since(started).Seconds())
+}
 
 // reconcileSettled re-polls while the charge is visible but not yet settled:
 // under load Found(Pending) is a transient truth, not a verdict miss, so it
