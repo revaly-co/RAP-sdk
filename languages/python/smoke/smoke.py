@@ -180,7 +180,26 @@ SETTLE_DELAY_SECONDS = 2.0
 # HTTP status. That warm-up cost is an environment property, not SDK behaviour,
 # so it is paid ONCE below — before the scenarios — which keeps every scenario
 # assert strict instead of loosening the 404 check into a timeout tolerance.
+#
+# The charge path is cold on its own, behind the reconcile path: on nightly
+# 40641561481 (2026-10-28) the first charges after a warm reconcile spent 24.5 s
+# in Olympus staging's POST /v1/gateways/charge, so charge-approved hit its 15 s
+# deadline as OutcomeUnknown in four suites — the same red as 8 of the 11
+# nightlies re-run since 2026-09-19. One throwaway approved charge under the
+# same budget pays that cost too.
 WARMUP_DEADLINE_SECONDS = 90.0
+
+
+def warm(run: Callable[[], object]) -> str:
+    """Runs one advisory warm-up call: asserts nothing and never raises. The
+    detail carries the elapsed time, plus the exception type name only when the
+    path did not answer."""
+    started = time.monotonic()
+    try:
+        run()
+    except Exception as err:  # noqa: BLE001 — advisory only, never a suite failure
+        return f"not confirmed after {time.monotonic() - started:.1f}s ({type(err).__name__})"
+    return f"ready in {time.monotonic() - started:.1f}s"
 
 
 def expect_found(verdict, want: RapTransactionOutcome) -> str:
@@ -417,21 +436,21 @@ def main() -> int:
         connect_timeout=5.0,
         overall_deadline=WARMUP_DEADLINE_SECONDS,
     )
-    warm_started = time.monotonic()
-    try:
-        warm_client.reconcile(
+    warm_reconcile = warm(
+        lambda: warm_client.reconcile(
             fresh_id("warmup"),
             ReconcilePolicy(
                 max_attempts=1, overall_budget=WARMUP_DEADLINE_SECONDS, initial_delay=0.5
             ),
         )
-        warm_detail = f"ready in {time.monotonic() - warm_started:.1f}s"
-    except Exception as err:  # noqa: BLE001 — advisory only, never a suite failure
-        elapsed = time.monotonic() - warm_started
-        warm_detail = f"not confirmed after {elapsed:.1f}s ({type(err).__name__})"
+    )
+    warm_charge = warm(
+        lambda: warm_client.charge(build_charge(fresh_id("warm"), TEST_PAN, "2027", routing_id))
+    )
 
     print(f"RAP contract smoke (python): {len(scenarios)} scenarios")
-    print(f"WARM reconcile path {warm_detail}")
+    print(f"WARM reconcile path {warm_reconcile}")
+    print(f"WARM charge path {warm_charge}")
     failures = 0
     skips = 0
     for name, run in scenarios:

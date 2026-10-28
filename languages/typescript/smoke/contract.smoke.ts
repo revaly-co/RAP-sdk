@@ -129,6 +129,13 @@ function freshId(label: string): string {
  * HTTP status. That warm-up cost is an environment property, not SDK behaviour,
  * so it is paid ONCE below — before the scenarios — which keeps every scenario
  * assert strict instead of loosening the 404 check into a timeout tolerance.
+ *
+ * The charge path is cold on its own, behind the reconcile path: on nightly
+ * 40641561481 (2026-10-28) the first charges after a warm reconcile spent 24.5 s
+ * in Olympus staging's POST /v1/gateways/charge, so charge-approved hit its 15 s
+ * deadline as OutcomeUnknown in four suites — the same red as 8 of the 11
+ * nightlies re-run since 2026-09-19. One throwaway approved charge under the
+ * same budget pays that cost too.
  */
 const WARMUP_DEADLINE_MS = 90_000;
 
@@ -138,20 +145,26 @@ const WARMUP_DEADLINE_MS = 90_000;
 // the warm-up budget it has to accommodate.
 beforeAll(async () => {
     const warmClient = new RapClient({ apiKey, baseUrl, overallDeadlineMs: WARMUP_DEADLINE_MS });
-    const started = Date.now();
-    const elapsed = () => `${((Date.now() - started) / 1000).toFixed(1)}s`;
-    try {
-        await warmClient.reconcile(freshId('warmup'), {
+    const warm = async (path: string, run: () => Promise<unknown>) => {
+        const started = Date.now();
+        const elapsed = () => `${((Date.now() - started) / 1000).toFixed(1)}s`;
+        try {
+            await run();
+            console.log(`WARM ${path} path ready in ${elapsed()}`);
+        } catch (failure) {
+            const cause = failure?.constructor?.name ?? typeof failure;
+            console.log(`WARM ${path} path not confirmed after ${elapsed()} (${cause})`);
+        }
+    };
+    await warm('reconcile', () =>
+        warmClient.reconcile(freshId('warmup'), {
             maxAttempts: 1,
             overallBudgetMs: WARMUP_DEADLINE_MS,
             initialDelayMs: 500,
-        });
-        console.log(`WARM reconcile path ready in ${elapsed()}`);
-    } catch (failure) {
-        const cause = failure?.constructor?.name ?? typeof failure;
-        console.log(`WARM reconcile path not confirmed after ${elapsed()} (${cause})`);
-    }
-}, WARMUP_DEADLINE_MS + 10_000);
+        }),
+    );
+    await warm('charge', () => warmClient.charge(buildCharge(freshId('warm'), TEST_PAN, '2027')));
+}, 2 * WARMUP_DEADLINE_MS + 10_000);
 
 /**
  * Charge request with the minimal live-approving field set (staging-verified

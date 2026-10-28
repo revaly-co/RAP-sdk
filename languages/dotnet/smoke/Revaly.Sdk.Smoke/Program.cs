@@ -326,23 +326,15 @@ internal static class Program
             ConnectTimeout = TimeSpan.FromSeconds(5),
             OverallDeadline = WarmupDeadline,
         });
-        var warmStarted = Stopwatch.StartNew();
-        string warmDetail;
-        try
-        {
-            await warmClient.ReconcileAsync(FreshId("warmup"), new ReconcilePolicy(
-                maxAttempts: 1,
-                overallBudget: WarmupDeadline,
-                initialDelay: TimeSpan.FromMilliseconds(500)));
-            warmDetail = $"ready in {warmStarted.Elapsed.TotalSeconds:F1}s";
-        }
-        catch (Exception warmFailure)
-        {
-            warmDetail = $"not confirmed after {warmStarted.Elapsed.TotalSeconds:F1}s ({warmFailure.GetType().Name})";
-        }
+        var warmReconcile = await WarmAsync(() => warmClient.ReconcileAsync(FreshId("warmup"), new ReconcilePolicy(
+            maxAttempts: 1,
+            overallBudget: WarmupDeadline,
+            initialDelay: TimeSpan.FromMilliseconds(500))));
+        var warmCharge = await WarmAsync(() => warmClient.Payments.ChargePaymentAsync(BuildCharge(FreshId("warm"), TestPan, "2027", routingId)));
 
         Console.WriteLine($"RAP contract smoke (dotnet): {scenarios.Length} scenarios");
-        Console.WriteLine($"WARM reconcile path {warmDetail}");
+        Console.WriteLine($"WARM reconcile path {warmReconcile}");
+        Console.WriteLine($"WARM charge path {warmCharge}");
         var failures = 0;
         var skips = 0;
         foreach (var (name, run) in scenarios)
@@ -480,8 +472,35 @@ internal static class Program
     /// HTTP status. That warm-up cost is an environment property, not SDK behaviour,
     /// so it is paid ONCE before the scenarios, which keeps every scenario assert
     /// strict instead of loosening the 404 check into a timeout tolerance.
+    /// <para>
+    /// The charge path is cold on its own, behind the reconcile path: on nightly
+    /// 40641561481 (2026-10-28) the first charges after a warm reconcile spent 24.5 s
+    /// in Olympus staging's POST /v1/gateways/charge, so charge-approved hit its 15 s
+    /// deadline as OutcomeUnknown in four suites — the same red as 8 of the 11
+    /// nightlies re-run since 2026-09-19. One throwaway approved charge under the
+    /// same budget pays that cost too.
+    /// </para>
     /// </summary>
     private static readonly TimeSpan WarmupDeadline = TimeSpan.FromSeconds(90);
+
+    /// <summary>
+    /// Runs one advisory warm-up call: asserts nothing and never throws. The
+    /// detail carries the elapsed time, plus the exception type name only when
+    /// the path did not answer.
+    /// </summary>
+    private static async Task<string> WarmAsync(Func<Task> run)
+    {
+        var started = Stopwatch.StartNew();
+        try
+        {
+            await run();
+            return $"ready in {started.Elapsed.TotalSeconds:F1}s";
+        }
+        catch (Exception warmFailure)
+        {
+            return $"not confirmed after {started.Elapsed.TotalSeconds:F1}s ({warmFailure.GetType().Name})";
+        }
+    }
 
     /// <summary>
     /// Unique merchantTransactionId — every reconcile scenario uses a fresh one

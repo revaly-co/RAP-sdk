@@ -165,7 +165,34 @@ const SETTLE_DELAY_MICROSECONDS = 2_000_000;
 // HTTP status. That warm-up cost is an environment property, not SDK behaviour,
 // so it is paid ONCE before the scenarios, which keeps every scenario assert
 // strict instead of loosening the 404 check into a timeout tolerance.
+//
+// The charge path is cold on its own, behind the reconcile path: on nightly
+// 40641561481 (2026-10-28) the first charges after a warm reconcile spent 24.5 s
+// in Olympus staging's POST /v1/gateways/charge, so charge-approved hit its 15 s
+// deadline as OutcomeUnknown in four suites — the same red as 8 of the 11
+// nightlies re-run since 2026-09-19. One throwaway approved charge under the
+// same budget pays that cost too.
 const WARMUP_DEADLINE_SECONDS = 90.0;
+
+/**
+ * Runs one advisory warm-up call: asserts nothing and never throws. The detail
+ * carries the elapsed time, plus the exception class only when the path did
+ * not answer.
+ */
+function warm(callable $run): string
+{
+    $started = microtime(true);
+    try {
+        $run();
+        return sprintf('ready in %.1fs', microtime(true) - $started);
+    } catch (\Throwable $warmFailure) {
+        return sprintf(
+            'not confirmed after %.1fs (%s)',
+            microtime(true) - $started,
+            get_class($warmFailure),
+        );
+    }
+}
 
 /**
  * Reconciles until the outcome settles. Under load a charge can be visible
@@ -446,24 +473,16 @@ $warmClient = new RapClient(
     connectTimeout: 5.0,
     overallDeadline: WARMUP_DEADLINE_SECONDS,
 );
-$warmStarted = microtime(true);
-try {
-    $warmClient->reconcile(freshId('warmup'), new ReconcilePolicy(
-        maxAttempts: 1,
-        overallBudgetSeconds: WARMUP_DEADLINE_SECONDS,
-        initialDelaySeconds: 0.5,
-    ));
-    $warmDetail = sprintf('ready in %.1fs', microtime(true) - $warmStarted);
-} catch (\Throwable $warmFailure) {
-    $warmDetail = sprintf(
-        'not confirmed after %.1fs (%s)',
-        microtime(true) - $warmStarted,
-        get_class($warmFailure),
-    );
-}
+$warmReconcile = warm(fn () => $warmClient->reconcile(freshId('warmup'), new ReconcilePolicy(
+    maxAttempts: 1,
+    overallBudgetSeconds: WARMUP_DEADLINE_SECONDS,
+    initialDelaySeconds: 0.5,
+)));
+$warmCharge = warm(fn () => $warmClient->charge(buildCharge(freshId('warm'), TEST_PAN, '2027', $routingId)));
 
 printf("RAP contract smoke (php): %d scenarios\n", count($scenarios));
-printf("WARM reconcile path %s\n", $warmDetail);
+printf("WARM reconcile path %s\n", $warmReconcile);
+printf("WARM charge path %s\n", $warmCharge);
 $failures = 0;
 $skips = 0;
 foreach ($scenarios as $name => $run) {
