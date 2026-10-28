@@ -66,6 +66,20 @@ Building *on* the SDK rather than *in* it? The path is shorter:
   charge warm-up taking 1.7 to 5.4 seconds on warm daytime staging. The cold case is proven
   only by the first 06:00 UTC nightly after merge. Details and residual risk are in ADR-SDK-024
   §"Preflight now warms the charge path".
+- **SC-660's SDK work is complete; what remains is platform documentation outside this
+  repository.** The 2026-10-19 snapshot listed two remaining items:
+  - **The RFC-046 §5.2 table on Confluence:** done on 2026-10-28. Page 1778679809, version 11,
+    carries the edge-rejection rows and decision R-1, so the published RFC now matches
+    `decision-log.md` R-1. Version 12, the same day, marks OQ-1, OQ-6 and OQ-11 as Decided.
+  - **The RFC-071 D12 documentation criteria:** done or in review, all in Backbone and
+    Confluence:
+    - Backbone ADR 034, merged;
+    - the PCI compliance page;
+    - the daily procedure, alert inventory and penetration-test pages;
+    - the edge firewall runbook, Backbone PR #413, in review;
+    - CDE diagram revision 5, waiting for upload and security-lead sign-off.
+
+  Nothing in this repository changes for those items. ADR-SDK-033 and v0.8.0 stand as released.
 
 ## Status snapshot (2026-10-21)
 
