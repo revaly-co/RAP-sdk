@@ -59,16 +59,22 @@ Building *on* the SDK rather than *in* it? The path is shorter:
   them change only the charge and authorize requests. What merchants gain: the optional
   `rtnData.additionalTransactionData.fraudPreventionPlatform` field (SC-867), without which
   Revaly does not submit RTN data, and the `MODERATELY_TRUSTED` value on `merchantTrustLevel`
-  (SC-837). One behaviour changes in two languages: `description` on charge and authorize is
-  now bounded at 256 characters instead of 500 (SC-785). The platform truncates a longer value
-  and never blocks the payment. The Python and PHP cores check the bound in the client, so
-  after this pin they refuse a description of 257 to 500 characters before sending it. The
-  .NET, Java, TypeScript and Go cores send it and the platform truncates. Whether that
-  difference is acceptable, or the platform spec should drop `maxLength` and state the limit in
-  prose, is to be decided before the next release. No response shape, error code,
-  `transactionType`, reconcile verdict or status changes, so the failover classification is
-  unaffected. The regeneration touched 444 files, none new or deleted; apart from the version
-  banner, the changes are the five affected models and their docs in each language. Verified
+  (SC-837). Two behaviours change. First, `description` on charge and authorize is now bounded
+  at 256 characters instead of 500 (SC-785). The platform truncates a longer value and never
+  blocks the payment, but two cores check the bound before sending: Python refuses a
+  description of 257 to 500 characters when the model is built, and PHP refuses it in
+  `setDescription()` (its array constructor does not check). The .NET, Java, TypeScript and Go
+  cores send it and the platform truncates. Second, v2.14.0 moved `NOT_TRUSTED` to the end of
+  the `merchantTrustLevel` enum, and the generated .NET enum has implicit values, so
+  `NOTTRUSTED` changes from 2 to 4. Recompiled code is unaffected because the wire value is the
+  name; code compiled against an earlier core and run against the new one, or a stored integer,
+  would send the wrong level. Both go in the release notes, and the open questions (keep the
+  client-side bound or ask the platform to drop `maxLength`; which version the release takes)
+  are tracked as OQ-18 in `open-items.md`, due before the next release tag. No response shape,
+  error code, `transactionType`, reconcile verdict or status changes, so the failover
+  classification is unaffected. The regeneration touched 444 files, none new or deleted; apart
+  from the version banner, the changes are the five affected models and their docs in each
+  language (56 files). Verified
   locally against the regenerated cores: .NET 0 errors (the two known CS0612 core warnings)
   and 84/84; Java core compiles and 99/99 (Temurin 21 container); PHP strict PSR-4 clean and
   107/107; TypeScript strict core `tsc` and typecheck clean, 131/131; Python 160/160 (Python

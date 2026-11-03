@@ -21,14 +21,17 @@ notes: >-
   PaymentRequest and AuthorizeRequest is bounded at 256 characters (was 500), and its
   description states that a longer value is truncated to its first 256 characters and never
   blocks the payment; the platform's breaking check allowlisted the tightened bound. The Python
-  and PHP cores enforce maxLength in the client, so after this pin they refuse a description of
-  257 to 500 characters before sending it; the .NET, Java, TypeScript and Go cores send it and
-  the platform truncates. (2) v2.14.0+66c63c6 (SC-837, Backbone PR #427): the request enum
-  `merchantTrustLevel` gains MODERATELY_TRUSTED; `merchantTrustData` is redefined as the
-  six-character trusted signal code (example T3D2L3); the RtnData and additionalTransactionData
-  descriptions add the RTN reporting keys and timing instants Revaly derives. (3)
-  v2.14.1+d3c5b38 (SC-846, Backbone PR #433): prose only, the `merchantName` default and
-  `acquirerMerchantId` stated optional. (4) v2.15.0+693a36b (SC-867, Backbone PR #442): the
+  core refuses a description of 257 to 500 characters when the model is built, and the PHP core
+  refuses it in setDescription() (its array constructor does not check); the .NET, Java,
+  TypeScript and Go cores send it and the platform truncates (OQ-18). (2) v2.14.0+66c63c6
+  (SC-837, Backbone PR #427): the request enum `merchantTrustLevel` gains MODERATELY_TRUSTED and
+  NOT_TRUSTED moves to the end, which renumbers the implicit .NET enum values (NOTTRUSTED 2 ->
+  4; the wire value is the name, OQ-18); `merchantTrustData` is redefined as the
+  six-character trusted signal code (example T3D2L3); `acquirerMerchantId` is stated optional;
+  the RtnData and additionalTransactionData descriptions add the RTN reporting keys and timing
+  instants Revaly derives. (3) v2.14.1+d3c5b38 (SC-846, Backbone PR #433): prose only, the
+  `merchantName` default and the `merchantData` description. (4) v2.15.0+693a36b (SC-867,
+  Backbone PR #442): the
   optional `rtnData.additionalTransactionData.fraudPreventionPlatform` (string, 1 to 128 of
   letters, digits, '.', '_', ':' and '-'); Revaly submits rtnData to RTN only when it is present.
   No response shape, error code, transactionType, reconcile verdict or status change, so the

@@ -52,10 +52,12 @@ all six packages) → `v2.15.0+693a36b` (2026-11-03, SC-869 — four platform ar
 bump, all on the charge and authorize requests and the `RtnData` schema: `description` on
 `PaymentRequest` / `AuthorizeRequest` bounded at 256 characters instead of 500, with prose
 that a longer value is truncated and never blocks the payment (SC-785, Backbone PR #419; the
-Python and PHP cores enforce the bound in the client, so they now refuse 257 to 500
-characters before sending); `merchantTrustLevel` gains `MODERATELY_TRUSTED` and
-`merchantTrustData` is redefined as the trusted signal code (SC-837, PR #427); prose on
-`merchantName` and `acquirerMerchantId` (SC-846, PR #433); the optional
+Python core and the PHP setter enforce the bound in the client, so they now refuse 257 to 500
+characters before sending, see OQ-18); `merchantTrustLevel` gains `MODERATELY_TRUSTED` with
+`NOT_TRUSTED` moved to the end, which renumbers the implicit .NET enum values,
+`merchantTrustData` is redefined as the trusted signal code and `acquirerMerchantId` is stated
+optional (SC-837, PR #427); prose on `merchantName` and `merchantData` (SC-846, PR #433); the
+optional
 `rtnData.additionalTransactionData.fraudPreventionPlatform`, without which Revaly does not
 submit RTN data (SC-867, PR #442); no response shape, error-code, verdict or status change).
 
