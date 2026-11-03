@@ -9,12 +9,12 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.13.0+98915d8`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.13.0%2B98915d8) (platform repo) |
-| Spec version | 2.13.0 |
-| Source commit | `98915d8fe0b27df33e7117866674a4b8e8a22bbb` |
+| Release | [`spec/v2.15.0+693a36b`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.15.0%2B693a36b) (platform repo) |
+| Spec version | 2.15.0 |
+| Source commit | `693a36b60fb9d40458eaf2ec8bcf5ab7b79fb9a3` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `ac8db33744bd9328b636329320362f58af2c690876cacc1965db30341eb66364` |
-| Pinned | 2026-10-19 |
+| sha256 (`openapi.bundled.yaml`) | `0599e4b766bc79653b29527ff0cdda1a77269d0507a347d171e109c015b99b32` |
+| Pinned | 2026-11-03 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
@@ -48,13 +48,25 @@ per-operation instruction; `code` stays documented as absent on every 4xx, the e
 included; the 403 and 409 descriptions gain the matching prose. `details` stays typeless; no
 shape, bound, enum, status or error-code change; the bundle differs from v2.12.2 in exactly
 five lines. This is the pin that ADR-SDK-033 Decision 9 requires before the minor release of
-all six packages).
+all six packages) → `v2.15.0+693a36b` (2026-11-03, SC-869 — four platform artifacts in one
+bump, all on the charge and authorize requests and the `RtnData` schema: `description` on
+`PaymentRequest` / `AuthorizeRequest` bounded at 256 characters instead of 500, with prose
+that a longer value is truncated and never blocks the payment (SC-785, Backbone PR #419; the
+Python core and the PHP setter enforce the bound in the client, so they now refuse 257 to 500
+characters before sending, see OQ-18); `merchantTrustLevel` gains `MODERATELY_TRUSTED` with
+`NOT_TRUSTED` moved to the end, which renumbers the implicit .NET enum values,
+`merchantTrustData` is redefined as the trusted signal code and `acquirerMerchantId` is stated
+optional (SC-837, PR #427); prose on `merchantName` and `merchantData` (SC-846, PR #433); the
+optional
+`rtnData.additionalTransactionData.fraudPreventionPlatform`, without which Revaly does not
+submit RTN data (SC-867, PR #442); no response shape, error-code, verdict or status change).
 
-Eight published artifacts were never consumed and are superseded rather than skipped:
-`v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), and `v2.8.0+95bd397`,
+Eleven published artifacts were never consumed and are superseded rather than skipped:
+`v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), `v2.8.0+95bd397`,
 `v2.9.0+026291d`, `v2.10.0+65b730f`, `v2.11.0+8241a0d`, `v2.12.0+c1c7485`,
 `v2.12.1+4bd7ff6` (2026-10-05 to 2026-10-19, absorbed by the v2.12.2 pin; `v2.12.0` breaks
-the .NET core build, so it is not a usable pin on its own).
+the .NET core build, so it is not a usable pin on its own), and `v2.13.1+f6b9766`,
+`v2.14.0+66c63c6`, `v2.14.1+d3c5b38` (2026-10-29 to 2026-11-02, absorbed by the v2.15.0 pin).
 
 [`openapi.bundled.yaml.sha256`](openapi.bundled.yaml.sha256) and
 [`provenance.json`](provenance.json) are verbatim copies of the release assets, committed as
@@ -65,7 +77,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.13.0+98915d8" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.15.0+693a36b" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

@@ -20,7 +20,7 @@ Name | Type | Description | Notes
 **customer_id** | **string** | Customer identifier | [optional]
 **gateway_fields** | **array<string,mixed>** | Additional gateway-specific fields | [optional]
 **rtn_data** | [**\Revaly\Sdk\Core\Model\RtnData**](RtnData.md) |  | [optional]
-**description** | **string** | Transaction description | [optional]
+**description** | **string** | Transaction description, up to 256 characters. A longer value is truncated to its first 256 characters and never blocks the payment. | [optional]
 **statement_descriptor** | **string** | Merchant-supplied text intended to appear on the customer&#39;s bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge. | [optional]
 **three_ds** | [**\Revaly\Sdk\Core\Model\ThreeDS**](ThreeDS.md) |  | [optional]
 **payment_plan_data** | [**\Revaly\Sdk\Core\Model\PaymentPlanData**](PaymentPlanData.md) |  | [optional]

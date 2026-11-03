@@ -1,7 +1,7 @@
 
 # RtnDataMerchantData
 
-Merchant identification and account signals. acquirerMerchantId is hard-required by RTN downstream but optional in this API.
+Merchant identification and account signals. acquirerMerchantId is optional; no destination financial institution requires it.
 
 ## Properties
 

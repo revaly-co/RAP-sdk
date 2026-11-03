@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.13.0
+API version: 2.15.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -54,7 +54,7 @@ type PaymentRequest struct {
 	// Additional gateway-specific fields
 	GatewayFields map[string]interface{} `json:"gatewayFields,omitempty"`
 	RtnData *RtnData `json:"rtnData,omitempty"`
-	// Transaction description
+	// Transaction description, up to 256 characters. A longer value is truncated to its first 256 characters and never blocks the payment.
 	Description NullableString `json:"description,omitempty"`
 	// Merchant-supplied text intended to appear on the customer's bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge.
 	StatementDescriptor NullableString `json:"statementDescriptor,omitempty"`

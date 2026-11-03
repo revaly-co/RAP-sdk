@@ -21,7 +21,7 @@ Name | Type | Description | Notes
 **CustomerId** | **string** | Customer identifier | [optional] 
 **GatewayFields** | **Dictionary&lt;string, Object&gt;** | Additional gateway-specific fields | [optional] 
 **RtnData** | [**RtnData**](RtnData.md) |  | [optional] 
-**Description** | **string** | Transaction description | [optional] 
+**Description** | **string** | Transaction description, up to 256 characters. A longer value is truncated to its first 256 characters and never blocks the payment. | [optional] 
 **StatementDescriptor** | **string** | Merchant-supplied text intended to appear on the customer&#39;s bank/card statement. Accepted as free text; per-gateway length and character adaptation is applied at submission and never blocks the charge. | [optional] 
 **ThreeDS** | [**ThreeDS**](ThreeDS.md) |  | [optional] 
 **PaymentPlanData** | [**PaymentPlanData**](PaymentPlanData.md) |  | [optional] 

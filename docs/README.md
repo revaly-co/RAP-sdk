@@ -52,7 +52,33 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
-## Status snapshot (2026-10-28)
+## Status snapshot (2026-11-03)
+
+- **Spec re-pinned v2.13.0 → v2.15.0+693a36b (eleventh pin, SC-869).** Four platform
+  artifacts published between 2026-10-29 and 2026-11-03 are absorbed in one bump, and all of
+  them change only the charge and authorize requests. What merchants gain: the optional
+  `rtnData.additionalTransactionData.fraudPreventionPlatform` field (SC-867), without which
+  Revaly does not submit RTN data, and the `MODERATELY_TRUSTED` value on `merchantTrustLevel`
+  (SC-837). Two behaviours change. First, `description` on charge and authorize is now bounded
+  at 256 characters instead of 500 (SC-785). The platform truncates a longer value and never
+  blocks the payment, but two cores check the bound before sending: Python refuses a
+  description of 257 to 500 characters when the model is built, and PHP refuses it in
+  `setDescription()` (its array constructor does not check). The .NET, Java, TypeScript and Go
+  cores send it and the platform truncates. Second, v2.14.0 moved `NOT_TRUSTED` to the end of
+  the `merchantTrustLevel` enum, and the generated .NET enum has implicit values, so
+  `NOTTRUSTED` changes from 2 to 4. Recompiled code is unaffected because the wire value is the
+  name; code compiled against an earlier core and run against the new one, or a stored integer,
+  would send the wrong level. Both go in the release notes, and the open questions (keep the
+  client-side bound or ask the platform to drop `maxLength`; which version the release takes)
+  are tracked as OQ-18 in `open-items.md`, due before the next release tag. No response shape,
+  error code, `transactionType`, reconcile verdict or status changes, so the failover
+  classification is unaffected. The regeneration touched 444 files, none new or deleted; apart
+  from the version banner, the changes are the five affected models and their docs in each
+  language (56 files). Verified
+  locally against the regenerated cores: .NET 0 errors (the two known CS0612 core warnings)
+  and 84/84; Java core compiles and 99/99 (Temurin 21 container); PHP strict PSR-4 clean and
+  107/107; TypeScript strict core `tsc` and typecheck clean, 131/131; Python 160/160 (Python
+  3.12 container); Go build, vet and tests clean.
 
 - **Nightly contract smoke no longer needs a re-run when staging is cold (SC-824).** Between
   2026-09-19 and 2026-10-28, 11 nightlies needed a manual re-run or stayed red. Eight of them
