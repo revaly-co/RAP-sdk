@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.13.0
+API version: 2.15.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -21,7 +21,7 @@ import (
 // checks if the RtnDataAdditionalTransactionData type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &RtnDataAdditionalTransactionData{}
 
-// RtnDataAdditionalTransactionData Core transaction signals supplied by the request producer. Transaction-routing fields (bin, lastFourCardNumber, purchaseAmount, purchaseCurrency, clientInitiatedDate, traceId, providerId) are derived by Revaly at submission time and must not be sent.
+// RtnDataAdditionalTransactionData Core transaction signals supplied by the request producer. Transaction-routing fields (bin, lastFourCardNumber, purchaseAmount, purchaseCurrency, clientInitiatedDate, traceId, providerId) and the RTN reporting keys and timing instants (merchantIdentifier, orderIdentifier, producerProcessStartedAt, producerRequestSentAt) are derived by Revaly at submission time and must not be sent.
 type RtnDataAdditionalTransactionData struct {
 	// Authorization decision from the producer. Required for Trusted MID flows.
 	ProviderAuthDecision *string `json:"providerAuthDecision,omitempty"`
@@ -33,14 +33,16 @@ type RtnDataAdditionalTransactionData struct {
 	PosEntryMode *string `json:"posEntryMode,omitempty"`
 	// Transaction retrieval reference number.
 	RetrievalReferenceNumber *string `json:"retrievalReferenceNumber,omitempty"`
-	// Merchant trust classification assigned by the producer.
+	// Merchant trust classification assigned by the producer, on three trust tiers plus not trusted: TRUSTED (high trust), MODERATELY_TRUSTED (moderate trust), CONDITIONALLY_TRUSTED (low trust), NOT_TRUSTED (not trusted). UNKNOWN means the producer holds no classification; financial institutions whose format carries only these tiers receive it as not trusted.
 	MerchantTrustLevel *string `json:"merchantTrustLevel,omitempty"`
-	// Producer metadata encoding the basis for the trust classification.
+	// Trusted signal code: the evidence behind merchantTrustLevel, as three fixed-position two-character pairs. Position 1 is customer tenure with the merchant (T0 unknown, T1 0 to 3 months, T2 3 to 12 months, T3 1 to 3 years, T4 over 3 years), position 2 is device trust (D0 unknown, D1 first seen, D2 seen once before, D3 frequently seen, D4 previously trusted), position 3 is location match (L0 unknown, L1 new location, L2 regional match, L3 full match). Any pair may be the neutral N0 (no evidence). RTN forwards a conforming code unchanged; a value in any other format is accepted but treated as absent, and RTN then derives the code from the account, device and address signals. Omit the field when the transaction is in no trust program and no evidence is available.
 	MerchantTrustData *string `json:"merchantTrustData,omitempty"`
 	// Card product brand.
 	CardBrand *string `json:"cardBrand,omitempty"`
 	// Message type: 1 = Pre-Auth Approved, 2 = Pre-Auth Declined, 3 = Pre-Auth Test.
 	MessageCategory *string `json:"messageCategory,omitempty"`
+	// Name of the fraud prevention platform whose score or decision this rtnData carries, as the platform is known in your own system. RTN calibrates a score by its source, so it requires the name: Revaly submits rtnData to RTN only when this field is present, and otherwise processes the payment without an RTN submission. 1 to 128 characters: letters, digits, '.', '_', ':' and '-'.
+	FraudPreventionPlatform *string `json:"fraudPreventionPlatform,omitempty" validate:"regexp=^[A-Za-z0-9._:-]{1,128}$"`
 	// Full card Primary Account Number (cardholder data / CHD). Optional. Forwarded to RTN in-flight only — never persisted or logged at rest by RAP. Sending this field transmits cardholder data; ensure your integration is authorized under your PCI-DSS obligations.
 	FullPan *string `json:"fullPan,omitempty" validate:"regexp=^\\\\d{13,19}$"`
 	// Device Primary Account Number (tokenized card number from a digital wallet).
@@ -352,6 +354,38 @@ func (o *RtnDataAdditionalTransactionData) SetMessageCategory(v string) {
 	o.MessageCategory = &v
 }
 
+// GetFraudPreventionPlatform returns the FraudPreventionPlatform field value if set, zero value otherwise.
+func (o *RtnDataAdditionalTransactionData) GetFraudPreventionPlatform() string {
+	if o == nil || IsNil(o.FraudPreventionPlatform) {
+		var ret string
+		return ret
+	}
+	return *o.FraudPreventionPlatform
+}
+
+// GetFraudPreventionPlatformOk returns a tuple with the FraudPreventionPlatform field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RtnDataAdditionalTransactionData) GetFraudPreventionPlatformOk() (*string, bool) {
+	if o == nil || IsNil(o.FraudPreventionPlatform) {
+		return nil, false
+	}
+	return o.FraudPreventionPlatform, true
+}
+
+// HasFraudPreventionPlatform returns a boolean if a field has been set.
+func (o *RtnDataAdditionalTransactionData) HasFraudPreventionPlatform() bool {
+	if o != nil && !IsNil(o.FraudPreventionPlatform) {
+		return true
+	}
+
+	return false
+}
+
+// SetFraudPreventionPlatform gets a reference to the given string and assigns it to the FraudPreventionPlatform field.
+func (o *RtnDataAdditionalTransactionData) SetFraudPreventionPlatform(v string) {
+	o.FraudPreventionPlatform = &v
+}
+
 // GetFullPan returns the FullPan field value if set, zero value otherwise.
 func (o *RtnDataAdditionalTransactionData) GetFullPan() string {
 	if o == nil || IsNil(o.FullPan) {
@@ -452,6 +486,9 @@ func (o RtnDataAdditionalTransactionData) ToMap() (map[string]interface{}, error
 	}
 	if !IsNil(o.MessageCategory) {
 		toSerialize["messageCategory"] = o.MessageCategory
+	}
+	if !IsNil(o.FraudPreventionPlatform) {
+		toSerialize["fraudPreventionPlatform"] = o.FraudPreventionPlatform
 	}
 	if !IsNil(o.FullPan) {
 		toSerialize["fullPan"] = o.FullPan

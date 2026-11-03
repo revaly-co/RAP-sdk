@@ -52,7 +52,27 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
-## Status snapshot (2026-10-28)
+## Status snapshot (2026-11-03)
+
+- **Spec re-pinned v2.13.0 → v2.15.0+693a36b (eleventh pin, SC-869).** Four platform
+  artifacts published between 2026-10-29 and 2026-11-03 are absorbed in one bump, and all of
+  them change only the charge and authorize requests. What merchants gain: the optional
+  `rtnData.additionalTransactionData.fraudPreventionPlatform` field (SC-867), without which
+  Revaly does not submit RTN data, and the `MODERATELY_TRUSTED` value on `merchantTrustLevel`
+  (SC-837). One behaviour changes in two languages: `description` on charge and authorize is
+  now bounded at 256 characters instead of 500 (SC-785). The platform truncates a longer value
+  and never blocks the payment. The Python and PHP cores check the bound in the client, so
+  after this pin they refuse a description of 257 to 500 characters before sending it. The
+  .NET, Java, TypeScript and Go cores send it and the platform truncates. Whether that
+  difference is acceptable, or the platform spec should drop `maxLength` and state the limit in
+  prose, is to be decided before the next release. No response shape, error code,
+  `transactionType`, reconcile verdict or status changes, so the failover classification is
+  unaffected. The regeneration touched 444 files, none new or deleted; apart from the version
+  banner, the changes are the five affected models and their docs in each language. Verified
+  locally against the regenerated cores: .NET 0 errors (the two known CS0612 core warnings)
+  and 84/84; Java core compiles and 99/99 (Temurin 21 container); PHP strict PSR-4 clean and
+  107/107; TypeScript strict core `tsc` and typecheck clean, 131/131; Python 160/160 (Python
+  3.12 container); Go build, vet and tests clean.
 
 - **Nightly contract smoke no longer needs a re-run when staging is cold (SC-824).** Between
   2026-09-19 and 2026-10-28, 11 nightlies needed a manual re-run or stayed red. Eight of them

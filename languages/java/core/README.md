@@ -2,7 +2,7 @@
 
 Revaly
 
-- API version: 2.13.0
+- API version: 2.15.0
 
 - Generator version: 7.23.0
 

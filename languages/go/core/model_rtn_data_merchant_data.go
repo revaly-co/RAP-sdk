@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.13.0
+API version: 2.15.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -21,9 +21,9 @@ import (
 // checks if the RtnDataMerchantData type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &RtnDataMerchantData{}
 
-// RtnDataMerchantData Merchant identification and account signals. acquirerMerchantId is hard-required by RTN downstream but optional in this API.
+// RtnDataMerchantData Merchant identification and account signals. acquirerMerchantId is optional; no destination financial institution requires it.
 type RtnDataMerchantData struct {
-	// Acquirer-assigned merchant identifier. Hard-required by RTN; optional in this API.
+	// Acquirer-assigned merchant identifier. Optional; no destination financial institution requires it.
 	AcquirerMerchantId *string `json:"acquirerMerchantId,omitempty"`
 	// Issuer-side merchant identifier, if known.
 	IssuerMerchantId *string `json:"issuerMerchantId,omitempty"`
@@ -31,7 +31,7 @@ type RtnDataMerchantData struct {
 	AcquirerBin *string `json:"acquirerBin,omitempty"`
 	// Acquirer reference number (ARN) for network clearing.
 	AcquirerReferenceNumber *string `json:"acquirerReferenceNumber,omitempty"`
-	// Merchant display name as it appears to the customer.
+	// Merchant display name as it appears to the customer. When omitted, Revaly sends the account's name as held in the Revaly account configuration, or the account's primary statement descriptor when no account name is configured. A value that is sent, including an empty string, is passed on as given.
 	MerchantName *string `json:"merchantName,omitempty"`
 	// Merchant account age token.
 	MerchantAccountAgeIndicator *string `json:"merchantAccountAgeIndicator,omitempty"`

@@ -4,11 +4,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**AcquirerMerchantId** | Pointer to **string** | Acquirer-assigned merchant identifier. Hard-required by RTN; optional in this API. | [optional] 
+**AcquirerMerchantId** | Pointer to **string** | Acquirer-assigned merchant identifier. Optional; no destination financial institution requires it. | [optional] 
 **IssuerMerchantId** | Pointer to **string** | Issuer-side merchant identifier, if known. | [optional] 
 **AcquirerBin** | Pointer to **string** | BIN of the acquiring institution. | [optional] 
 **AcquirerReferenceNumber** | Pointer to **string** | Acquirer reference number (ARN) for network clearing. | [optional] 
-**MerchantName** | Pointer to **string** | Merchant display name as it appears to the customer. | [optional] 
+**MerchantName** | Pointer to **string** | Merchant display name as it appears to the customer. When omitted, Revaly sends the account&#39;s name as held in the Revaly account configuration, or the account&#39;s primary statement descriptor when no account name is configured. A value that is sent, including an empty string, is passed on as given. | [optional] 
 **MerchantAccountAgeIndicator** | Pointer to **string** | Merchant account age token. | [optional] 
 **MerchantAccountOpenedDate** | Pointer to **string** | Date the merchant account was created. Format YYYYMMDD. | [optional] 
 **IsTenuredMerchant** | Pointer to **bool** | True if the merchant has a long-standing, established account relationship. | [optional] 

@@ -1,7 +1,7 @@
 
 # RtnDataAdditionalTransactionData
 
-Core transaction signals supplied by the request producer. Transaction-routing fields (bin, lastFourCardNumber, purchaseAmount, purchaseCurrency, clientInitiatedDate, traceId, providerId) are derived by Revaly at submission time and must not be sent.
+Core transaction signals supplied by the request producer. Transaction-routing fields (bin, lastFourCardNumber, purchaseAmount, purchaseCurrency, clientInitiatedDate, traceId, providerId) and the RTN reporting keys and timing instants (merchantIdentifier, orderIdentifier, producerProcessStartedAt, producerRequestSentAt) are derived by Revaly at submission time and must not be sent.
 
 ## Properties
 
@@ -16,6 +16,7 @@ Name | Type
 `merchantTrustData` | string
 `cardBrand` | string
 `messageCategory` | string
+`fraudPreventionPlatform` | string
 `fullPan` | string
 `dpan` | string
 
@@ -32,9 +33,10 @@ const example = {
   "posEntryMode": ECOMMERCE,
   "retrievalReferenceNumber": 123456789012,
   "merchantTrustLevel": TRUSTED,
-  "merchantTrustData": tool=KOUNT;riskScore=12;program=TRUSTED_AUTH;version=1,
+  "merchantTrustData": T3D2L3,
   "cardBrand": VISA,
   "messageCategory": 1,
+  "fraudPreventionPlatform": KOUNT,
   "fullPan": 4147202000001234,
   "dpan": 4761739001010010,
 } satisfies RtnDataAdditionalTransactionData
