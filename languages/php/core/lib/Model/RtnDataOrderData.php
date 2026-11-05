@@ -491,14 +491,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             $invalidProperties[] = "invalid value for 'gift_card_amount', must be bigger than or equal to 0.";
         }
 
-        if (!is_null($this->container['top_item_categories']) && (mb_strlen($this->container['top_item_categories']) > 20)) {
-            $invalidProperties[] = "invalid value for 'top_item_categories', the character length must be smaller than or equal to 20.";
-        }
-
-        if (!is_null($this->container['highest_price_item_sku']) && (mb_strlen($this->container['highest_price_item_sku']) > 16)) {
-            $invalidProperties[] = "invalid value for 'highest_price_item_sku', the character length must be smaller than or equal to 16.";
-        }
-
         $allowedValues = $this->getIsCouponUsedAllowableValues();
         if (!is_null($this->container['is_coupon_used']) && !in_array($this->container['is_coupon_used'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -1048,9 +1040,7 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
         if (is_null($top_item_categories)) {
             throw new \InvalidArgumentException('non-nullable top_item_categories cannot be null');
         }
-        if ((mb_strlen($top_item_categories) > 20)) {
-            throw new \InvalidArgumentException('invalid length for $top_item_categories when calling RtnDataOrderData., must be smaller than or equal to 20.');
-        }
+
 
         $this->container['top_item_categories'] = $top_item_categories;
 
@@ -1079,9 +1069,7 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
         if (is_null($highest_price_item_sku)) {
             throw new \InvalidArgumentException('non-nullable highest_price_item_sku cannot be null');
         }
-        if ((mb_strlen($highest_price_item_sku) > 16)) {
-            throw new \InvalidArgumentException('invalid length for $highest_price_item_sku when calling RtnDataOrderData., must be smaller than or equal to 16.');
-        }
+
 
         $this->container['highest_price_item_sku'] = $highest_price_item_sku;
 

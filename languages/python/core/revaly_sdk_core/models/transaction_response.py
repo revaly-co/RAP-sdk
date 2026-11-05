@@ -38,7 +38,7 @@ class TransactionResponse(BaseModel):
     """
     Complete transaction information including processing details
     """ # noqa: E501
-    transaction_id: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=50)]] = Field(default=None, description="Unique identifier for the transaction", alias="transactionId", json_schema_extra={"examples": ["06CQR5TMB800000G0011NCFRVY37A"]})
+    transaction_id: Optional[Annotated[str, Field(min_length=1, strict=True)]] = Field(default=None, description="Unique identifier for the transaction", alias="transactionId", json_schema_extra={"examples": ["06CQR5TMB800000G0011NCFRVY37A"]})
     transaction_date: Optional[datetime] = Field(default=None, description="Date and time when the transaction was processed (ISO 8601)", alias="transactionDate", json_schema_extra={"examples": ["2024-01-15T10:30:00Z"]})
     transaction_status: Optional[StrictInt] = Field(default=None, description="Current status of the transaction (1 = Approved, 2 = Declined, 3 = Error)", alias="transactionStatus", json_schema_extra={"examples": [1]})
     message: Optional[StrictStr] = Field(default=None, description="Human-readable message about the transaction result", json_schema_extra={"examples": ["Transaction approved successfully"]})
@@ -59,7 +59,7 @@ class TransactionResponse(BaseModel):
     mit_stored_transaction_id: Optional[StrictStr] = Field(default=None, description="Merchant-initiated transaction stored credential ID", alias="mitStoredTransactionId", json_schema_extra={"examples": ["mit_1234567890abcdef"]})
     stored_credential: Optional[StoredCredentialResponse] = Field(default=None, alias="storedCredential")
     order_id: Optional[StrictStr] = Field(default=None, description="Order identifier from the merchant system", alias="orderId", json_schema_extra={"examples": ["order_67890"]})
-    statement_descriptor: Optional[Annotated[str, Field(strict=True, max_length=255)]] = Field(default=None, description="Merchant-supplied text intended for the customer's card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge.", alias="statementDescriptor", json_schema_extra={"examples": ["ACME* SUBSCRIPTION"]})
+    statement_descriptor: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Merchant-supplied text intended for the customer's card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge.", alias="statementDescriptor", json_schema_extra={"examples": ["ACME* SUBSCRIPTION"]})
     customer_ip: Optional[StrictStr] = Field(default=None, description="Customer's IP address at time of transaction", alias="customerIp", json_schema_extra={"examples": ["192.168.1.100"]})
     engaged_recovery_state: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Recovery state indicator (0 = not engaged, 1+ = recovery level)", alias="engagedRecoveryState", json_schema_extra={"examples": [0]})
     description: Optional[StrictStr] = Field(default=None, description="Transaction description or notes", json_schema_extra={"examples": ["Payment for premium subscription"]})

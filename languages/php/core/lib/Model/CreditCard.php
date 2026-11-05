@@ -366,10 +366,6 @@ class CreditCard implements ModelInterface, ArrayAccess, \JsonSerializable
             $invalidProperties[] = "invalid value for 'expiry_year', must be conform to the pattern /^20[0-9]{2}$/.";
         }
 
-        if (!is_null($this->container['company']) && (mb_strlen($this->container['company']) > 100)) {
-            $invalidProperties[] = "invalid value for 'company', the character length must be smaller than or equal to 100.";
-        }
-
         $allowedValues = $this->getCardTypeAllowableValues();
         if (!is_null($this->container['card_type']) && !in_array($this->container['card_type'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -558,9 +554,7 @@ class CreditCard implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($company) && (mb_strlen($company) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $company when calling CreditCard., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['company'] = $company;
 

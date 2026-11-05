@@ -32,12 +32,12 @@ class RtnDataPartnerRiskData(BaseModel):
     """
     Risk scores and trust signals from the producer. All fields optional.
     """ # noqa: E501
-    transaction_risk_score: Optional[Annotated[str, Field(strict=True, max_length=10)]] = Field(default=None, description="Transaction-level risk score assigned by the producer. String to accommodate decimal scores.", alias="transactionRiskScore", json_schema_extra={"examples": ["12"]})
+    transaction_risk_score: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Transaction-level risk score assigned by the producer. String to accommodate decimal scores.", alias="transactionRiskScore", json_schema_extra={"examples": ["12"]})
     is_trusted_mid_partner: Optional[StrictBool] = Field(default=None, description="True if the producer is operating in Trusted MID capacity for this transaction.", alias="isTrustedMidPartner", json_schema_extra={"examples": [False]})
-    customer_risk_score: Optional[Annotated[str, Field(strict=True, max_length=10)]] = Field(default=None, description="Customer-level risk score.", alias="customerRiskScore", json_schema_extra={"examples": ["5"]})
-    device_risk_score: Optional[Annotated[str, Field(strict=True, max_length=10)]] = Field(default=None, description="Device-level risk score.", alias="deviceRiskScore", json_schema_extra={"examples": ["3"]})
-    ip_risk_score: Optional[Annotated[str, Field(strict=True, max_length=10)]] = Field(default=None, description="IP address risk score.", alias="ipRiskScore", json_schema_extra={"examples": ["2"]})
-    merchant_risk_score: Optional[Annotated[str, Field(strict=True, max_length=10)]] = Field(default=None, description="Merchant-level risk score.", alias="merchantRiskScore", json_schema_extra={"examples": ["44.6"]})
+    customer_risk_score: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Customer-level risk score.", alias="customerRiskScore", json_schema_extra={"examples": ["5"]})
+    device_risk_score: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Device-level risk score.", alias="deviceRiskScore", json_schema_extra={"examples": ["3"]})
+    ip_risk_score: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="IP address risk score.", alias="ipRiskScore", json_schema_extra={"examples": ["2"]})
+    merchant_risk_score: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Merchant-level risk score.", alias="merchantRiskScore", json_schema_extra={"examples": ["44.6"]})
     __properties: ClassVar[List[str]] = ["transactionRiskScore", "isTrustedMidPartner", "customerRiskScore", "deviceRiskScore", "ipRiskScore", "merchantRiskScore"]
 
     model_config = ConfigDict(

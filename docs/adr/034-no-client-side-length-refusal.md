@@ -1,7 +1,8 @@
 # ADR-SDK-034 — An SDK does not refuse a request for a string length bound; the platform decides (OQ-18)
 
 **Status:** Accepted — decided 2026-11-05 by Dimitri Pankov as RAP SDK author (OQ-18, raised on
-PR #118 by the fresh-context review of 2026-11-03, SC-869) · closes OQ-18 · no failover-contract
+PR #118 by the fresh-context review of 2026-11-03, SC-869) · closes OQ-18 · implemented
+2026-11-05 (SC-886, see Implementation below) · no failover-contract
 change: a request the SDK no longer refuses is sent and classified like any other request
 **Source:** spec pins v2.15.0+693a36b (SC-869: the 256-character `description` bound from SC-785)
 and v2.16.0+99cb098 (SC-661: the 45-character `customerIp` bound)
@@ -95,3 +96,31 @@ OQ-18 asked (a) whether the Python and PHP refusal is acceptable or the platform
 - No released package refuses a longer `customerIp` before sending, which is what the SC-661
   request protects; `main` carries the check in the unreleased Python and PHP cores until the
   revision.
+
+## Implementation (2026-11-05, SC-886)
+
+- **PHP:** `pipeline/php/templates/model_generic.mustache` is the stock v7.23.0 template with
+  only the two `maxLength` blocks removed (the setter's exception and the
+  `listInvalidProperties()` entry). 37 model files change, removals only.
+- **Python: a generation step, not a template fork.** The generator hands the model template
+  each field's whole declaration as one precomputed string (`vendorExtensions.x-py-typing`), so
+  a fork cannot drop one constraint. `pipeline/generate.sh` removes `max_length=N` from the
+  model field annotations after generation, inside the pinned image, and fails generation if
+  any survives anywhere in `models/`. Only `Annotated[str, Field(...)]` annotations are
+  stripped, so a list bound would stop generation instead of being removed. 132 annotations in
+  33 model files change and nothing else; `api/` keeps its 36 path and query parameter bounds.
+- **Scope as built: model fields, in both directions.** PHP's deserializer calls the same
+  setters, and Python's response models carry the same annotations, so a response with a longer
+  value now binds instead of raising: a processed payment can no longer surface as a parse error
+  over a length bound. Decision 2's "request body fields" reads "model fields".
+- **A pattern that embeds a length still refuses.** `fraudPreventionPlatform`'s pattern
+  `^[A-Za-z0-9._:-]{1,128}$` still refuses a 129-character value in Python and PHP, because
+  decision 2 keeps patterns.
+- **Tests:** Python `tests/test_length_bounds.py` (six tests) and
+  `test_merchant_transaction_id_over_100_is_left_to_the_platform`, which replaces the test that
+  asserted the refusal; PHP `tests/LengthBoundsTest.php` (five tests). Against unmodified `main`
+  the four Python and two PHP behaviour tests fail on the length refusal, and the tests for the
+  kept checks pass. PHP's required-field evidence is the setter's non-null guard: a required
+  field that is never set was not refused before this change either (nothing calls `valid()`),
+  and the platform still answers it.
+- **Decision 4's hold ends with this change:** Python 0.9.0 and PHP 0.10.0 release from it.

@@ -307,10 +307,6 @@ class GatewayPaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializ
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['gateway_payment_method_id']) && (mb_strlen($this->container['gateway_payment_method_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'gateway_payment_method_id', the character length must be smaller than or equal to 100.";
-        }
-
         if (!is_null($this->container['bin']) && !preg_match("/^(?:[0-9]{6}|[0-9]{8})$/", $this->container['bin'])) {
             $invalidProperties[] = "invalid value for 'bin', must be conform to the pattern /^(?:[0-9]{6}|[0-9]{8})$/.";
         }
@@ -371,9 +367,7 @@ class GatewayPaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializ
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_payment_method_id) && (mb_strlen($gateway_payment_method_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_payment_method_id when calling GatewayPaymentMethod., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['gateway_payment_method_id'] = $gateway_payment_method_id;
 

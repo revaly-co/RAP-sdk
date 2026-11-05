@@ -307,22 +307,6 @@ class StoredCredentialResponse implements ModelInterface, ArrayAccess, \JsonSeri
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['initial_network_transaction_id']) && (mb_strlen($this->container['initial_network_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'initial_network_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['latest_network_transaction_id']) && (mb_strlen($this->container['latest_network_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'latest_network_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['gateway_initial_transaction_id']) && (mb_strlen($this->container['gateway_initial_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'gateway_initial_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['gateway_latest_transaction_id']) && (mb_strlen($this->container['gateway_latest_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'gateway_latest_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
         return $invalidProperties;
     }
 
@@ -401,9 +385,7 @@ class StoredCredentialResponse implements ModelInterface, ArrayAccess, \JsonSeri
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($initial_network_transaction_id) && (mb_strlen($initial_network_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $initial_network_transaction_id when calling StoredCredentialResponse., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['initial_network_transaction_id'] = $initial_network_transaction_id;
 
@@ -439,9 +421,7 @@ class StoredCredentialResponse implements ModelInterface, ArrayAccess, \JsonSeri
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($latest_network_transaction_id) && (mb_strlen($latest_network_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $latest_network_transaction_id when calling StoredCredentialResponse., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['latest_network_transaction_id'] = $latest_network_transaction_id;
 
@@ -477,9 +457,7 @@ class StoredCredentialResponse implements ModelInterface, ArrayAccess, \JsonSeri
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_initial_transaction_id) && (mb_strlen($gateway_initial_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_initial_transaction_id when calling StoredCredentialResponse., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['gateway_initial_transaction_id'] = $gateway_initial_transaction_id;
 
@@ -515,9 +493,7 @@ class StoredCredentialResponse implements ModelInterface, ArrayAccess, \JsonSeri
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_latest_transaction_id) && (mb_strlen($gateway_latest_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_latest_transaction_id when calling StoredCredentialResponse., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['gateway_latest_transaction_id'] = $gateway_latest_transaction_id;
 

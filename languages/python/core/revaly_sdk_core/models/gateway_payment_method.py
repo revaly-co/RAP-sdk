@@ -32,7 +32,7 @@ class GatewayPaymentMethod(BaseModel):
     """
     GatewayPaymentMethodId details for payment processing
     """ # noqa: E501
-    gateway_payment_method_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Token identifier from the payment gateway", alias="gatewayPaymentMethodId", json_schema_extra={"examples": ["tok_1234567890abcdef"]})
+    gateway_payment_method_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Token identifier from the payment gateway", alias="gatewayPaymentMethodId", json_schema_extra={"examples": ["tok_1234567890abcdef"]})
     bin: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Bank Identification Number (first 6 or 8 digits)", json_schema_extra={"examples": ["424242"]})
     last_four_digits: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Last four digits of the payment method", alias="lastFourDigits", json_schema_extra={"examples": ["4242"]})
     expiry_year: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Expiration year (YYYY)", alias="expiryYear", json_schema_extra={"examples": ["2025"]})

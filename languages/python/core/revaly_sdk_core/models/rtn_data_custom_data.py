@@ -32,7 +32,7 @@ class RtnDataCustomData(BaseModel):
     """
     Producer-reserved custom fields for metadata not covered by the canonical schema.
     """ # noqa: E501
-    custom_field1: Optional[Annotated[str, Field(strict=True, max_length=2048)]] = Field(default=None, description="Free-form name-value pair string. Format is producer-defined.", alias="customField1", json_schema_extra={"examples": ["campaignId=WINTER26;checkoutVariant=B"]})
+    custom_field1: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Free-form name-value pair string. Format is producer-defined.", alias="customField1", json_schema_extra={"examples": ["campaignId=WINTER26;checkoutVariant=B"]})
     __properties: ClassVar[List[str]] = ["customField1"]
 
     model_config = ConfigDict(

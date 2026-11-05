@@ -347,26 +347,6 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['acquirer_merchant_id']) && (mb_strlen($this->container['acquirer_merchant_id']) > 15)) {
-            $invalidProperties[] = "invalid value for 'acquirer_merchant_id', the character length must be smaller than or equal to 15.";
-        }
-
-        if (!is_null($this->container['issuer_merchant_id']) && (mb_strlen($this->container['issuer_merchant_id']) > 15)) {
-            $invalidProperties[] = "invalid value for 'issuer_merchant_id', the character length must be smaller than or equal to 15.";
-        }
-
-        if (!is_null($this->container['acquirer_bin']) && (mb_strlen($this->container['acquirer_bin']) > 11)) {
-            $invalidProperties[] = "invalid value for 'acquirer_bin', the character length must be smaller than or equal to 11.";
-        }
-
-        if (!is_null($this->container['acquirer_reference_number']) && (mb_strlen($this->container['acquirer_reference_number']) > 23)) {
-            $invalidProperties[] = "invalid value for 'acquirer_reference_number', the character length must be smaller than or equal to 23.";
-        }
-
-        if (!is_null($this->container['merchant_name']) && (mb_strlen($this->container['merchant_name']) > 254)) {
-            $invalidProperties[] = "invalid value for 'merchant_name', the character length must be smaller than or equal to 254.";
-        }
-
         $allowedValues = $this->getMerchantAccountAgeIndicatorAllowableValues();
         if (!is_null($this->container['merchant_account_age_indicator']) && !in_array($this->container['merchant_account_age_indicator'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -417,9 +397,7 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($acquirer_merchant_id)) {
             throw new \InvalidArgumentException('non-nullable acquirer_merchant_id cannot be null');
         }
-        if ((mb_strlen($acquirer_merchant_id) > 15)) {
-            throw new \InvalidArgumentException('invalid length for $acquirer_merchant_id when calling RtnDataMerchantData., must be smaller than or equal to 15.');
-        }
+
 
         $this->container['acquirer_merchant_id'] = $acquirer_merchant_id;
 
@@ -448,9 +426,7 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($issuer_merchant_id)) {
             throw new \InvalidArgumentException('non-nullable issuer_merchant_id cannot be null');
         }
-        if ((mb_strlen($issuer_merchant_id) > 15)) {
-            throw new \InvalidArgumentException('invalid length for $issuer_merchant_id when calling RtnDataMerchantData., must be smaller than or equal to 15.');
-        }
+
 
         $this->container['issuer_merchant_id'] = $issuer_merchant_id;
 
@@ -479,9 +455,7 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($acquirer_bin)) {
             throw new \InvalidArgumentException('non-nullable acquirer_bin cannot be null');
         }
-        if ((mb_strlen($acquirer_bin) > 11)) {
-            throw new \InvalidArgumentException('invalid length for $acquirer_bin when calling RtnDataMerchantData., must be smaller than or equal to 11.');
-        }
+
 
         $this->container['acquirer_bin'] = $acquirer_bin;
 
@@ -510,9 +484,7 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($acquirer_reference_number)) {
             throw new \InvalidArgumentException('non-nullable acquirer_reference_number cannot be null');
         }
-        if ((mb_strlen($acquirer_reference_number) > 23)) {
-            throw new \InvalidArgumentException('invalid length for $acquirer_reference_number when calling RtnDataMerchantData., must be smaller than or equal to 23.');
-        }
+
 
         $this->container['acquirer_reference_number'] = $acquirer_reference_number;
 
@@ -541,9 +513,7 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($merchant_name)) {
             throw new \InvalidArgumentException('non-nullable merchant_name cannot be null');
         }
-        if ((mb_strlen($merchant_name) > 254)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_name when calling RtnDataMerchantData., must be smaller than or equal to 254.');
-        }
+
 
         $this->container['merchant_name'] = $merchant_name;
 

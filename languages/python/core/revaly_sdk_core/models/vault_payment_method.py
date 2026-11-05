@@ -32,7 +32,7 @@ class VaultPaymentMethod(BaseModel):
     """
     Vault-issued payment token details for payment processing
     """ # noqa: E501
-    vault_token: Optional[Annotated[str, Field(strict=True, max_length=200)]] = Field(default=None, description="Vault-issued token (any provider) used to authorize a payment. Valid only on `/payments/charge` and `/payments/authorize` when `paymentMethodType` is `vaultToken`. Requires `paymentMethod.merchantAccountReferenceId` for gateway routing. Must not be combined with `creditCard` or `gatewayPaymentMethod`. ", alias="vaultToken", json_schema_extra={"examples": ["vt_01HX5J8QH8N1XK2D3T4B6Q7Z9C"]})
+    vault_token: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Vault-issued token (any provider) used to authorize a payment. Valid only on `/payments/charge` and `/payments/authorize` when `paymentMethodType` is `vaultToken`. Requires `paymentMethod.merchantAccountReferenceId` for gateway routing. Must not be combined with `creditCard` or `gatewayPaymentMethod`. ", alias="vaultToken", json_schema_extra={"examples": ["vt_01HX5J8QH8N1XK2D3T4B6Q7Z9C"]})
     bin: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Bank Identification Number (first 6 or 8 digits)", json_schema_extra={"examples": ["424242"]})
     last_four_digits: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Last four digits of the payment method", alias="lastFourDigits", json_schema_extra={"examples": ["4242"]})
     expiry_year: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Expiration year (YYYY)", alias="expiryYear", json_schema_extra={"examples": ["2025"]})

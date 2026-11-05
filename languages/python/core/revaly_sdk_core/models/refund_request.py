@@ -32,7 +32,7 @@ class RefundRequest(BaseModel):
     """
     Request to refund a payment transaction
     """ # noqa: E501
-    merchant_transaction_id: Annotated[str, Field(strict=True, max_length=100)] = Field(description="Merchant-provided unique identifier for this refund transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["refund_order_12345"]})
+    merchant_transaction_id: Annotated[str, Field(strict=True)] = Field(description="Merchant-provided unique identifier for this refund transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["refund_order_12345"]})
     amount: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Refund amount in smallest currency unit (e.g., cents for USD). If null or omitted, a full refund will be processed. ", json_schema_extra={"examples": [1000]})
     __properties: ClassVar[List[str]] = ["merchantTransactionId", "amount"]
 

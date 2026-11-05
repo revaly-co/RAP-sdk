@@ -34,7 +34,7 @@ class CreatePaymentMethodRequest(BaseModel):
     Request to create a new payment method
     """ # noqa: E501
     payment_method_type: StrictStr = Field(description="Type of payment method to create: - **creditCard**: Use raw credit card details that will be tokenized - **gatewayPaymentMethodId**: Use an existing token from a supported payment gateway ", alias="paymentMethodType", json_schema_extra={"examples": ["creditCard"]})
-    customer_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Unique identifier for the customer", alias="customerId", json_schema_extra={"examples": ["customer_123456"]})
+    customer_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Unique identifier for the customer", alias="customerId", json_schema_extra={"examples": ["customer_123456"]})
     payment_method: Optional[PaymentMethod] = Field(default=None, alias="paymentMethod")
     __properties: ClassVar[List[str]] = ["paymentMethodType", "customerId", "paymentMethod"]
 

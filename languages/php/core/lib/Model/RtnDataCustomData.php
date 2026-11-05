@@ -279,10 +279,6 @@ class RtnDataCustomData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['custom_field1']) && (mb_strlen($this->container['custom_field1']) > 2048)) {
-            $invalidProperties[] = "invalid value for 'custom_field1', the character length must be smaller than or equal to 2048.";
-        }
-
         return $invalidProperties;
     }
 
@@ -320,9 +316,7 @@ class RtnDataCustomData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($custom_field1)) {
             throw new \InvalidArgumentException('non-nullable custom_field1 cannot be null');
         }
-        if ((mb_strlen($custom_field1) > 2048)) {
-            throw new \InvalidArgumentException('invalid length for $custom_field1 when calling RtnDataCustomData., must be smaller than or equal to 2048.');
-        }
+
 
         $this->container['custom_field1'] = $custom_field1;
 

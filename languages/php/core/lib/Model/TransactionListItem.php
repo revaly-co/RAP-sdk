@@ -503,10 +503,6 @@ class TransactionListItem implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['statement_descriptor']) && (mb_strlen($this->container['statement_descriptor']) > 255)) {
-            $invalidProperties[] = "invalid value for 'statement_descriptor', the character length must be smaller than or equal to 255.";
-        }
-
         return $invalidProperties;
     }
 
@@ -1285,9 +1281,7 @@ class TransactionListItem implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($statement_descriptor) && (mb_strlen($statement_descriptor) > 255)) {
-            throw new \InvalidArgumentException('invalid length for $statement_descriptor when calling TransactionListItem., must be smaller than or equal to 255.');
-        }
+
 
         $this->container['statement_descriptor'] = $statement_descriptor;
 

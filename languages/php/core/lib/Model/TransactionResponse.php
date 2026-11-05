@@ -489,10 +489,6 @@ class TransactionResponse implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['transaction_id']) && (mb_strlen($this->container['transaction_id']) > 50)) {
-            $invalidProperties[] = "invalid value for 'transaction_id', the character length must be smaller than or equal to 50.";
-        }
-
         if (!is_null($this->container['transaction_id']) && (mb_strlen($this->container['transaction_id']) < 1)) {
             $invalidProperties[] = "invalid value for 'transaction_id', the character length must be bigger than or equal to 1.";
         }
@@ -503,10 +499,6 @@ class TransactionResponse implements ModelInterface, ArrayAccess, \JsonSerializa
 
         if (!is_null($this->container['amount']) && ($this->container['amount'] < 0)) {
             $invalidProperties[] = "invalid value for 'amount', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['statement_descriptor']) && (mb_strlen($this->container['statement_descriptor']) > 255)) {
-            $invalidProperties[] = "invalid value for 'statement_descriptor', the character length must be smaller than or equal to 255.";
         }
 
         if (!is_null($this->container['engaged_recovery_state']) && ($this->container['engaged_recovery_state'] < 0)) {
@@ -557,9 +549,7 @@ class TransactionResponse implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($transaction_id) && (mb_strlen($transaction_id) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $transaction_id when calling TransactionResponse., must be smaller than or equal to 50.');
-        }
+
         if (!is_null($transaction_id) && (mb_strlen($transaction_id) < 1)) {
             throw new \InvalidArgumentException('invalid length for $transaction_id when calling TransactionResponse., must be bigger than or equal to 1.');
         }
@@ -1288,9 +1278,7 @@ class TransactionResponse implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($statement_descriptor) && (mb_strlen($statement_descriptor) > 255)) {
-            throw new \InvalidArgumentException('invalid length for $statement_descriptor when calling TransactionResponse., must be smaller than or equal to 255.');
-        }
+
 
         $this->container['statement_descriptor'] = $statement_descriptor;
 

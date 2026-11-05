@@ -32,9 +32,9 @@ class RefundCancelRequest(BaseModel):
     """
     Request to refund or cancel a payment transaction using merchant transaction ID
     """ # noqa: E501
-    merchant_transaction_id: Annotated[str, Field(strict=True, max_length=100)] = Field(description="Merchant-provided unique identifier for this refund/cancel transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["refund_order_12345"]})
+    merchant_transaction_id: Annotated[str, Field(strict=True)] = Field(description="Merchant-provided unique identifier for this refund/cancel transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["refund_order_12345"]})
     amount: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Refund amount in smallest currency unit (e.g., cents for USD). If null or omitted, a full refund will be processed. ", json_schema_extra={"examples": [1000]})
-    customer_id: Annotated[str, Field(min_length=1, strict=True, max_length=50)] = Field(description="Unique identifier of the customer associated with this transaction", alias="customerId", json_schema_extra={"examples": ["customer_12345"]})
+    customer_id: Annotated[str, Field(min_length=1, strict=True)] = Field(description="Unique identifier of the customer associated with this transaction", alias="customerId", json_schema_extra={"examples": ["customer_12345"]})
     __properties: ClassVar[List[str]] = ["merchantTransactionId", "amount", "customerId"]
 
     model_config = ConfigDict(

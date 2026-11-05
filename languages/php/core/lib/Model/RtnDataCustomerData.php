@@ -722,30 +722,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['first_name']) && (mb_strlen($this->container['first_name']) > 45)) {
-            $invalidProperties[] = "invalid value for 'first_name', the character length must be smaller than or equal to 45.";
-        }
-
-        if (!is_null($this->container['last_name']) && (mb_strlen($this->container['last_name']) > 45)) {
-            $invalidProperties[] = "invalid value for 'last_name', the character length must be smaller than or equal to 45.";
-        }
-
-        if (!is_null($this->container['email']) && (mb_strlen($this->container['email']) > 30)) {
-            $invalidProperties[] = "invalid value for 'email', the character length must be smaller than or equal to 30.";
-        }
-
-        if (!is_null($this->container['home_phone']) && (mb_strlen($this->container['home_phone']) > 18)) {
-            $invalidProperties[] = "invalid value for 'home_phone', the character length must be smaller than or equal to 18.";
-        }
-
-        if (!is_null($this->container['mobile_phone']) && (mb_strlen($this->container['mobile_phone']) > 18)) {
-            $invalidProperties[] = "invalid value for 'mobile_phone', the character length must be smaller than or equal to 18.";
-        }
-
-        if (!is_null($this->container['work_phone']) && (mb_strlen($this->container['work_phone']) > 18)) {
-            $invalidProperties[] = "invalid value for 'work_phone', the character length must be smaller than or equal to 18.";
-        }
-
         if (!is_null($this->container['account_opened_date']) && !preg_match("/^\\d{8}$/", $this->container['account_opened_date'])) {
             $invalidProperties[] = "invalid value for 'account_opened_date', must be conform to the pattern /^\\d{8}$/.";
         }
@@ -814,10 +790,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             $invalidProperties[] = "invalid value for 'payment_method_add_attempt_count_last24_hours', must be bigger than or equal to 0.";
         }
 
-        if (!is_null($this->container['customer_id']) && (mb_strlen($this->container['customer_id']) > 24)) {
-            $invalidProperties[] = "invalid value for 'customer_id', the character length must be smaller than or equal to 24.";
-        }
-
         $allowedValues = $this->getAccountAuthenticationMethodAllowableValues();
         if (!is_null($this->container['account_authentication_method']) && !in_array($this->container['account_authentication_method'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -849,26 +821,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             $invalidProperties[] = "invalid value for 'registered_account_tenure', must be bigger than or equal to 0.";
         }
 
-        if (!is_null($this->container['registered_name']) && (mb_strlen($this->container['registered_name']) > 35)) {
-            $invalidProperties[] = "invalid value for 'registered_name', the character length must be smaller than or equal to 35.";
-        }
-
-        if (!is_null($this->container['registered_email']) && (mb_strlen($this->container['registered_email']) > 60)) {
-            $invalidProperties[] = "invalid value for 'registered_email', the character length must be smaller than or equal to 60.";
-        }
-
-        if (!is_null($this->container['registered_postal_code']) && (mb_strlen($this->container['registered_postal_code']) > 9)) {
-            $invalidProperties[] = "invalid value for 'registered_postal_code', the character length must be smaller than or equal to 9.";
-        }
-
-        if (!is_null($this->container['registered_address']) && (mb_strlen($this->container['registered_address']) > 50)) {
-            $invalidProperties[] = "invalid value for 'registered_address', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['registered_phone']) && (mb_strlen($this->container['registered_phone']) > 18)) {
-            $invalidProperties[] = "invalid value for 'registered_phone', the character length must be smaller than or equal to 18.";
-        }
-
         if (!is_null($this->container['days_since_name_change']) && ($this->container['days_since_name_change'] < 0)) {
             $invalidProperties[] = "invalid value for 'days_since_name_change', must be bigger than or equal to 0.";
         }
@@ -895,14 +847,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
 
         if (!is_null($this->container['days_since_ship_to_name_change']) && ($this->container['days_since_ship_to_name_change'] < 0)) {
             $invalidProperties[] = "invalid value for 'days_since_ship_to_name_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['customer_ani']) && (mb_strlen($this->container['customer_ani']) > 18)) {
-            $invalidProperties[] = "invalid value for 'customer_ani', the character length must be smaller than or equal to 18.";
-        }
-
-        if (!is_null($this->container['customer_ani_digits']) && (mb_strlen($this->container['customer_ani_digits']) > 2)) {
-            $invalidProperties[] = "invalid value for 'customer_ani_digits', the character length must be smaller than or equal to 2.";
         }
 
         return $invalidProperties;
@@ -942,9 +886,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($first_name)) {
             throw new \InvalidArgumentException('non-nullable first_name cannot be null');
         }
-        if ((mb_strlen($first_name) > 45)) {
-            throw new \InvalidArgumentException('invalid length for $first_name when calling RtnDataCustomerData., must be smaller than or equal to 45.');
-        }
+
 
         $this->container['first_name'] = $first_name;
 
@@ -973,9 +915,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($last_name)) {
             throw new \InvalidArgumentException('non-nullable last_name cannot be null');
         }
-        if ((mb_strlen($last_name) > 45)) {
-            throw new \InvalidArgumentException('invalid length for $last_name when calling RtnDataCustomerData., must be smaller than or equal to 45.');
-        }
+
 
         $this->container['last_name'] = $last_name;
 
@@ -1004,9 +944,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($email)) {
             throw new \InvalidArgumentException('non-nullable email cannot be null');
         }
-        if ((mb_strlen($email) > 30)) {
-            throw new \InvalidArgumentException('invalid length for $email when calling RtnDataCustomerData., must be smaller than or equal to 30.');
-        }
+
 
         $this->container['email'] = $email;
 
@@ -1035,9 +973,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($home_phone)) {
             throw new \InvalidArgumentException('non-nullable home_phone cannot be null');
         }
-        if ((mb_strlen($home_phone) > 18)) {
-            throw new \InvalidArgumentException('invalid length for $home_phone when calling RtnDataCustomerData., must be smaller than or equal to 18.');
-        }
+
 
         $this->container['home_phone'] = $home_phone;
 
@@ -1066,9 +1002,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($mobile_phone)) {
             throw new \InvalidArgumentException('non-nullable mobile_phone cannot be null');
         }
-        if ((mb_strlen($mobile_phone) > 18)) {
-            throw new \InvalidArgumentException('invalid length for $mobile_phone when calling RtnDataCustomerData., must be smaller than or equal to 18.');
-        }
+
 
         $this->container['mobile_phone'] = $mobile_phone;
 
@@ -1097,9 +1031,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($work_phone)) {
             throw new \InvalidArgumentException('non-nullable work_phone cannot be null');
         }
-        if ((mb_strlen($work_phone) > 18)) {
-            throw new \InvalidArgumentException('invalid length for $work_phone when calling RtnDataCustomerData., must be smaller than or equal to 18.');
-        }
+
 
         $this->container['work_phone'] = $work_phone;
 
@@ -1589,9 +1521,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($customer_id)) {
             throw new \InvalidArgumentException('non-nullable customer_id cannot be null');
         }
-        if ((mb_strlen($customer_id) > 24)) {
-            throw new \InvalidArgumentException('invalid length for $customer_id when calling RtnDataCustomerData., must be smaller than or equal to 24.');
-        }
+
 
         $this->container['customer_id'] = $customer_id;
 
@@ -1799,9 +1729,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($registered_name)) {
             throw new \InvalidArgumentException('non-nullable registered_name cannot be null');
         }
-        if ((mb_strlen($registered_name) > 35)) {
-            throw new \InvalidArgumentException('invalid length for $registered_name when calling RtnDataCustomerData., must be smaller than or equal to 35.');
-        }
+
 
         $this->container['registered_name'] = $registered_name;
 
@@ -1830,9 +1758,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($registered_email)) {
             throw new \InvalidArgumentException('non-nullable registered_email cannot be null');
         }
-        if ((mb_strlen($registered_email) > 60)) {
-            throw new \InvalidArgumentException('invalid length for $registered_email when calling RtnDataCustomerData., must be smaller than or equal to 60.');
-        }
+
 
         $this->container['registered_email'] = $registered_email;
 
@@ -1861,9 +1787,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($registered_postal_code)) {
             throw new \InvalidArgumentException('non-nullable registered_postal_code cannot be null');
         }
-        if ((mb_strlen($registered_postal_code) > 9)) {
-            throw new \InvalidArgumentException('invalid length for $registered_postal_code when calling RtnDataCustomerData., must be smaller than or equal to 9.');
-        }
+
 
         $this->container['registered_postal_code'] = $registered_postal_code;
 
@@ -1892,9 +1816,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($registered_address)) {
             throw new \InvalidArgumentException('non-nullable registered_address cannot be null');
         }
-        if ((mb_strlen($registered_address) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $registered_address when calling RtnDataCustomerData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['registered_address'] = $registered_address;
 
@@ -1923,9 +1845,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($registered_phone)) {
             throw new \InvalidArgumentException('non-nullable registered_phone cannot be null');
         }
-        if ((mb_strlen($registered_phone) > 18)) {
-            throw new \InvalidArgumentException('invalid length for $registered_phone when calling RtnDataCustomerData., must be smaller than or equal to 18.');
-        }
+
 
         $this->container['registered_phone'] = $registered_phone;
 
@@ -2178,9 +2098,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($customer_ani)) {
             throw new \InvalidArgumentException('non-nullable customer_ani cannot be null');
         }
-        if ((mb_strlen($customer_ani) > 18)) {
-            throw new \InvalidArgumentException('invalid length for $customer_ani when calling RtnDataCustomerData., must be smaller than or equal to 18.');
-        }
+
 
         $this->container['customer_ani'] = $customer_ani;
 
@@ -2209,9 +2127,7 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($customer_ani_digits)) {
             throw new \InvalidArgumentException('non-nullable customer_ani_digits cannot be null');
         }
-        if ((mb_strlen($customer_ani_digits) > 2)) {
-            throw new \InvalidArgumentException('invalid length for $customer_ani_digits when calling RtnDataCustomerData., must be smaller than or equal to 2.');
-        }
+
 
         $this->container['customer_ani_digits'] = $customer_ani_digits;
 

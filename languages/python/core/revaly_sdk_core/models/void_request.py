@@ -32,7 +32,7 @@ class VoidRequest(BaseModel):
     """
     Request to void (cancel) a payment transaction
     """ # noqa: E501
-    merchant_transaction_id: Annotated[str, Field(strict=True, max_length=100)] = Field(description="Merchant-provided unique identifier for this void transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["void_order_12345"]})
+    merchant_transaction_id: Annotated[str, Field(strict=True)] = Field(description="Merchant-provided unique identifier for this void transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["void_order_12345"]})
     __properties: ClassVar[List[str]] = ["merchantTransactionId"]
 
     model_config = ConfigDict(

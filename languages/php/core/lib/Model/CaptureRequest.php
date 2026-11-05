@@ -289,10 +289,6 @@ class CaptureRequest implements ModelInterface, ArrayAccess, \JsonSerializable
         if ($this->container['merchant_transaction_id'] === null) {
             $invalidProperties[] = "'merchant_transaction_id' can't be null";
         }
-        if ((mb_strlen($this->container['merchant_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
         if (!is_null($this->container['amount']) && ($this->container['amount'] < 0)) {
             $invalidProperties[] = "invalid value for 'amount', must be bigger than or equal to 0.";
         }
@@ -334,9 +330,7 @@ class CaptureRequest implements ModelInterface, ArrayAccess, \JsonSerializable
         if (is_null($merchant_transaction_id)) {
             throw new \InvalidArgumentException('non-nullable merchant_transaction_id cannot be null');
         }
-        if ((mb_strlen($merchant_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_transaction_id when calling CaptureRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['merchant_transaction_id'] = $merchant_transaction_id;
 

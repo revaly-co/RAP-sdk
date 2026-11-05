@@ -36,7 +36,7 @@ class CreditCard(BaseModel):
     card_verification_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Card verification code (CVV/CVC)", alias="cardVerificationCode", json_schema_extra={"examples": ["123"]})
     expiry_month: Annotated[str, Field(strict=True)] = Field(description="Expiration month (01-12)", alias="expiryMonth", json_schema_extra={"examples": ["12"]})
     expiry_year: Annotated[str, Field(strict=True)] = Field(description="Expiration year (YYYY)", alias="expiryYear", json_schema_extra={"examples": ["2025"]})
-    company: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Card issuing company", json_schema_extra={"examples": ["Visa"]})
+    company: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Card issuing company", json_schema_extra={"examples": ["Visa"]})
     card_type: Optional[StrictStr] = Field(default=None, description="Type of credit card", alias="cardType", json_schema_extra={"examples": ["visa"]})
     __properties: ClassVar[List[str]] = ["number", "cardVerificationCode", "expiryMonth", "expiryYear", "company", "cardType"]
 

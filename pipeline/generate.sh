@@ -123,6 +123,26 @@ for LANG_ID in $LANGS; do
     -o "/local/$OUT_DIR" \
     --ignore-file-override "/local/$CFG_DIR/.openapi-generator-ignore" \
     > /dev/null
+  if [ "$LANG_ID" = "python" ]; then
+    # ADR-SDK-034 (SC-886): an SDK never refuses a request because a model field is longer
+    # than the spec's maxLength; the platform decides. The python generator hands the model
+    # template each field's whole declaration as one precomputed string (x-py-typing), so a
+    # template fork cannot drop one constraint. This step removes `max_length=N` from string
+    # annotations (`Annotated[str, Field(...)]`) in models/ only (never api/: path and query
+    # parameter checks stay), inside the same pinned image so the bytes match on every host.
+    # Any max_length left anywhere in models/ (a list bound, or a shape this pattern misses)
+    # fails generation instead of passing silently.
+    PY_MODELS="$OUT_DIR/revaly_sdk_core/models"
+    [ -d "$PY_MODELS" ] || die "python models directory $PY_MODELS not found (package rename?)."
+    # shellcheck disable=SC2086  # DOCKER_USER intentionally word-splits
+    docker run --rm $DOCKER_USER --entrypoint sh \
+      -v "$HOST_REPO:/local" \
+      "$IMAGE_REF" -c \
+      "find '/local/$PY_MODELS' -name '*.py' -exec sed -E -i '/^    [a-z_0-9]+: /s/Annotated\[str, Field\(([^()]*), max_length=[0-9]+\)\]/Annotated[str, Field(\1)]/' {} +"
+    if grep -rnE 'max_length=[0-9]' "$PY_MODELS" > /dev/null; then
+      die "max_length survived in $PY_MODELS (ADR-SDK-034); extend the strip pattern."
+    fi
+  fi
   FILE_COUNT=$(find "$OUT_DIR" -type f | wc -l | tr -d ' ')
   echo "==> [$LANG_ID] done ($FILE_COUNT files)"
 done

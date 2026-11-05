@@ -34,10 +34,10 @@ class StoredCredential(BaseModel):
     Stored credential information for recurring, installment, or unscheduled transactions
     """ # noqa: E501
     reason_type: Optional[StoredCredentialReasonType] = Field(default=None, alias="reasonType")
-    initial_network_transaction_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Network transaction ID from the initial transaction that established the stored credential", alias="initialNetworkTransactionId", json_schema_extra={"examples": ["019078743540000"]})
-    latest_network_transaction_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Network transaction ID from the most recent transaction using this stored credential", alias="latestNetworkTransactionId", json_schema_extra={"examples": ["019078743540001"]})
-    initial_gateway_transaction_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Gateway transaction ID from the initial transaction that established the stored credential", alias="initialGatewayTransactionId", json_schema_extra={"examples": ["gw_initial_abc123"]})
-    latest_gateway_transaction_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Gateway transaction ID from the most recent transaction using this stored credential", alias="latestGatewayTransactionId", json_schema_extra={"examples": ["gw_latest_xyz789"]})
+    initial_network_transaction_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Network transaction ID from the initial transaction that established the stored credential", alias="initialNetworkTransactionId", json_schema_extra={"examples": ["019078743540000"]})
+    latest_network_transaction_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Network transaction ID from the most recent transaction using this stored credential", alias="latestNetworkTransactionId", json_schema_extra={"examples": ["019078743540001"]})
+    initial_gateway_transaction_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Gateway transaction ID from the initial transaction that established the stored credential", alias="initialGatewayTransactionId", json_schema_extra={"examples": ["gw_initial_abc123"]})
+    latest_gateway_transaction_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Gateway transaction ID from the most recent transaction using this stored credential", alias="latestGatewayTransactionId", json_schema_extra={"examples": ["gw_latest_xyz789"]})
     __properties: ClassVar[List[str]] = ["reasonType", "initialNetworkTransactionId", "latestNetworkTransactionId", "initialGatewayTransactionId", "latestGatewayTransactionId"]
 
     model_config = ConfigDict(
