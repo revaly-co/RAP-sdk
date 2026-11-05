@@ -18,7 +18,7 @@ Name | Type | Description | Notes
 **order_id** | **str** | Order identifier from the merchant system | [optional] 
 **store_on_success** | **bool** | Whether to store the payment method on successful authorization | [optional] 
 **bypass_platform** | **bool** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. | [optional] [default to False]
-**customer_ip** | **str** | Customer&#39;s IP address | [optional] 
+**customer_ip** | **str** | Customer&#39;s IP address (IPv4 or IPv6 text). At most 45 characters, the IPv6 maximum. | [optional] 
 **customer_id** | **str** | Customer identifier | [optional] 
 **gateway_fields** | **Dict[str, object]** | Additional gateway-specific fields | [optional] 
 **rtn_data** | [**RtnData**](RtnData.md) |  | [optional] 

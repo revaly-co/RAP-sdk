@@ -19,7 +19,7 @@ SC-234) — **Approved 2026-07-10** (v10, Charles Weiss).
 
 | Document | Purpose |
 | --- | --- |
-| [`adr/`](adr/README.md) | **33 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
+| [`adr/`](adr/README.md) | **34 ADRs** — one per finalized RFC decision (D-1…D-13, decided OQs) + post-RFC records (024+, status per ADR) |
 | [`architecture.md`](architecture.md) | System architecture: components, data flow, trust boundary, repo shape |
 | [`failover-contract.md`](failover-contract.md) | The merchant-facing failover & reconciliation contract, with sequence diagrams — the safety core of the product. Appendix A carries the normative prohibitions verbatim |
 | [`failover-cookbook.md`](failover-cookbook.md) | Task-oriented recipes for integrators: handling each outcome, choosing a reconcile policy, testing offline, debugging with correlation ids |
@@ -51,6 +51,30 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 3. `failover-cookbook.md` — recipes for each outcome, reconcile policy, offline tests.
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
+
+## Status snapshot (2026-11-05)
+
+- **OQ-18 decided → ADR-SDK-034, and spec re-pinned v2.15.0 → v2.16.0+99cb098 (twelfth pin,
+  SC-661).** The decision: no SDK refuses a request before sending because a string is longer
+  than a `maxLength` the spec declares on a body field; the platform truncates, records or
+  refuses. The .NET, Java, TypeScript and Go cores already send body fields of any length
+  (path-parameter checks in Go, Python and PHP are out of scope). The Python core and the PHP setters
+  still check the bound, so they get a template revision (SC-886, ADR-SDK-023), and until it lands they
+  are not released from a pin that adds or tightens a bound the platform does not enforce.
+  v2.16.0 is such a pin: it adds a 45-character bound on `customerIp` (charge and authorize),
+  which Backbone's contract check records without refusing while its census runs (Olympus
+  already declines a longer value with 50037; the direct path accepts up to 50), and raises
+  `merchantTransactionId` on refund-cancel from 50 to 100 characters. No response shape, error
+  code, `transactionType`, reconcile verdict or status changes, so the failover classification
+  is unaffected. The release from this pin is .NET, Java, TypeScript and Go at 0.9.0 (a minor
+  bump per package, ADR-SDK-034 decision 5); Python (0.9.0) and PHP (0.10.0) release with the
+  template revision. The .NET release note states the `merchantTrustLevel` renumbering from the
+  2026-11-03 snapshot below. The regeneration touched 428 files, none new or deleted; 25 of them
+  change beyond the version banner (the `customerIp` and `RefundCancelRequest` models and their
+  docs). Verified locally against the regenerated cores with the stage-3 commands: .NET 84/84
+  (the two known CS0612 core warnings); Java 99/99 (Temurin 21 container); PHP 107/107, strict
+  PSR-4 clean (PHP 8.3 container); TypeScript strict core `tsc` and typecheck clean, 131/131;
+  Python 160/160 (Python 3.12 container); Go build, vet and tests ok (73 tests).
 
 ## Status snapshot (2026-11-03)
 

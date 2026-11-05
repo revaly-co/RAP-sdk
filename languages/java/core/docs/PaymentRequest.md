@@ -20,7 +20,7 @@ Request to process a payment (charge) transaction
 |**orderId** | **String** | Order identifier from the merchant system |  [optional] |
 |**storeOnSuccess** | **Boolean** | Whether to store the payment method on successful transaction |  [optional] |
 |**bypassPlatform** | **Boolean** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. |  [optional] |
-|**customerIp** | **String** | Customer&#39;s IP address |  [optional] |
+|**customerIp** | **String** | Customer&#39;s IP address (IPv4 or IPv6 text). At most 45 characters, the IPv6 maximum. |  [optional] |
 |**customerId** | **String** | Customer identifier |  [optional] |
 |**gatewayFields** | **Map&lt;String, Object&gt;** | Additional gateway-specific fields |  [optional] |
 |**rtnData** | [**RtnData**](RtnData.md) |  |  [optional] |

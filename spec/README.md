@@ -9,12 +9,12 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.15.0+693a36b`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.15.0%2B693a36b) (platform repo) |
-| Spec version | 2.15.0 |
-| Source commit | `693a36b60fb9d40458eaf2ec8bcf5ab7b79fb9a3` |
+| Release | [`spec/v2.16.0+99cb098`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.16.0%2B99cb098) (platform repo) |
+| Spec version | 2.16.0 |
+| Source commit | `99cb098c29d98fd20f9c94aa64dfe620410b839f` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `0599e4b766bc79653b29527ff0cdda1a77269d0507a347d171e109c015b99b32` |
-| Pinned | 2026-11-03 |
+| sha256 (`openapi.bundled.yaml`) | `c9cd081edc18db609ec5065bfae7b6ee52b83f6f1061b9d374791cc9ca6c1b20` |
+| Pinned | 2026-11-05 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
@@ -59,7 +59,16 @@ characters before sending, see OQ-18); `merchantTrustLevel` gains `MODERATELY_TR
 optional (SC-837, PR #427); prose on `merchantName` and `merchantData` (SC-846, PR #433); the
 optional
 `rtnData.additionalTransactionData.fraudPreventionPlatform`, without which Revaly does not
-submit RTN data (SC-867, PR #442); no response shape, error-code, verdict or status change).
+submit RTN data (SC-867, PR #442); no response shape, error-code, verdict or status change)
+→ `v2.16.0+99cb098` (2026-11-05, SC-661 — Backbone PR #439, five lines on three request
+schemas: `customerIp` on `PaymentRequest` / `AuthorizeRequest` gains `maxLength: 45` with prose
+naming IPv4 or IPv6 text, and `merchantTransactionId` on `RefundCancelRequest` rises from 50 to
+100 characters; Backbone's contract check records a longer `customerIp` without refusing it
+while its census runs, Olympus already declines one over 45 characters (50037), and the direct
+path accepts up to 50. The Python core and the PHP setters would refuse a longer `customerIp` before sending, so
+under ADR-SDK-034 (OQ-18) this pin releases .NET, Java, TypeScript and Go only, and Python and
+PHP release after their template revision; no response shape, error-code, verdict or status
+change).
 
 Eleven published artifacts were never consumed and are superseded rather than skipped:
 `v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), `v2.8.0+95bd397`,
@@ -77,7 +86,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.15.0+693a36b" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.16.0+99cb098" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

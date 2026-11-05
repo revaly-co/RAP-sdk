@@ -16,7 +16,7 @@ Name | Type | Description | Notes
 **OrderId** | Pointer to **NullableString** | Order identifier from the merchant system | [optional] 
 **StoreOnSuccess** | Pointer to **NullableBool** | Whether to store the payment method on successful transaction | [optional] 
 **BypassPlatform** | Pointer to **bool** | Deprecated. When true, the request is refused with 404 before it reaches any payment processor. Send false or omit the field. | [optional] [default to false]
-**CustomerIp** | Pointer to **NullableString** | Customer&#39;s IP address | [optional] 
+**CustomerIp** | Pointer to **NullableString** | Customer&#39;s IP address (IPv4 or IPv6 text). At most 45 characters, the IPv6 maximum. | [optional] 
 **CustomerId** | Pointer to **NullableString** | Customer identifier | [optional] 
 **GatewayFields** | Pointer to **map[string]interface{}** | Additional gateway-specific fields | [optional] 
 **RtnData** | Pointer to [**RtnData**](RtnData.md) |  | [optional] 
