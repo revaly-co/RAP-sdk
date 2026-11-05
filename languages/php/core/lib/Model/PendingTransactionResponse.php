@@ -330,10 +330,6 @@ class PendingTransactionResponse implements ModelInterface, ArrayAccess, \JsonSe
         if ($this->container['merchant_transaction_id'] === null) {
             $invalidProperties[] = "'merchant_transaction_id' can't be null";
         }
-        if ((mb_strlen($this->container['merchant_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
         if ((mb_strlen($this->container['merchant_transaction_id']) < 1)) {
             $invalidProperties[] = "invalid value for 'merchant_transaction_id', the character length must be bigger than or equal to 1.";
         }
@@ -406,9 +402,7 @@ class PendingTransactionResponse implements ModelInterface, ArrayAccess, \JsonSe
         if (is_null($merchant_transaction_id)) {
             throw new \InvalidArgumentException('non-nullable merchant_transaction_id cannot be null');
         }
-        if ((mb_strlen($merchant_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_transaction_id when calling PendingTransactionResponse., must be smaller than or equal to 100.');
-        }
+
         if ((mb_strlen($merchant_transaction_id) < 1)) {
             throw new \InvalidArgumentException('invalid length for $merchant_transaction_id when calling PendingTransactionResponse., must be bigger than or equal to 1.');
         }

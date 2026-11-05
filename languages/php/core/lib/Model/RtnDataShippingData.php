@@ -476,34 +476,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
             );
         }
 
-        if (!is_null($this->container['address_line1']) && (mb_strlen($this->container['address_line1']) > 50)) {
-            $invalidProperties[] = "invalid value for 'address_line1', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['address_line2']) && (mb_strlen($this->container['address_line2']) > 50)) {
-            $invalidProperties[] = "invalid value for 'address_line2', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['address_line3']) && (mb_strlen($this->container['address_line3']) > 50)) {
-            $invalidProperties[] = "invalid value for 'address_line3', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['city']) && (mb_strlen($this->container['city']) > 50)) {
-            $invalidProperties[] = "invalid value for 'city', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['region']) && (mb_strlen($this->container['region']) > 60)) {
-            $invalidProperties[] = "invalid value for 'region', the character length must be smaller than or equal to 60.";
-        }
-
-        if (!is_null($this->container['postal_code']) && (mb_strlen($this->container['postal_code']) > 16)) {
-            $invalidProperties[] = "invalid value for 'postal_code', the character length must be smaller than or equal to 16.";
-        }
-
-        if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) > 2)) {
-            $invalidProperties[] = "invalid value for 'country', the character length must be smaller than or equal to 2.";
-        }
-
         if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) < 2)) {
             $invalidProperties[] = "invalid value for 'country', the character length must be bigger than or equal to 2.";
         }
@@ -521,10 +493,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
             );
         }
 
-        if (!is_null($this->container['delivery_email_address']) && (mb_strlen($this->container['delivery_email_address']) > 30)) {
-            $invalidProperties[] = "invalid value for 'delivery_email_address', the character length must be smaller than or equal to 30.";
-        }
-
         $allowedValues = $this->getDeliveryTimeframeIndicatorAllowableValues();
         if (!is_null($this->container['delivery_timeframe_indicator']) && !in_array($this->container['delivery_timeframe_indicator'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -532,18 +500,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->container['delivery_timeframe_indicator'],
                 implode("', '", $allowedValues)
             );
-        }
-
-        if (!is_null($this->container['shipping_first_name']) && (mb_strlen($this->container['shipping_first_name']) > 30)) {
-            $invalidProperties[] = "invalid value for 'shipping_first_name', the character length must be smaller than or equal to 30.";
-        }
-
-        if (!is_null($this->container['shipping_last_name']) && (mb_strlen($this->container['shipping_last_name']) > 30)) {
-            $invalidProperties[] = "invalid value for 'shipping_last_name', the character length must be smaller than or equal to 30.";
-        }
-
-        if (!is_null($this->container['shipping_phone']) && (mb_strlen($this->container['shipping_phone']) > 18)) {
-            $invalidProperties[] = "invalid value for 'shipping_phone', the character length must be smaller than or equal to 18.";
         }
 
         if (!is_null($this->container['shipping_address_count']) && ($this->container['shipping_address_count'] < 0)) {
@@ -622,9 +578,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($address_line1)) {
             throw new \InvalidArgumentException('non-nullable address_line1 cannot be null');
         }
-        if ((mb_strlen($address_line1) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $address_line1 when calling RtnDataShippingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['address_line1'] = $address_line1;
 
@@ -653,9 +607,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($address_line2)) {
             throw new \InvalidArgumentException('non-nullable address_line2 cannot be null');
         }
-        if ((mb_strlen($address_line2) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $address_line2 when calling RtnDataShippingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['address_line2'] = $address_line2;
 
@@ -684,9 +636,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($address_line3)) {
             throw new \InvalidArgumentException('non-nullable address_line3 cannot be null');
         }
-        if ((mb_strlen($address_line3) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $address_line3 when calling RtnDataShippingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['address_line3'] = $address_line3;
 
@@ -715,9 +665,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($city)) {
             throw new \InvalidArgumentException('non-nullable city cannot be null');
         }
-        if ((mb_strlen($city) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $city when calling RtnDataShippingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['city'] = $city;
 
@@ -746,9 +694,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($region)) {
             throw new \InvalidArgumentException('non-nullable region cannot be null');
         }
-        if ((mb_strlen($region) > 60)) {
-            throw new \InvalidArgumentException('invalid length for $region when calling RtnDataShippingData., must be smaller than or equal to 60.');
-        }
+
 
         $this->container['region'] = $region;
 
@@ -777,9 +723,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($postal_code)) {
             throw new \InvalidArgumentException('non-nullable postal_code cannot be null');
         }
-        if ((mb_strlen($postal_code) > 16)) {
-            throw new \InvalidArgumentException('invalid length for $postal_code when calling RtnDataShippingData., must be smaller than or equal to 16.');
-        }
+
 
         $this->container['postal_code'] = $postal_code;
 
@@ -808,9 +752,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($country)) {
             throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
-        if ((mb_strlen($country) > 2)) {
-            throw new \InvalidArgumentException('invalid length for $country when calling RtnDataShippingData., must be smaller than or equal to 2.');
-        }
+
         if ((mb_strlen($country) < 2)) {
             throw new \InvalidArgumentException('invalid length for $country when calling RtnDataShippingData., must be bigger than or equal to 2.');
         }
@@ -932,9 +874,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($delivery_email_address)) {
             throw new \InvalidArgumentException('non-nullable delivery_email_address cannot be null');
         }
-        if ((mb_strlen($delivery_email_address) > 30)) {
-            throw new \InvalidArgumentException('invalid length for $delivery_email_address when calling RtnDataShippingData., must be smaller than or equal to 30.');
-        }
+
 
         $this->container['delivery_email_address'] = $delivery_email_address;
 
@@ -994,9 +934,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($shipping_first_name)) {
             throw new \InvalidArgumentException('non-nullable shipping_first_name cannot be null');
         }
-        if ((mb_strlen($shipping_first_name) > 30)) {
-            throw new \InvalidArgumentException('invalid length for $shipping_first_name when calling RtnDataShippingData., must be smaller than or equal to 30.');
-        }
+
 
         $this->container['shipping_first_name'] = $shipping_first_name;
 
@@ -1025,9 +963,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($shipping_last_name)) {
             throw new \InvalidArgumentException('non-nullable shipping_last_name cannot be null');
         }
-        if ((mb_strlen($shipping_last_name) > 30)) {
-            throw new \InvalidArgumentException('invalid length for $shipping_last_name when calling RtnDataShippingData., must be smaller than or equal to 30.');
-        }
+
 
         $this->container['shipping_last_name'] = $shipping_last_name;
 
@@ -1056,9 +992,7 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($shipping_phone)) {
             throw new \InvalidArgumentException('non-nullable shipping_phone cannot be null');
         }
-        if ((mb_strlen($shipping_phone) > 18)) {
-            throw new \InvalidArgumentException('invalid length for $shipping_phone when calling RtnDataShippingData., must be smaller than or equal to 18.');
-        }
+
 
         $this->container['shipping_phone'] = $shipping_phone;
 

@@ -32,13 +32,13 @@ class RtnDataBillingData(BaseModel):
     """
     Cardholder billing address. All fields optional; omit rather than send nulls.
     """ # noqa: E501
-    address_line1: Optional[Annotated[str, Field(strict=True, max_length=50)]] = Field(default=None, description="First line of the billing address.", alias="addressLine1", json_schema_extra={"examples": ["1455 Rue Sainte-Catherine O"]})
-    address_line2: Optional[Annotated[str, Field(strict=True, max_length=50)]] = Field(default=None, description="Second line of the billing address.", alias="addressLine2", json_schema_extra={"examples": ["Apt 1204"]})
-    address_line3: Optional[Annotated[str, Field(strict=True, max_length=50)]] = Field(default=None, description="Third line of the billing address.", alias="addressLine3", json_schema_extra={"examples": ["Building B"]})
-    city: Optional[Annotated[str, Field(strict=True, max_length=50)]] = Field(default=None, description="City of the billing address.", json_schema_extra={"examples": ["Montreal"]})
-    region: Optional[Annotated[str, Field(strict=True, max_length=60)]] = Field(default=None, description="State or province name.", json_schema_extra={"examples": ["Quebec"]})
-    postal_code: Optional[Annotated[str, Field(strict=True, max_length=16)]] = Field(default=None, description="Postal or ZIP code of the billing address.", alias="postalCode", json_schema_extra={"examples": ["H3G 1T1"]})
-    country: Optional[Annotated[str, Field(min_length=2, strict=True, max_length=2)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code.", json_schema_extra={"examples": ["CA"]})
+    address_line1: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="First line of the billing address.", alias="addressLine1", json_schema_extra={"examples": ["1455 Rue Sainte-Catherine O"]})
+    address_line2: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Second line of the billing address.", alias="addressLine2", json_schema_extra={"examples": ["Apt 1204"]})
+    address_line3: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Third line of the billing address.", alias="addressLine3", json_schema_extra={"examples": ["Building B"]})
+    city: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="City of the billing address.", json_schema_extra={"examples": ["Montreal"]})
+    region: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="State or province name.", json_schema_extra={"examples": ["Quebec"]})
+    postal_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Postal or ZIP code of the billing address.", alias="postalCode", json_schema_extra={"examples": ["H3G 1T1"]})
+    country: Optional[Annotated[str, Field(min_length=2, strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code.", json_schema_extra={"examples": ["CA"]})
     __properties: ClassVar[List[str]] = ["addressLine1", "addressLine2", "addressLine3", "city", "region", "postalCode", "country"]
 
     model_config = ConfigDict(

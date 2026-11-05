@@ -335,20 +335,12 @@ class Recovery implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['customer_account_number']) && (mb_strlen($this->container['customer_account_number']) > 100)) {
-            $invalidProperties[] = "invalid value for 'customer_account_number', the character length must be smaller than or equal to 100.";
-        }
-
         if (!is_null($this->container['customer_balance']) && ($this->container['customer_balance'] < 0)) {
             $invalidProperties[] = "invalid value for 'customer_balance', must be bigger than or equal to 0.";
         }
 
         if (!is_null($this->container['retry_count']) && ($this->container['retry_count'] < 0)) {
             $invalidProperties[] = "invalid value for 'retry_count', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['payment_reference_data']) && (mb_strlen($this->container['payment_reference_data']) > 500)) {
-            $invalidProperties[] = "invalid value for 'payment_reference_data', the character length must be smaller than or equal to 500.";
         }
 
         return $invalidProperties;
@@ -463,9 +455,7 @@ class Recovery implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($customer_account_number) && (mb_strlen($customer_account_number) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $customer_account_number when calling Recovery., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['customer_account_number'] = $customer_account_number;
 
@@ -647,9 +637,7 @@ class Recovery implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($payment_reference_data) && (mb_strlen($payment_reference_data) > 500)) {
-            throw new \InvalidArgumentException('invalid length for $payment_reference_data when calling Recovery., must be smaller than or equal to 500.');
-        }
+
 
         $this->container['payment_reference_data'] = $payment_reference_data;
 

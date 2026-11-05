@@ -11,6 +11,15 @@
 # generator upgrade — upgrades are ADR-SDK-023 revisions):
 #   templates/partial_header.mustache  — generated-code banner (ADR-SDK-016)
 #   templates/model_generic.mustache   — the enum open-vocabulary override above
+#   pipeline/generate.sh post-generation step (python only, 2026-11-05, SC-886,
+#     ADR-SDK-034) — removes `max_length=N` from the model field annotations under
+#     revaly_sdk_core/models/ so the SDK never refuses a request (or a response) for a
+#     string length bound; the platform decides. It is a step, not a template fork,
+#     because the generator hands the template each field's whole declaration as one
+#     precomputed string (vendorExtensions.x-py-typing). It runs inside the pinned image,
+#     strips only Annotated[str, Field(...)] bounds, leaves api/ untouched (path and query
+#     parameter bounds stay), and fails generation if any max_length survives anywhere in
+#     models/ (a list bound included). Re-check the pattern on any generator upgrade.
 #   templates/pyproject.mustache, requirements.mustache, setup.mustache — forked
 #     2026-07-15 solely to bump dependency floors flagged by Dependabot: urllib3
 #     >= 2.7.0 (GHSA-mf9v-mfxr-j63j, GHSA-qccp-gfcp-xxvc — high) in all three, and the

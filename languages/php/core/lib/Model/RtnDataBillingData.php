@@ -321,34 +321,6 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['address_line1']) && (mb_strlen($this->container['address_line1']) > 50)) {
-            $invalidProperties[] = "invalid value for 'address_line1', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['address_line2']) && (mb_strlen($this->container['address_line2']) > 50)) {
-            $invalidProperties[] = "invalid value for 'address_line2', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['address_line3']) && (mb_strlen($this->container['address_line3']) > 50)) {
-            $invalidProperties[] = "invalid value for 'address_line3', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['city']) && (mb_strlen($this->container['city']) > 50)) {
-            $invalidProperties[] = "invalid value for 'city', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['region']) && (mb_strlen($this->container['region']) > 60)) {
-            $invalidProperties[] = "invalid value for 'region', the character length must be smaller than or equal to 60.";
-        }
-
-        if (!is_null($this->container['postal_code']) && (mb_strlen($this->container['postal_code']) > 16)) {
-            $invalidProperties[] = "invalid value for 'postal_code', the character length must be smaller than or equal to 16.";
-        }
-
-        if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) > 2)) {
-            $invalidProperties[] = "invalid value for 'country', the character length must be smaller than or equal to 2.";
-        }
-
         if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) < 2)) {
             $invalidProperties[] = "invalid value for 'country', the character length must be bigger than or equal to 2.";
         }
@@ -390,9 +362,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($address_line1)) {
             throw new \InvalidArgumentException('non-nullable address_line1 cannot be null');
         }
-        if ((mb_strlen($address_line1) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $address_line1 when calling RtnDataBillingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['address_line1'] = $address_line1;
 
@@ -421,9 +391,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($address_line2)) {
             throw new \InvalidArgumentException('non-nullable address_line2 cannot be null');
         }
-        if ((mb_strlen($address_line2) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $address_line2 when calling RtnDataBillingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['address_line2'] = $address_line2;
 
@@ -452,9 +420,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($address_line3)) {
             throw new \InvalidArgumentException('non-nullable address_line3 cannot be null');
         }
-        if ((mb_strlen($address_line3) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $address_line3 when calling RtnDataBillingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['address_line3'] = $address_line3;
 
@@ -483,9 +449,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($city)) {
             throw new \InvalidArgumentException('non-nullable city cannot be null');
         }
-        if ((mb_strlen($city) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $city when calling RtnDataBillingData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['city'] = $city;
 
@@ -514,9 +478,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($region)) {
             throw new \InvalidArgumentException('non-nullable region cannot be null');
         }
-        if ((mb_strlen($region) > 60)) {
-            throw new \InvalidArgumentException('invalid length for $region when calling RtnDataBillingData., must be smaller than or equal to 60.');
-        }
+
 
         $this->container['region'] = $region;
 
@@ -545,9 +507,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($postal_code)) {
             throw new \InvalidArgumentException('non-nullable postal_code cannot be null');
         }
-        if ((mb_strlen($postal_code) > 16)) {
-            throw new \InvalidArgumentException('invalid length for $postal_code when calling RtnDataBillingData., must be smaller than or equal to 16.');
-        }
+
 
         $this->container['postal_code'] = $postal_code;
 
@@ -576,9 +536,7 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
         if (is_null($country)) {
             throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
-        if ((mb_strlen($country) > 2)) {
-            throw new \InvalidArgumentException('invalid length for $country when calling RtnDataBillingData., must be smaller than or equal to 2.');
-        }
+
         if ((mb_strlen($country) < 2)) {
             throw new \InvalidArgumentException('invalid length for $country when calling RtnDataBillingData., must be bigger than or equal to 2.');
         }

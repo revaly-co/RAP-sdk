@@ -535,10 +535,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
             );
         }
 
-        if (!is_null($this->container['retrieval_reference_number']) && (mb_strlen($this->container['retrieval_reference_number']) > 12)) {
-            $invalidProperties[] = "invalid value for 'retrieval_reference_number', the character length must be smaller than or equal to 12.";
-        }
-
         $allowedValues = $this->getMerchantTrustLevelAllowableValues();
         if (!is_null($this->container['merchant_trust_level']) && !in_array($this->container['merchant_trust_level'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -546,10 +542,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
                 $this->container['merchant_trust_level'],
                 implode("', '", $allowedValues)
             );
-        }
-
-        if (!is_null($this->container['merchant_trust_data']) && (mb_strlen($this->container['merchant_trust_data']) > 2048)) {
-            $invalidProperties[] = "invalid value for 'merchant_trust_data', the character length must be smaller than or equal to 2048.";
         }
 
         $allowedValues = $this->getCardBrandAllowableValues();
@@ -570,16 +562,8 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
             );
         }
 
-        if (!is_null($this->container['fraud_prevention_platform']) && (mb_strlen($this->container['fraud_prevention_platform']) > 128)) {
-            $invalidProperties[] = "invalid value for 'fraud_prevention_platform', the character length must be smaller than or equal to 128.";
-        }
-
         if (!is_null($this->container['fraud_prevention_platform']) && !preg_match("/^[A-Za-z0-9._:-]{1,128}$/", $this->container['fraud_prevention_platform'])) {
             $invalidProperties[] = "invalid value for 'fraud_prevention_platform', must be conform to the pattern /^[A-Za-z0-9._:-]{1,128}$/.";
-        }
-
-        if (!is_null($this->container['full_pan']) && (mb_strlen($this->container['full_pan']) > 19)) {
-            $invalidProperties[] = "invalid value for 'full_pan', the character length must be smaller than or equal to 19.";
         }
 
         if (!is_null($this->container['full_pan']) && (mb_strlen($this->container['full_pan']) < 13)) {
@@ -588,10 +572,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
 
         if (!is_null($this->container['full_pan']) && !preg_match("/^\\d{13,19}$/", $this->container['full_pan'])) {
             $invalidProperties[] = "invalid value for 'full_pan', must be conform to the pattern /^\\d{13,19}$/.";
-        }
-
-        if (!is_null($this->container['dpan']) && (mb_strlen($this->container['dpan']) > 19)) {
-            $invalidProperties[] = "invalid value for 'dpan', the character length must be smaller than or equal to 19.";
         }
 
         return $invalidProperties;
@@ -751,9 +731,7 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($retrieval_reference_number)) {
             throw new \InvalidArgumentException('non-nullable retrieval_reference_number cannot be null');
         }
-        if ((mb_strlen($retrieval_reference_number) > 12)) {
-            throw new \InvalidArgumentException('invalid length for $retrieval_reference_number when calling RtnDataAdditionalTransactionData., must be smaller than or equal to 12.');
-        }
+
 
         $this->container['retrieval_reference_number'] = $retrieval_reference_number;
 
@@ -813,9 +791,7 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($merchant_trust_data)) {
             throw new \InvalidArgumentException('non-nullable merchant_trust_data cannot be null');
         }
-        if ((mb_strlen($merchant_trust_data) > 2048)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_trust_data when calling RtnDataAdditionalTransactionData., must be smaller than or equal to 2048.');
-        }
+
 
         $this->container['merchant_trust_data'] = $merchant_trust_data;
 
@@ -906,9 +882,7 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($fraud_prevention_platform)) {
             throw new \InvalidArgumentException('non-nullable fraud_prevention_platform cannot be null');
         }
-        if ((mb_strlen($fraud_prevention_platform) > 128)) {
-            throw new \InvalidArgumentException('invalid length for $fraud_prevention_platform when calling RtnDataAdditionalTransactionData., must be smaller than or equal to 128.');
-        }
+
         if ((!preg_match("/^[A-Za-z0-9._:-]{1,128}$/", ObjectSerializer::toString($fraud_prevention_platform)))) {
             throw new \InvalidArgumentException("invalid value for \$fraud_prevention_platform when calling RtnDataAdditionalTransactionData., must conform to the pattern /^[A-Za-z0-9._:-]{1,128}$/.");
         }
@@ -940,9 +914,7 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($full_pan)) {
             throw new \InvalidArgumentException('non-nullable full_pan cannot be null');
         }
-        if ((mb_strlen($full_pan) > 19)) {
-            throw new \InvalidArgumentException('invalid length for $full_pan when calling RtnDataAdditionalTransactionData., must be smaller than or equal to 19.');
-        }
+
         if ((mb_strlen($full_pan) < 13)) {
             throw new \InvalidArgumentException('invalid length for $full_pan when calling RtnDataAdditionalTransactionData., must be bigger than or equal to 13.');
         }
@@ -977,9 +949,7 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($dpan)) {
             throw new \InvalidArgumentException('non-nullable dpan cannot be null');
         }
-        if ((mb_strlen($dpan) > 19)) {
-            throw new \InvalidArgumentException('invalid length for $dpan when calling RtnDataAdditionalTransactionData., must be smaller than or equal to 19.');
-        }
+
 
         $this->container['dpan'] = $dpan;
 

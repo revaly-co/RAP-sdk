@@ -36,7 +36,7 @@ class PaymentMethodWriteResponse(BaseModel):
     Response after creating or modifying a payment method
     """ # noqa: E501
     transaction: Optional[PaymentMethodWriteResponseTransaction] = None
-    payment_method_id: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=50)]] = Field(default=None, description="Unique identifier for the payment method", alias="paymentMethodId", json_schema_extra={"examples": ["7DA6XQ33AIPUZLLDAGMXYHNTG4"]})
+    payment_method_id: Optional[Annotated[str, Field(min_length=1, strict=True)]] = Field(default=None, description="Unique identifier for the payment method", alias="paymentMethodId", json_schema_extra={"examples": ["7DA6XQ33AIPUZLLDAGMXYHNTG4"]})
     credit_card_number: Optional[StrictStr] = Field(default=None, description="Masked credit card number", alias="creditCardNumber", json_schema_extra={"examples": ["************4242"]})
     expiry_month: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Expiration month", alias="expiryMonth", json_schema_extra={"examples": ["12"]})
     expiry_year: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Expiration year", alias="expiryYear", json_schema_extra={"examples": ["2025"]})

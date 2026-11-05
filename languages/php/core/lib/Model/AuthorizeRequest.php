@@ -471,40 +471,8 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
         if ($this->container['merchant_transaction_id'] === null) {
             $invalidProperties[] = "'merchant_transaction_id' can't be null";
         }
-        if ((mb_strlen($this->container['merchant_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['gateway_routing_id']) && (mb_strlen($this->container['gateway_routing_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'gateway_routing_id', the character length must be smaller than or equal to 100.";
-        }
-
         if (!is_null($this->container['currency']) && !preg_match("/^[A-Z]{3}$/", $this->container['currency'])) {
             $invalidProperties[] = "invalid value for 'currency', must be conform to the pattern /^[A-Z]{3}$/.";
-        }
-
-        if (!is_null($this->container['mit_stored_transaction_id']) && (mb_strlen($this->container['mit_stored_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'mit_stored_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['order_id']) && (mb_strlen($this->container['order_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'order_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['customer_ip']) && (mb_strlen($this->container['customer_ip']) > 45)) {
-            $invalidProperties[] = "invalid value for 'customer_ip', the character length must be smaller than or equal to 45.";
-        }
-
-        if (!is_null($this->container['customer_id']) && (mb_strlen($this->container['customer_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'customer_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['description']) && (mb_strlen($this->container['description']) > 256)) {
-            $invalidProperties[] = "invalid value for 'description', the character length must be smaller than or equal to 256.";
-        }
-
-        if (!is_null($this->container['statement_descriptor']) && (mb_strlen($this->container['statement_descriptor']) > 255)) {
-            $invalidProperties[] = "invalid value for 'statement_descriptor', the character length must be smaller than or equal to 255.";
         }
 
         return $invalidProperties;
@@ -614,9 +582,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
         if (is_null($merchant_transaction_id)) {
             throw new \InvalidArgumentException('non-nullable merchant_transaction_id cannot be null');
         }
-        if ((mb_strlen($merchant_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_transaction_id when calling AuthorizeRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['merchant_transaction_id'] = $merchant_transaction_id;
 
@@ -652,9 +618,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_routing_id) && (mb_strlen($gateway_routing_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_routing_id when calling AuthorizeRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['gateway_routing_id'] = $gateway_routing_id;
 
@@ -763,9 +727,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($mit_stored_transaction_id) && (mb_strlen($mit_stored_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $mit_stored_transaction_id when calling AuthorizeRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['mit_stored_transaction_id'] = $mit_stored_transaction_id;
 
@@ -855,9 +817,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($order_id) && (mb_strlen($order_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $order_id when calling AuthorizeRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['order_id'] = $order_id;
 
@@ -956,9 +916,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($customer_ip) && (mb_strlen($customer_ip) > 45)) {
-            throw new \InvalidArgumentException('invalid length for $customer_ip when calling AuthorizeRequest., must be smaller than or equal to 45.');
-        }
+
 
         $this->container['customer_ip'] = $customer_ip;
 
@@ -994,9 +952,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($customer_id) && (mb_strlen($customer_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $customer_id when calling AuthorizeRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['customer_id'] = $customer_id;
 
@@ -1093,9 +1049,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($description) && (mb_strlen($description) > 256)) {
-            throw new \InvalidArgumentException('invalid length for $description when calling AuthorizeRequest., must be smaller than or equal to 256.');
-        }
+
 
         $this->container['description'] = $description;
 
@@ -1131,9 +1085,7 @@ class AuthorizeRequest implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($statement_descriptor) && (mb_strlen($statement_descriptor) > 255)) {
-            throw new \InvalidArgumentException('invalid length for $statement_descriptor when calling AuthorizeRequest., must be smaller than or equal to 255.');
-        }
+
 
         $this->container['statement_descriptor'] = $statement_descriptor;
 

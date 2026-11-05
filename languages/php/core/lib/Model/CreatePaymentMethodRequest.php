@@ -322,10 +322,6 @@ class CreatePaymentMethodRequest implements ModelInterface, ArrayAccess, \JsonSe
             );
         }
 
-        if (!is_null($this->container['customer_id']) && (mb_strlen($this->container['customer_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'customer_id', the character length must be smaller than or equal to 100.";
-        }
-
         return $invalidProperties;
     }
 
@@ -401,9 +397,7 @@ class CreatePaymentMethodRequest implements ModelInterface, ArrayAccess, \JsonSe
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($customer_id) && (mb_strlen($customer_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $customer_id when calling CreatePaymentMethodRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['customer_id'] = $customer_id;
 

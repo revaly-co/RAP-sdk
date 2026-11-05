@@ -363,22 +363,6 @@ class Gateway implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['name']) && (mb_strlen($this->container['name']) > 100)) {
-            $invalidProperties[] = "invalid value for 'name', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['bank_type_code']) && (mb_strlen($this->container['bank_type_code']) > 50)) {
-            $invalidProperties[] = "invalid value for 'bank_type_code', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['merchant_account_reference_id']) && (mb_strlen($this->container['merchant_account_reference_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_account_reference_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['gateway_type']) && (mb_strlen($this->container['gateway_type']) > 50)) {
-            $invalidProperties[] = "invalid value for 'gateway_type', the character length must be smaller than or equal to 50.";
-        }
-
         if (!is_null($this->container['currency_code']) && !preg_match("/^[A-Z]{3}$/", $this->container['currency_code'])) {
             $invalidProperties[] = "invalid value for 'currency_code', must be conform to the pattern /^[A-Z]{3}$/.";
         }
@@ -427,9 +411,7 @@ class Gateway implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($name) && (mb_strlen($name) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $name when calling Gateway., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['name'] = $name;
 
@@ -465,9 +447,7 @@ class Gateway implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($bank_type_code) && (mb_strlen($bank_type_code) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $bank_type_code when calling Gateway., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['bank_type_code'] = $bank_type_code;
 
@@ -503,9 +483,7 @@ class Gateway implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($merchant_account_reference_id) && (mb_strlen($merchant_account_reference_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_account_reference_id when calling Gateway., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['merchant_account_reference_id'] = $merchant_account_reference_id;
 
@@ -541,9 +519,7 @@ class Gateway implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_type) && (mb_strlen($gateway_type) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_type when calling Gateway., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['gateway_type'] = $gateway_type;
 

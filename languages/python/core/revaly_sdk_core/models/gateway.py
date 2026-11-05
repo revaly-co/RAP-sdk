@@ -33,10 +33,10 @@ class Gateway(BaseModel):
     """
     Gateway configuration and settings
     """ # noqa: E501
-    name: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Gateway name", json_schema_extra={"examples": ["Stripe Production"]})
-    bank_type_code: Optional[Annotated[str, Field(strict=True, max_length=50)]] = Field(default=None, description="Bank type code", alias="bankTypeCode", json_schema_extra={"examples": ["VISA"]})
-    merchant_account_reference_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Merchant account reference ID at the gateway", alias="merchantAccountReferenceId", json_schema_extra={"examples": ["merch_acct_ref_123"]})
-    gateway_type: Optional[Annotated[str, Field(strict=True, max_length=50)]] = Field(default=None, description="Type of payment gateway", alias="gatewayType", json_schema_extra={"examples": ["stripe"]})
+    name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Gateway name", json_schema_extra={"examples": ["Stripe Production"]})
+    bank_type_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Bank type code", alias="bankTypeCode", json_schema_extra={"examples": ["VISA"]})
+    merchant_account_reference_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Merchant account reference ID at the gateway", alias="merchantAccountReferenceId", json_schema_extra={"examples": ["merch_acct_ref_123"]})
+    gateway_type: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Type of payment gateway", alias="gatewayType", json_schema_extra={"examples": ["stripe"]})
     currency_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Primary currency code for this gateway", alias="currencyCode", json_schema_extra={"examples": ["USD"]})
     accepted_currency_codes: Optional[List[Annotated[str, Field(strict=True)]]] = Field(default=None, description="List of accepted currency codes", alias="acceptedCurrencyCodes", json_schema_extra={"examples": [["USD", "EUR", "GBP"]]})
     accepted_cards: Optional[AcceptedCards] = Field(default=None, alias="acceptedCards")

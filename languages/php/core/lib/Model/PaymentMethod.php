@@ -356,30 +356,6 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['first_name']) && (mb_strlen($this->container['first_name']) > 100)) {
-            $invalidProperties[] = "invalid value for 'first_name', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['last_name']) && (mb_strlen($this->container['last_name']) > 100)) {
-            $invalidProperties[] = "invalid value for 'last_name', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['full_name']) && (mb_strlen($this->container['full_name']) > 200)) {
-            $invalidProperties[] = "invalid value for 'full_name', the character length must be smaller than or equal to 200.";
-        }
-
-        if (!is_null($this->container['email']) && (mb_strlen($this->container['email']) > 255)) {
-            $invalidProperties[] = "invalid value for 'email', the character length must be smaller than or equal to 255.";
-        }
-
-        if (!is_null($this->container['merchant_account_reference_id']) && (mb_strlen($this->container['merchant_account_reference_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_account_reference_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['payment_method_id']) && (mb_strlen($this->container['payment_method_id']) > 50)) {
-            $invalidProperties[] = "invalid value for 'payment_method_id', the character length must be smaller than or equal to 50.";
-        }
-
         if (!is_null($this->container['payment_method_id']) && (mb_strlen($this->container['payment_method_id']) < 1)) {
             $invalidProperties[] = "invalid value for 'payment_method_id', the character length must be bigger than or equal to 1.";
         }
@@ -432,9 +408,7 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($first_name) && (mb_strlen($first_name) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $first_name when calling PaymentMethod., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['first_name'] = $first_name;
 
@@ -470,9 +444,7 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($last_name) && (mb_strlen($last_name) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $last_name when calling PaymentMethod., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['last_name'] = $last_name;
 
@@ -508,9 +480,7 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($full_name) && (mb_strlen($full_name) > 200)) {
-            throw new \InvalidArgumentException('invalid length for $full_name when calling PaymentMethod., must be smaller than or equal to 200.');
-        }
+
 
         $this->container['full_name'] = $full_name;
 
@@ -546,9 +516,7 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($email) && (mb_strlen($email) > 255)) {
-            throw new \InvalidArgumentException('invalid length for $email when calling PaymentMethod., must be smaller than or equal to 255.');
-        }
+
 
         $this->container['email'] = $email;
 
@@ -584,9 +552,7 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($merchant_account_reference_id) && (mb_strlen($merchant_account_reference_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_account_reference_id when calling PaymentMethod., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['merchant_account_reference_id'] = $merchant_account_reference_id;
 
@@ -622,9 +588,7 @@ class PaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($payment_method_id) && (mb_strlen($payment_method_id) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $payment_method_id when calling PaymentMethod., must be smaller than or equal to 50.');
-        }
+
         if (!is_null($payment_method_id) && (mb_strlen($payment_method_id) < 1)) {
             throw new \InvalidArgumentException('invalid length for $payment_method_id when calling PaymentMethod., must be bigger than or equal to 1.');
         }

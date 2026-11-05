@@ -32,13 +32,13 @@ class Address(BaseModel):
     """
     Address information for billing or shipping
     """ # noqa: E501
-    address1: Optional[Annotated[str, Field(strict=True, max_length=255)]] = Field(default=None, description="Primary address line", json_schema_extra={"examples": ["123 Main St"]})
-    address2: Optional[Annotated[str, Field(strict=True, max_length=255)]] = Field(default=None, description="Secondary address line (apartment, suite, etc.)", json_schema_extra={"examples": ["Apt 4B"]})
-    city: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="City name", json_schema_extra={"examples": ["New York"]})
-    state: Optional[Annotated[str, Field(strict=True, max_length=10)]] = Field(default=None, description="State or province code", json_schema_extra={"examples": ["NY"]})
-    zip: Optional[Annotated[str, Field(strict=True, max_length=20)]] = Field(default=None, description="Postal or ZIP code", json_schema_extra={"examples": ["10001"]})
+    address1: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Primary address line", json_schema_extra={"examples": ["123 Main St"]})
+    address2: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Secondary address line (apartment, suite, etc.)", json_schema_extra={"examples": ["Apt 4B"]})
+    city: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="City name", json_schema_extra={"examples": ["New York"]})
+    state: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="State or province code", json_schema_extra={"examples": ["NY"]})
+    zip: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Postal or ZIP code", json_schema_extra={"examples": ["10001"]})
     country: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Country code (ISO 3166-1 alpha-2)", json_schema_extra={"examples": ["US"]})
-    phone_number: Optional[Annotated[str, Field(strict=True, max_length=20)]] = Field(default=None, description="Phone number associated with the address", alias="phoneNumber", json_schema_extra={"examples": ["+1-555-123-4567"]})
+    phone_number: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Phone number associated with the address", alias="phoneNumber", json_schema_extra={"examples": ["+1-555-123-4567"]})
     __properties: ClassVar[List[str]] = ["address1", "address2", "city", "state", "zip", "country", "phoneNumber"]
 
     @field_validator('country')

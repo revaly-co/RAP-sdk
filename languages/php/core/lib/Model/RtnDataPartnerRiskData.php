@@ -314,26 +314,6 @@ class RtnDataPartnerRiskData implements ModelInterface, ArrayAccess, \JsonSerial
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['transaction_risk_score']) && (mb_strlen($this->container['transaction_risk_score']) > 10)) {
-            $invalidProperties[] = "invalid value for 'transaction_risk_score', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['customer_risk_score']) && (mb_strlen($this->container['customer_risk_score']) > 10)) {
-            $invalidProperties[] = "invalid value for 'customer_risk_score', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['device_risk_score']) && (mb_strlen($this->container['device_risk_score']) > 10)) {
-            $invalidProperties[] = "invalid value for 'device_risk_score', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['ip_risk_score']) && (mb_strlen($this->container['ip_risk_score']) > 10)) {
-            $invalidProperties[] = "invalid value for 'ip_risk_score', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['merchant_risk_score']) && (mb_strlen($this->container['merchant_risk_score']) > 10)) {
-            $invalidProperties[] = "invalid value for 'merchant_risk_score', the character length must be smaller than or equal to 10.";
-        }
-
         return $invalidProperties;
     }
 
@@ -371,9 +351,7 @@ class RtnDataPartnerRiskData implements ModelInterface, ArrayAccess, \JsonSerial
         if (is_null($transaction_risk_score)) {
             throw new \InvalidArgumentException('non-nullable transaction_risk_score cannot be null');
         }
-        if ((mb_strlen($transaction_risk_score) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $transaction_risk_score when calling RtnDataPartnerRiskData., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['transaction_risk_score'] = $transaction_risk_score;
 
@@ -429,9 +407,7 @@ class RtnDataPartnerRiskData implements ModelInterface, ArrayAccess, \JsonSerial
         if (is_null($customer_risk_score)) {
             throw new \InvalidArgumentException('non-nullable customer_risk_score cannot be null');
         }
-        if ((mb_strlen($customer_risk_score) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $customer_risk_score when calling RtnDataPartnerRiskData., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['customer_risk_score'] = $customer_risk_score;
 
@@ -460,9 +436,7 @@ class RtnDataPartnerRiskData implements ModelInterface, ArrayAccess, \JsonSerial
         if (is_null($device_risk_score)) {
             throw new \InvalidArgumentException('non-nullable device_risk_score cannot be null');
         }
-        if ((mb_strlen($device_risk_score) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $device_risk_score when calling RtnDataPartnerRiskData., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['device_risk_score'] = $device_risk_score;
 
@@ -491,9 +465,7 @@ class RtnDataPartnerRiskData implements ModelInterface, ArrayAccess, \JsonSerial
         if (is_null($ip_risk_score)) {
             throw new \InvalidArgumentException('non-nullable ip_risk_score cannot be null');
         }
-        if ((mb_strlen($ip_risk_score) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $ip_risk_score when calling RtnDataPartnerRiskData., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['ip_risk_score'] = $ip_risk_score;
 
@@ -522,9 +494,7 @@ class RtnDataPartnerRiskData implements ModelInterface, ArrayAccess, \JsonSerial
         if (is_null($merchant_risk_score)) {
             throw new \InvalidArgumentException('non-nullable merchant_risk_score cannot be null');
         }
-        if ((mb_strlen($merchant_risk_score) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_risk_score when calling RtnDataPartnerRiskData., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['merchant_risk_score'] = $merchant_risk_score;
 

@@ -296,10 +296,6 @@ class RefundCancelRequest implements ModelInterface, ArrayAccess, \JsonSerializa
         if ($this->container['merchant_transaction_id'] === null) {
             $invalidProperties[] = "'merchant_transaction_id' can't be null";
         }
-        if ((mb_strlen($this->container['merchant_transaction_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_transaction_id', the character length must be smaller than or equal to 100.";
-        }
-
         if (!is_null($this->container['amount']) && ($this->container['amount'] < 0)) {
             $invalidProperties[] = "invalid value for 'amount', must be bigger than or equal to 0.";
         }
@@ -307,10 +303,6 @@ class RefundCancelRequest implements ModelInterface, ArrayAccess, \JsonSerializa
         if ($this->container['customer_id'] === null) {
             $invalidProperties[] = "'customer_id' can't be null";
         }
-        if ((mb_strlen($this->container['customer_id']) > 50)) {
-            $invalidProperties[] = "invalid value for 'customer_id', the character length must be smaller than or equal to 50.";
-        }
-
         if ((mb_strlen($this->container['customer_id']) < 1)) {
             $invalidProperties[] = "invalid value for 'customer_id', the character length must be bigger than or equal to 1.";
         }
@@ -352,9 +344,7 @@ class RefundCancelRequest implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($merchant_transaction_id)) {
             throw new \InvalidArgumentException('non-nullable merchant_transaction_id cannot be null');
         }
-        if ((mb_strlen($merchant_transaction_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_transaction_id when calling RefundCancelRequest., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['merchant_transaction_id'] = $merchant_transaction_id;
 
@@ -422,9 +412,7 @@ class RefundCancelRequest implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($customer_id)) {
             throw new \InvalidArgumentException('non-nullable customer_id cannot be null');
         }
-        if ((mb_strlen($customer_id) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $customer_id when calling RefundCancelRequest., must be smaller than or equal to 50.');
-        }
+
         if ((mb_strlen($customer_id) < 1)) {
             throw new \InvalidArgumentException('invalid length for $customer_id when calling RefundCancelRequest., must be bigger than or equal to 1.');
         }

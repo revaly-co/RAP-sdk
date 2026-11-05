@@ -198,7 +198,8 @@ def test_payment_request_requires_amount_and_merchant_transaction_id():
     assert required == {"amount", "merchant_transaction_id"}
 
 
-def test_merchant_transaction_id_max_length_100():
-    with pytest.raises(ValidationError):
-        PaymentRequest(amount=1, merchant_transaction_id="x" * 101)
-    PaymentRequest(amount=1, merchant_transaction_id="x" * 100)
+def test_merchant_transaction_id_over_100_is_left_to_the_platform():
+    # ADR-SDK-034 (SC-886): the spec bound (100) is the platform's to enforce; the model
+    # no longer refuses a longer value before sending.
+    request = PaymentRequest(amount=1, merchant_transaction_id="x" * 101)
+    assert json.loads(request.to_json())["merchantTransactionId"] == "x" * 101

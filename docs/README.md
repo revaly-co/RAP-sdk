@@ -54,6 +54,16 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 
 ## Status snapshot (2026-11-05)
 
+- **SC-886: Python and PHP stop refusing over-long fields (ADR-SDK-034 implemented).** PHP forks
+  `model_generic.mustache` with the two stock `maxLength` blocks removed; Python cannot do it in
+  a template (the field declaration arrives precomputed), so `pipeline/generate.sh` strips
+  `max_length` from the generated model annotations and fails generation if any survive. The
+  regeneration changes 33 Python and 37 PHP model files and nothing else; the other four cores
+  regenerate byte-identical, and the API layers keep their path and query parameter bounds. Over-long
+  model fields are now sent (and over-long response fields bind) in all six SDKs. Python 166
+  and PHP 112 tests pass locally (6 and 5 new; against unmodified `main` the six behaviour tests
+  fail on the length refusal). The release hold of ADR-SDK-034 decision 4 ends: Python 0.9.0 and
+  PHP 0.10.0 release from this change, with .NET, Java, TypeScript and Go at 0.9.0.
 - **OQ-18 decided → ADR-SDK-034, and spec re-pinned v2.15.0 → v2.16.0+99cb098 (twelfth pin,
   SC-661).** The decision: no SDK refuses a request before sending because a string is longer
   than a `maxLength` the spec declares on a body field; the platform truncates, records or

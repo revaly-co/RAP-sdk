@@ -463,36 +463,8 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['ip_address']) && (mb_strlen($this->container['ip_address']) > 128)) {
-            $invalidProperties[] = "invalid value for 'ip_address', the character length must be smaller than or equal to 128.";
-        }
-
-        if (!is_null($this->container['city']) && (mb_strlen($this->container['city']) > 60)) {
-            $invalidProperties[] = "invalid value for 'city', the character length must be smaller than or equal to 60.";
-        }
-
-        if (!is_null($this->container['region']) && (mb_strlen($this->container['region']) > 60)) {
-            $invalidProperties[] = "invalid value for 'region', the character length must be smaller than or equal to 60.";
-        }
-
-        if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) > 2)) {
-            $invalidProperties[] = "invalid value for 'country', the character length must be smaller than or equal to 2.";
-        }
-
         if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) < 2)) {
             $invalidProperties[] = "invalid value for 'country', the character length must be bigger than or equal to 2.";
-        }
-
-        if (!is_null($this->container['device_id']) && (mb_strlen($this->container['device_id']) > 48)) {
-            $invalidProperties[] = "invalid value for 'device_id', the character length must be smaller than or equal to 48.";
-        }
-
-        if (!is_null($this->container['device_longitude']) && (mb_strlen($this->container['device_longitude']) > 8)) {
-            $invalidProperties[] = "invalid value for 'device_longitude', the character length must be smaller than or equal to 8.";
-        }
-
-        if (!is_null($this->container['device_latitude']) && (mb_strlen($this->container['device_latitude']) > 8)) {
-            $invalidProperties[] = "invalid value for 'device_latitude', the character length must be smaller than or equal to 8.";
         }
 
         $allowedValues = $this->getChannelAllowableValues();
@@ -511,14 +483,6 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
                 $this->container['device_type'],
                 implode("', '", $allowedValues)
             );
-        }
-
-        if (!is_null($this->container['session_cookie']) && (mb_strlen($this->container['session_cookie']) > 128)) {
-            $invalidProperties[] = "invalid value for 'session_cookie', the character length must be smaller than or equal to 128.";
-        }
-
-        if (!is_null($this->container['purchase_host_name']) && (mb_strlen($this->container['purchase_host_name']) > 120)) {
-            $invalidProperties[] = "invalid value for 'purchase_host_name', the character length must be smaller than or equal to 120.";
         }
 
         return $invalidProperties;
@@ -558,9 +522,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($ip_address)) {
             throw new \InvalidArgumentException('non-nullable ip_address cannot be null');
         }
-        if ((mb_strlen($ip_address) > 128)) {
-            throw new \InvalidArgumentException('invalid length for $ip_address when calling RtnDataDeviceData., must be smaller than or equal to 128.');
-        }
+
 
         $this->container['ip_address'] = $ip_address;
 
@@ -589,9 +551,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($city)) {
             throw new \InvalidArgumentException('non-nullable city cannot be null');
         }
-        if ((mb_strlen($city) > 60)) {
-            throw new \InvalidArgumentException('invalid length for $city when calling RtnDataDeviceData., must be smaller than or equal to 60.');
-        }
+
 
         $this->container['city'] = $city;
 
@@ -620,9 +580,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($region)) {
             throw new \InvalidArgumentException('non-nullable region cannot be null');
         }
-        if ((mb_strlen($region) > 60)) {
-            throw new \InvalidArgumentException('invalid length for $region when calling RtnDataDeviceData., must be smaller than or equal to 60.');
-        }
+
 
         $this->container['region'] = $region;
 
@@ -651,9 +609,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($country)) {
             throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
-        if ((mb_strlen($country) > 2)) {
-            throw new \InvalidArgumentException('invalid length for $country when calling RtnDataDeviceData., must be smaller than or equal to 2.');
-        }
+
         if ((mb_strlen($country) < 2)) {
             throw new \InvalidArgumentException('invalid length for $country when calling RtnDataDeviceData., must be bigger than or equal to 2.');
         }
@@ -685,9 +641,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($device_id)) {
             throw new \InvalidArgumentException('non-nullable device_id cannot be null');
         }
-        if ((mb_strlen($device_id) > 48)) {
-            throw new \InvalidArgumentException('invalid length for $device_id when calling RtnDataDeviceData., must be smaller than or equal to 48.');
-        }
+
 
         $this->container['device_id'] = $device_id;
 
@@ -878,9 +832,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($device_longitude)) {
             throw new \InvalidArgumentException('non-nullable device_longitude cannot be null');
         }
-        if ((mb_strlen($device_longitude) > 8)) {
-            throw new \InvalidArgumentException('invalid length for $device_longitude when calling RtnDataDeviceData., must be smaller than or equal to 8.');
-        }
+
 
         $this->container['device_longitude'] = $device_longitude;
 
@@ -909,9 +861,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($device_latitude)) {
             throw new \InvalidArgumentException('non-nullable device_latitude cannot be null');
         }
-        if ((mb_strlen($device_latitude) > 8)) {
-            throw new \InvalidArgumentException('invalid length for $device_latitude when calling RtnDataDeviceData., must be smaller than or equal to 8.');
-        }
+
 
         $this->container['device_latitude'] = $device_latitude;
 
@@ -1110,9 +1060,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($session_cookie)) {
             throw new \InvalidArgumentException('non-nullable session_cookie cannot be null');
         }
-        if ((mb_strlen($session_cookie) > 128)) {
-            throw new \InvalidArgumentException('invalid length for $session_cookie when calling RtnDataDeviceData., must be smaller than or equal to 128.');
-        }
+
 
         $this->container['session_cookie'] = $session_cookie;
 
@@ -1141,9 +1089,7 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($purchase_host_name)) {
             throw new \InvalidArgumentException('non-nullable purchase_host_name cannot be null');
         }
-        if ((mb_strlen($purchase_host_name) > 120)) {
-            throw new \InvalidArgumentException('invalid length for $purchase_host_name when calling RtnDataDeviceData., must be smaller than or equal to 120.');
-        }
+
 
         $this->container['purchase_host_name'] = $purchase_host_name;
 

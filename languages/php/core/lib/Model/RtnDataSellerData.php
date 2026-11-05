@@ -405,34 +405,6 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['seller_id']) && (mb_strlen($this->container['seller_id']) > 30)) {
-            $invalidProperties[] = "invalid value for 'seller_id', the character length must be smaller than or equal to 30.";
-        }
-
-        if (!is_null($this->container['seller_business_name']) && (mb_strlen($this->container['seller_business_name']) > 30)) {
-            $invalidProperties[] = "invalid value for 'seller_business_name', the character length must be smaller than or equal to 30.";
-        }
-
-        if (!is_null($this->container['seller_owner_name']) && (mb_strlen($this->container['seller_owner_name']) > 50)) {
-            $invalidProperties[] = "invalid value for 'seller_owner_name', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['seller_address']) && (mb_strlen($this->container['seller_address']) > 50)) {
-            $invalidProperties[] = "invalid value for 'seller_address', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['seller_phone']) && (mb_strlen($this->container['seller_phone']) > 10)) {
-            $invalidProperties[] = "invalid value for 'seller_phone', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['seller_email']) && (mb_strlen($this->container['seller_email']) > 60)) {
-            $invalidProperties[] = "invalid value for 'seller_email', the character length must be smaller than or equal to 60.";
-        }
-
-        if (!is_null($this->container['seller_postal_code']) && (mb_strlen($this->container['seller_postal_code']) > 9)) {
-            $invalidProperties[] = "invalid value for 'seller_postal_code', the character length must be smaller than or equal to 9.";
-        }
-
         $allowedValues = $this->getSellerRegionAllowableValues();
         if (!is_null($this->container['seller_region']) && !in_array($this->container['seller_region'], $allowedValues, true)) {
             $invalidProperties[] = sprintf(
@@ -488,9 +460,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_id)) {
             throw new \InvalidArgumentException('non-nullable seller_id cannot be null');
         }
-        if ((mb_strlen($seller_id) > 30)) {
-            throw new \InvalidArgumentException('invalid length for $seller_id when calling RtnDataSellerData., must be smaller than or equal to 30.');
-        }
+
 
         $this->container['seller_id'] = $seller_id;
 
@@ -519,9 +489,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_business_name)) {
             throw new \InvalidArgumentException('non-nullable seller_business_name cannot be null');
         }
-        if ((mb_strlen($seller_business_name) > 30)) {
-            throw new \InvalidArgumentException('invalid length for $seller_business_name when calling RtnDataSellerData., must be smaller than or equal to 30.');
-        }
+
 
         $this->container['seller_business_name'] = $seller_business_name;
 
@@ -550,9 +518,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_owner_name)) {
             throw new \InvalidArgumentException('non-nullable seller_owner_name cannot be null');
         }
-        if ((mb_strlen($seller_owner_name) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $seller_owner_name when calling RtnDataSellerData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['seller_owner_name'] = $seller_owner_name;
 
@@ -662,9 +628,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_address)) {
             throw new \InvalidArgumentException('non-nullable seller_address cannot be null');
         }
-        if ((mb_strlen($seller_address) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $seller_address when calling RtnDataSellerData., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['seller_address'] = $seller_address;
 
@@ -693,9 +657,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_phone)) {
             throw new \InvalidArgumentException('non-nullable seller_phone cannot be null');
         }
-        if ((mb_strlen($seller_phone) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $seller_phone when calling RtnDataSellerData., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['seller_phone'] = $seller_phone;
 
@@ -724,9 +686,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_email)) {
             throw new \InvalidArgumentException('non-nullable seller_email cannot be null');
         }
-        if ((mb_strlen($seller_email) > 60)) {
-            throw new \InvalidArgumentException('invalid length for $seller_email when calling RtnDataSellerData., must be smaller than or equal to 60.');
-        }
+
 
         $this->container['seller_email'] = $seller_email;
 
@@ -755,9 +715,7 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_postal_code)) {
             throw new \InvalidArgumentException('non-nullable seller_postal_code cannot be null');
         }
-        if ((mb_strlen($seller_postal_code) > 9)) {
-            throw new \InvalidArgumentException('invalid length for $seller_postal_code when calling RtnDataSellerData., must be smaller than or equal to 9.');
-        }
+
 
         $this->container['seller_postal_code'] = $seller_postal_code;
 

@@ -36,12 +36,12 @@ class PaymentMethod(BaseModel):
     """
     Payment method details. Which fields are required depends on the payment-method type of the request: creditCard requires a cardholder name (fullName, or firstName together with lastName) plus creditCard.number/expiryMonth/expiryYear; gatewayPaymentMethodId requires gatewayPaymentMethod.gatewayPaymentMethodId and merchantAccountReferenceId; vaultToken requires vaultPaymentMethod.vaultToken plus the request-level customerId. When billing a stored payment method, supply paymentMethodId alone.
     """ # noqa: E501
-    first_name: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Customer's first name", alias="firstName", json_schema_extra={"examples": ["John"]})
-    last_name: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Customer's last name", alias="lastName", json_schema_extra={"examples": ["Doe"]})
-    full_name: Optional[Annotated[str, Field(strict=True, max_length=200)]] = Field(default=None, description="Customer's full name", alias="fullName", json_schema_extra={"examples": ["John Doe"]})
-    email: Optional[Annotated[str, Field(strict=True, max_length=255)]] = Field(default=None, description="Customer's email address", json_schema_extra={"examples": ["john.doe@example.com"]})
-    merchant_account_reference_id: Optional[Annotated[str, Field(strict=True, max_length=100)]] = Field(default=None, description="Merchant account identifier at the gateway", alias="merchantAccountReferenceId", json_schema_extra={"examples": ["acct_9876543210fedcba"]})
-    payment_method_id: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=50)]] = Field(default=None, description="Existing payment method identifier (for updates)", alias="paymentMethodId", json_schema_extra={"examples": ["7DA6XQ33AIPUZLLDAGMXYHNTG4"]})
+    first_name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Customer's first name", alias="firstName", json_schema_extra={"examples": ["John"]})
+    last_name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Customer's last name", alias="lastName", json_schema_extra={"examples": ["Doe"]})
+    full_name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Customer's full name", alias="fullName", json_schema_extra={"examples": ["John Doe"]})
+    email: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Customer's email address", json_schema_extra={"examples": ["john.doe@example.com"]})
+    merchant_account_reference_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Merchant account identifier at the gateway", alias="merchantAccountReferenceId", json_schema_extra={"examples": ["acct_9876543210fedcba"]})
+    payment_method_id: Optional[Annotated[str, Field(min_length=1, strict=True)]] = Field(default=None, description="Existing payment method identifier (for updates)", alias="paymentMethodId", json_schema_extra={"examples": ["7DA6XQ33AIPUZLLDAGMXYHNTG4"]})
     issuer_identification_number: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Bank Identification Number (BIN). Must contain exactly 6 or 8 digits.", alias="issuerIdentificationNumber", json_schema_extra={"examples": ["424242"]})
     billing_address: Optional[Address] = Field(default=None, alias="billingAddress")
     shipping_address: Optional[Address] = Field(default=None, alias="shippingAddress")

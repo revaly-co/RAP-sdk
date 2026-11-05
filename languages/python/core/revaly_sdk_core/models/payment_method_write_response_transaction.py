@@ -33,7 +33,7 @@ class PaymentMethodWriteResponseTransaction(BaseModel):
     """
     Associated transaction information
     """ # noqa: E501
-    transaction_id: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=50)]] = Field(default=None, description="Unique identifier for the transaction", alias="transactionId", json_schema_extra={"examples": ["06CQR5TMB800000G0011NCFRVY37A"]})
+    transaction_id: Optional[Annotated[str, Field(min_length=1, strict=True)]] = Field(default=None, description="Unique identifier for the transaction", alias="transactionId", json_schema_extra={"examples": ["06CQR5TMB800000G0011NCFRVY37A"]})
     transaction_date: Optional[datetime] = Field(default=None, description="Date and time when the transaction was processed", alias="transactionDate", json_schema_extra={"examples": ["2024-01-15T10:30:00Z"]})
     transaction_status: Optional[StrictInt] = Field(default=None, description="Current status of the transaction (1 = Approved, 2 = Declined, 3 = Error)", alias="transactionStatus", json_schema_extra={"examples": [1]})
     message: Optional[StrictStr] = Field(default=None, description="Human-readable message about the transaction", json_schema_extra={"examples": ["Payment method created successfully"]})

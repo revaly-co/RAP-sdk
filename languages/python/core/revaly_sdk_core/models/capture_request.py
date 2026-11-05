@@ -32,7 +32,7 @@ class CaptureRequest(BaseModel):
     """
     Request to capture an authorized payment transaction
     """ # noqa: E501
-    merchant_transaction_id: Annotated[str, Field(strict=True, max_length=100)] = Field(description="Merchant-provided unique identifier for this capture transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["capture_order_12345"]})
+    merchant_transaction_id: Annotated[str, Field(strict=True)] = Field(description="Merchant-provided unique identifier for this capture transaction", alias="merchantTransactionId", json_schema_extra={"examples": ["capture_order_12345"]})
     amount: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Capture amount in smallest currency unit (e.g., cents for USD). If null or omitted, the full authorized amount will be captured. ", json_schema_extra={"examples": [1500]})
     __properties: ClassVar[List[str]] = ["merchantTransactionId", "amount"]
 

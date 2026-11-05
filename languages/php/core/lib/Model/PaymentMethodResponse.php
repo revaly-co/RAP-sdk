@@ -440,10 +440,6 @@ class PaymentMethodResponse implements ModelInterface, ArrayAccess, \JsonSeriali
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['payment_method_id']) && (mb_strlen($this->container['payment_method_id']) > 50)) {
-            $invalidProperties[] = "invalid value for 'payment_method_id', the character length must be smaller than or equal to 50.";
-        }
-
         if (!is_null($this->container['payment_method_id']) && (mb_strlen($this->container['payment_method_id']) < 1)) {
             $invalidProperties[] = "invalid value for 'payment_method_id', the character length must be bigger than or equal to 1.";
         }
@@ -512,9 +508,7 @@ class PaymentMethodResponse implements ModelInterface, ArrayAccess, \JsonSeriali
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($payment_method_id) && (mb_strlen($payment_method_id) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $payment_method_id when calling PaymentMethodResponse., must be smaller than or equal to 50.');
-        }
+
         if (!is_null($payment_method_id) && (mb_strlen($payment_method_id) < 1)) {
             throw new \InvalidArgumentException('invalid length for $payment_method_id when calling PaymentMethodResponse., must be bigger than or equal to 1.');
         }

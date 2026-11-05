@@ -342,38 +342,6 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['merchant_account_reference_id']) && (mb_strlen($this->container['merchant_account_reference_id']) > 100)) {
-            $invalidProperties[] = "invalid value for 'merchant_account_reference_id', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['gateway_code']) && (mb_strlen($this->container['gateway_code']) > 50)) {
-            $invalidProperties[] = "invalid value for 'gateway_code', the character length must be smaller than or equal to 50.";
-        }
-
-        if (!is_null($this->container['gateway_message']) && (mb_strlen($this->container['gateway_message']) > 1024)) {
-            $invalidProperties[] = "invalid value for 'gateway_message', the character length must be smaller than or equal to 1024.";
-        }
-
-        if (!is_null($this->container['gateway_message_key']) && (mb_strlen($this->container['gateway_message_key']) > 100)) {
-            $invalidProperties[] = "invalid value for 'gateway_message_key', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['avs_code']) && (mb_strlen($this->container['avs_code']) > 10)) {
-            $invalidProperties[] = "invalid value for 'avs_code', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['avs_message']) && (mb_strlen($this->container['avs_message']) > 1024)) {
-            $invalidProperties[] = "invalid value for 'avs_message', the character length must be smaller than or equal to 1024.";
-        }
-
-        if (!is_null($this->container['cvv_code']) && (mb_strlen($this->container['cvv_code']) > 10)) {
-            $invalidProperties[] = "invalid value for 'cvv_code', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['cvv_message']) && (mb_strlen($this->container['cvv_message']) > 1024)) {
-            $invalidProperties[] = "invalid value for 'cvv_message', the character length must be smaller than or equal to 1024.";
-        }
-
         return $invalidProperties;
     }
 
@@ -452,9 +420,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($merchant_account_reference_id) && (mb_strlen($merchant_account_reference_id) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $merchant_account_reference_id when calling PreviousTransaction., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['merchant_account_reference_id'] = $merchant_account_reference_id;
 
@@ -490,9 +456,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_code) && (mb_strlen($gateway_code) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_code when calling PreviousTransaction., must be smaller than or equal to 50.');
-        }
+
 
         $this->container['gateway_code'] = $gateway_code;
 
@@ -528,9 +492,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_message) && (mb_strlen($gateway_message) > 1024)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_message when calling PreviousTransaction., must be smaller than or equal to 1024.');
-        }
+
 
         $this->container['gateway_message'] = $gateway_message;
 
@@ -566,9 +528,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($gateway_message_key) && (mb_strlen($gateway_message_key) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $gateway_message_key when calling PreviousTransaction., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['gateway_message_key'] = $gateway_message_key;
 
@@ -638,9 +598,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($avs_code) && (mb_strlen($avs_code) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $avs_code when calling PreviousTransaction., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['avs_code'] = $avs_code;
 
@@ -676,9 +634,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($avs_message) && (mb_strlen($avs_message) > 1024)) {
-            throw new \InvalidArgumentException('invalid length for $avs_message when calling PreviousTransaction., must be smaller than or equal to 1024.');
-        }
+
 
         $this->container['avs_message'] = $avs_message;
 
@@ -714,9 +670,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($cvv_code) && (mb_strlen($cvv_code) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $cvv_code when calling PreviousTransaction., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['cvv_code'] = $cvv_code;
 
@@ -752,9 +706,7 @@ class PreviousTransaction implements ModelInterface, ArrayAccess, \JsonSerializa
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($cvv_message) && (mb_strlen($cvv_message) > 1024)) {
-            throw new \InvalidArgumentException('invalid length for $cvv_message when calling PreviousTransaction., must be smaller than or equal to 1024.');
-        }
+
 
         $this->container['cvv_message'] = $cvv_message;
 

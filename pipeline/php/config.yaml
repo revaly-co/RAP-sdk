@@ -8,6 +8,12 @@
 # api doc): the stock example leaves the key prefix-less with a commented-out 'Bearer'
 # hint, but the RAP scheme requires `Authorization: ApiKey <key>` — the example now calls
 # setApiKeyPrefix('Authorization', 'ApiKey') unconditionally.
+# templates/model_generic.mustache — forked 2026-11-05 (SC-886, ADR-SDK-034) from the
+# stock v7.23.0 template, with only the two maxLength blocks removed (the setter's
+# InvalidArgumentException and the listInvalidProperties() entry), so the SDK never refuses
+# a request, or a response it deserializes through the setters, for a string length bound;
+# the platform decides. minLength, pattern, enum and required checks are stock; the API
+# layer's path-parameter bounds (api.mustache) are untouched.
 generatorName: php # default guzzle library — the psr-18 library is still beta
 
 additionalProperties:

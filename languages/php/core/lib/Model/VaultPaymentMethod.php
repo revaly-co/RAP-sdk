@@ -307,10 +307,6 @@ class VaultPaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializab
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['vault_token']) && (mb_strlen($this->container['vault_token']) > 200)) {
-            $invalidProperties[] = "invalid value for 'vault_token', the character length must be smaller than or equal to 200.";
-        }
-
         if (!is_null($this->container['bin']) && !preg_match("/^(?:[0-9]{6}|[0-9]{8})$/", $this->container['bin'])) {
             $invalidProperties[] = "invalid value for 'bin', must be conform to the pattern /^(?:[0-9]{6}|[0-9]{8})$/.";
         }
@@ -371,9 +367,7 @@ class VaultPaymentMethod implements ModelInterface, ArrayAccess, \JsonSerializab
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($vault_token) && (mb_strlen($vault_token) > 200)) {
-            throw new \InvalidArgumentException('invalid length for $vault_token when calling VaultPaymentMethod., must be smaller than or equal to 200.');
-        }
+
 
         $this->container['vault_token'] = $vault_token;
 

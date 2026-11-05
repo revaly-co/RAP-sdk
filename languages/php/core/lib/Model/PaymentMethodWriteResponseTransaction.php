@@ -314,10 +314,6 @@ class PaymentMethodWriteResponseTransaction implements ModelInterface, ArrayAcce
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['transaction_id']) && (mb_strlen($this->container['transaction_id']) > 50)) {
-            $invalidProperties[] = "invalid value for 'transaction_id', the character length must be smaller than or equal to 50.";
-        }
-
         if (!is_null($this->container['transaction_id']) && (mb_strlen($this->container['transaction_id']) < 1)) {
             $invalidProperties[] = "invalid value for 'transaction_id', the character length must be bigger than or equal to 1.";
         }
@@ -366,9 +362,7 @@ class PaymentMethodWriteResponseTransaction implements ModelInterface, ArrayAcce
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($transaction_id) && (mb_strlen($transaction_id) > 50)) {
-            throw new \InvalidArgumentException('invalid length for $transaction_id when calling PaymentMethodWriteResponseTransaction., must be smaller than or equal to 50.');
-        }
+
         if (!is_null($transaction_id) && (mb_strlen($transaction_id) < 1)) {
             throw new \InvalidArgumentException('invalid length for $transaction_id when calling PaymentMethodWriteResponseTransaction., must be bigger than or equal to 1.');
         }

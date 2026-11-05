@@ -321,32 +321,8 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['address1']) && (mb_strlen($this->container['address1']) > 255)) {
-            $invalidProperties[] = "invalid value for 'address1', the character length must be smaller than or equal to 255.";
-        }
-
-        if (!is_null($this->container['address2']) && (mb_strlen($this->container['address2']) > 255)) {
-            $invalidProperties[] = "invalid value for 'address2', the character length must be smaller than or equal to 255.";
-        }
-
-        if (!is_null($this->container['city']) && (mb_strlen($this->container['city']) > 100)) {
-            $invalidProperties[] = "invalid value for 'city', the character length must be smaller than or equal to 100.";
-        }
-
-        if (!is_null($this->container['state']) && (mb_strlen($this->container['state']) > 10)) {
-            $invalidProperties[] = "invalid value for 'state', the character length must be smaller than or equal to 10.";
-        }
-
-        if (!is_null($this->container['zip']) && (mb_strlen($this->container['zip']) > 20)) {
-            $invalidProperties[] = "invalid value for 'zip', the character length must be smaller than or equal to 20.";
-        }
-
         if (!is_null($this->container['country']) && !preg_match("/^[A-Z]{2}$/", $this->container['country'])) {
             $invalidProperties[] = "invalid value for 'country', must be conform to the pattern /^[A-Z]{2}$/.";
-        }
-
-        if (!is_null($this->container['phone_number']) && (mb_strlen($this->container['phone_number']) > 20)) {
-            $invalidProperties[] = "invalid value for 'phone_number', the character length must be smaller than or equal to 20.";
         }
 
         return $invalidProperties;
@@ -393,9 +369,7 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($address1) && (mb_strlen($address1) > 255)) {
-            throw new \InvalidArgumentException('invalid length for $address1 when calling Address., must be smaller than or equal to 255.');
-        }
+
 
         $this->container['address1'] = $address1;
 
@@ -431,9 +405,7 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($address2) && (mb_strlen($address2) > 255)) {
-            throw new \InvalidArgumentException('invalid length for $address2 when calling Address., must be smaller than or equal to 255.');
-        }
+
 
         $this->container['address2'] = $address2;
 
@@ -469,9 +441,7 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($city) && (mb_strlen($city) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $city when calling Address., must be smaller than or equal to 100.');
-        }
+
 
         $this->container['city'] = $city;
 
@@ -507,9 +477,7 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($state) && (mb_strlen($state) > 10)) {
-            throw new \InvalidArgumentException('invalid length for $state when calling Address., must be smaller than or equal to 10.');
-        }
+
 
         $this->container['state'] = $state;
 
@@ -545,9 +513,7 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($zip) && (mb_strlen($zip) > 20)) {
-            throw new \InvalidArgumentException('invalid length for $zip when calling Address., must be smaller than or equal to 20.');
-        }
+
 
         $this->container['zip'] = $zip;
 
@@ -622,9 +588,7 @@ class Address implements ModelInterface, ArrayAccess, \JsonSerializable
                 $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
             }
         }
-        if (!is_null($phone_number) && (mb_strlen($phone_number) > 20)) {
-            throw new \InvalidArgumentException('invalid length for $phone_number when calling Address., must be smaller than or equal to 20.');
-        }
+
 
         $this->container['phone_number'] = $phone_number;
 
