@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **latest_network_transaction_id** | **str** | Network transaction ID from the most recent transaction using this stored credential, returned by the gateway | [optional] 
 **gateway_initial_transaction_id** | **str** | Gateway&#39;s own transaction ID from the initial transaction that established the stored credential | [optional] 
 **gateway_latest_transaction_id** | **str** | Gateway&#39;s own transaction ID from the most recent transaction using this stored credential | [optional] 
+**transaction_link_id** | **str** | Mastercard Transaction Link ID. The value the card network returned for this transaction; it is the authority for what happened on this charge. | [optional] 
 
 ## Example
 

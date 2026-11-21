@@ -37,6 +37,7 @@ Name | Type
 `description` | string
 `gatewayFields` | { [key: string]: any; }
 `gatewaySpecificResponseFields` | { [key: string]: any; }
+`gatewayResponsePayload` | string
 `paymentPlanData` | [PaymentPlanData](PaymentPlanData.md)
 `recovery` | [Recovery](Recovery.md)
 `response` | [TransactionResponseDetails](TransactionResponseDetails.md)
@@ -80,6 +81,7 @@ const example = {
   "description": Payment for premium subscription,
   "gatewayFields": {processor_id=12345, network_transaction_id=abc123xyz789},
   "gatewaySpecificResponseFields": {gatewayCode=00, gatewayMessage=Approved},
+  "gatewayResponsePayload": {"pspReference":"8835511210681145","additionalData":{"merchantAdviceCode":"01"}},
   "paymentPlanData": null,
   "recovery": null,
   "response": null,

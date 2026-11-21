@@ -35,6 +35,7 @@ Name | Type | Description | Notes
 **Description** | Pointer to **NullableString** | Transaction description or notes | [optional] 
 **GatewayFields** | Pointer to **map[string]interface{}** | Additional gateway-specific fields | [optional] 
 **GatewaySpecificResponseFields** | Pointer to **map[string]interface{}** | Additional gateway-specific response details returned directly from the processor | [optional] 
+**GatewayResponsePayload** | Pointer to **string** | The processing gateway&#39;s own answer, as one JSON document in a string, reduced to the keys the platform lists for that gateway. Every other key is removed. Free-text values under the kept keys are checked for a value shaped like a card number: 13 to 19 digits that pass the Luhn check, with or without separators between the groups of digits. Such a number is never returned in full. Its first 6 and last 4 digits are kept and every digit between them is replaced with &#x60;*&#x60;; the rest of that value and the rest of the payload are returned as the gateway sent them, and the platform is alerted to it. A matching JSON number is returned as a masked string. A value that cannot be masked is left out, that key only. Gateway reference and token fields are returned as the gateway sent them and are not checked, because gateway references are often 16-digit numbers. Present only on the answer to a payment, capture, void or refund sent directly to the gateway, and only when the payload is switched on for the API key that made the request and the gateway returned one. In every other case the field is absent, never null and never an empty string. | [optional] 
 **PaymentPlanData** | Pointer to [**NullablePaymentPlanData**](PaymentPlanData.md) |  | [optional] 
 **Recovery** | Pointer to [**NullableRecovery**](Recovery.md) |  | [optional] 
 **Response** | Pointer to [**NullableTransactionResponseDetails**](TransactionResponseDetails.md) |  | [optional] 
@@ -1099,6 +1100,31 @@ HasGatewaySpecificResponseFields returns a boolean if a field has been set.
 `func (o *GetTransactionByMerchantTransactionId200Response) UnsetGatewaySpecificResponseFields()`
 
 UnsetGatewaySpecificResponseFields ensures that no value is present for GatewaySpecificResponseFields, not even an explicit nil
+### GetGatewayResponsePayload
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetGatewayResponsePayload() string`
+
+GetGatewayResponsePayload returns the GatewayResponsePayload field if non-nil, zero value otherwise.
+
+### GetGatewayResponsePayloadOk
+
+`func (o *GetTransactionByMerchantTransactionId200Response) GetGatewayResponsePayloadOk() (*string, bool)`
+
+GetGatewayResponsePayloadOk returns a tuple with the GatewayResponsePayload field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetGatewayResponsePayload
+
+`func (o *GetTransactionByMerchantTransactionId200Response) SetGatewayResponsePayload(v string)`
+
+SetGatewayResponsePayload sets GatewayResponsePayload field to given value.
+
+### HasGatewayResponsePayload
+
+`func (o *GetTransactionByMerchantTransactionId200Response) HasGatewayResponsePayload() bool`
+
+HasGatewayResponsePayload returns a boolean if a field has been set.
+
 ### GetPaymentPlanData
 
 `func (o *GetTransactionByMerchantTransactionId200Response) GetPaymentPlanData() PaymentPlanData`

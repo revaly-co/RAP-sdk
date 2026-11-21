@@ -12,6 +12,7 @@ Name | Type
 `latestNetworkTransactionId` | string
 `initialGatewayTransactionId` | string
 `latestGatewayTransactionId` | string
+`transactionLinkId` | string
 
 ## Example
 
@@ -25,6 +26,7 @@ const example = {
   "latestNetworkTransactionId": 019078743540001,
   "initialGatewayTransactionId": gw_initial_abc123,
   "latestGatewayTransactionId": gw_latest_xyz789,
+  "transactionLinkId": Rv7tLk2-Q9x_Ab4cD8eF1g,
 } satisfies StoredCredential
 
 console.log(example)

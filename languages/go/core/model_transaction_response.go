@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.16.0
+API version: 2.18.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -77,6 +77,8 @@ type TransactionResponse struct {
 	GatewayFields map[string]interface{} `json:"gatewayFields,omitempty"`
 	// Additional gateway-specific response details returned directly from the processor
 	GatewaySpecificResponseFields map[string]interface{} `json:"gatewaySpecificResponseFields,omitempty"`
+	// The processing gateway's own answer, as one JSON document in a string, reduced to the keys the platform lists for that gateway. Every other key is removed. Free-text values under the kept keys are checked for a value shaped like a card number: 13 to 19 digits that pass the Luhn check, with or without separators between the groups of digits. Such a number is never returned in full. Its first 6 and last 4 digits are kept and every digit between them is replaced with `*`; the rest of that value and the rest of the payload are returned as the gateway sent them, and the platform is alerted to it. A matching JSON number is returned as a masked string. A value that cannot be masked is left out, that key only. Gateway reference and token fields are returned as the gateway sent them and are not checked, because gateway references are often 16-digit numbers. Present only on the answer to a payment, capture, void or refund sent directly to the gateway, and only when the payload is switched on for the API key that made the request and the gateway returned one. In every other case the field is absent, never null and never an empty string.
+	GatewayResponsePayload *string `json:"gatewayResponsePayload,omitempty"`
 	PaymentPlanData NullablePaymentPlanData `json:"paymentPlanData,omitempty"`
 	Recovery NullableRecovery `json:"recovery,omitempty"`
 	Response NullableTransactionResponseDetails `json:"response,omitempty"`
@@ -1216,6 +1218,38 @@ func (o *TransactionResponse) SetGatewaySpecificResponseFields(v map[string]inte
 	o.GatewaySpecificResponseFields = v
 }
 
+// GetGatewayResponsePayload returns the GatewayResponsePayload field value if set, zero value otherwise.
+func (o *TransactionResponse) GetGatewayResponsePayload() string {
+	if o == nil || IsNil(o.GatewayResponsePayload) {
+		var ret string
+		return ret
+	}
+	return *o.GatewayResponsePayload
+}
+
+// GetGatewayResponsePayloadOk returns a tuple with the GatewayResponsePayload field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TransactionResponse) GetGatewayResponsePayloadOk() (*string, bool) {
+	if o == nil || IsNil(o.GatewayResponsePayload) {
+		return nil, false
+	}
+	return o.GatewayResponsePayload, true
+}
+
+// HasGatewayResponsePayload returns a boolean if a field has been set.
+func (o *TransactionResponse) HasGatewayResponsePayload() bool {
+	if o != nil && !IsNil(o.GatewayResponsePayload) {
+		return true
+	}
+
+	return false
+}
+
+// SetGatewayResponsePayload gets a reference to the given string and assigns it to the GatewayResponsePayload field.
+func (o *TransactionResponse) SetGatewayResponsePayload(v string) {
+	o.GatewayResponsePayload = &v
+}
+
 // GetPaymentPlanData returns the PaymentPlanData field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *TransactionResponse) GetPaymentPlanData() PaymentPlanData {
 	if o == nil || IsNil(o.PaymentPlanData.Get()) {
@@ -1474,6 +1508,9 @@ func (o TransactionResponse) ToMap() (map[string]interface{}, error) {
 	}
 	if o.GatewaySpecificResponseFields != nil {
 		toSerialize["gatewaySpecificResponseFields"] = o.GatewaySpecificResponseFields
+	}
+	if !IsNil(o.GatewayResponsePayload) {
+		toSerialize["gatewayResponsePayload"] = o.GatewayResponsePayload
 	}
 	if o.PaymentPlanData.IsSet() {
 		toSerialize["paymentPlanData"] = o.PaymentPlanData.Get()
