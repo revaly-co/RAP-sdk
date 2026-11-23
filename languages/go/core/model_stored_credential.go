@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.16.0
+API version: 2.18.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -32,6 +32,8 @@ type StoredCredential struct {
 	InitialGatewayTransactionId NullableString `json:"initialGatewayTransactionId,omitempty"`
 	// Gateway transaction ID from the most recent transaction using this stored credential
 	LatestGatewayTransactionId NullableString `json:"latestGatewayTransactionId,omitempty"`
+	// Mastercard Transaction Link ID. Optional and accepted on every charge, but sent to the network only on connections Revaly has enabled for it, and only on merchant-initiated Mastercard charges. Send the value returned by the approved charge that set up the agreement, or, if the agreement was set up elsewhere, by the first approved charge after it. Never send a value from a declined response. Omit it and Revaly sends the value it keeps for the card, where it keeps one. Exactly 22 characters: letters, digits, hyphen and underscore.
+	TransactionLinkId NullableString `json:"transactionLinkId,omitempty"`
 }
 
 // NewStoredCredential instantiates a new StoredCredential object
@@ -261,6 +263,48 @@ func (o *StoredCredential) UnsetLatestGatewayTransactionId() {
 	o.LatestGatewayTransactionId.Unset()
 }
 
+// GetTransactionLinkId returns the TransactionLinkId field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *StoredCredential) GetTransactionLinkId() string {
+	if o == nil || IsNil(o.TransactionLinkId.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.TransactionLinkId.Get()
+}
+
+// GetTransactionLinkIdOk returns a tuple with the TransactionLinkId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *StoredCredential) GetTransactionLinkIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.TransactionLinkId.Get(), o.TransactionLinkId.IsSet()
+}
+
+// HasTransactionLinkId returns a boolean if a field has been set.
+func (o *StoredCredential) HasTransactionLinkId() bool {
+	if o != nil && o.TransactionLinkId.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetTransactionLinkId gets a reference to the given NullableString and assigns it to the TransactionLinkId field.
+func (o *StoredCredential) SetTransactionLinkId(v string) {
+	o.TransactionLinkId.Set(&v)
+}
+// SetTransactionLinkIdNil sets the value for TransactionLinkId to be an explicit nil
+func (o *StoredCredential) SetTransactionLinkIdNil() {
+	o.TransactionLinkId.Set(nil)
+}
+
+// UnsetTransactionLinkId ensures that no value is present for TransactionLinkId, not even an explicit nil
+func (o *StoredCredential) UnsetTransactionLinkId() {
+	o.TransactionLinkId.Unset()
+}
+
 func (o StoredCredential) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -285,6 +329,9 @@ func (o StoredCredential) ToMap() (map[string]interface{}, error) {
 	}
 	if o.LatestGatewayTransactionId.IsSet() {
 		toSerialize["latestGatewayTransactionId"] = o.LatestGatewayTransactionId.Get()
+	}
+	if o.TransactionLinkId.IsSet() {
+		toSerialize["transactionLinkId"] = o.TransactionLinkId.Get()
 	}
 	return toSerialize, nil
 }

@@ -13,6 +13,7 @@ Stored credential information returned from the gateway for recurring, installme
 |**latestNetworkTransactionId** | **String** | Network transaction ID from the most recent transaction using this stored credential, returned by the gateway |  [optional] |
 |**gatewayInitialTransactionId** | **String** | Gateway&#39;s own transaction ID from the initial transaction that established the stored credential |  [optional] |
 |**gatewayLatestTransactionId** | **String** | Gateway&#39;s own transaction ID from the most recent transaction using this stored credential |  [optional] |
+|**transactionLinkId** | **String** | Mastercard Transaction Link ID. The value the card network returned for this transaction; it is the authority for what happened on this charge. |  [optional] |
 
 
 

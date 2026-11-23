@@ -4,31 +4,35 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.16.0+99cb098
-specVersion: 2.16.0
-sourceCommit: 99cb098c29d98fd20f9c94aa64dfe620410b839f
+releaseTag: spec/v2.18.0+834f684
+specVersion: 2.18.0
+sourceCommit: 834f68460f46750caef19592f68e2527a885455e
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: c9cd081edc18db609ec5065bfae7b6ee52b83f6f1061b9d374791cc9ca6c1b20
-pinnedAt: "2026-11-05"
+  openapi.bundled.yaml: df67b5f945bfae2c04b321168bf0040bb3d3fbd19e5c30953da03affc448a559
+pinnedAt: "2026-11-21"
 notes: >-
-  Twelfth pin (was spec/v2.15.0+693a36b; SC-661). One platform artifact, v2.16.0+99cb098
-  (SC-661, Backbone PR #439); the bundle differs from v2.15.0 in five lines on three request
-  schemas. `customerIp` on PaymentRequest and AuthorizeRequest gains `maxLength: 45` and a
-  description naming IPv4 or IPv6 text; `merchantTransactionId` on RefundCancelRequest rises
-  from `maxLength: 50` to 100. Backbone's contract check records the new customerIp bound
-  without refusing while its 30-day census runs (to 2026-12-04, SC-661); Olympus already
-  declines a value over 45 characters (50037), and the direct path accepts up to 50. No response shape, error
-  code, transactionType, reconcile verdict or status change, so the failover classification
-  surface is untouched (failover-contract §2). All four platform gates pass on v2.16.0;
-  provenance ciRunId 41859970321. OQ-18 is decided by ADR-SDK-034: an SDK does not refuse a
-  request for a body field's length bound before sending, and the platform decides. The generated
-  Python and PHP cores still check `maxLength` (Python when a model is built or assigned, PHP in
-  its setters), so this pin releases .NET, Java, TypeScript and Go only; Python and PHP release
-  after their template revision. Prior pin history: v2.1.2+9af661b (first
+  Thirteenth pin (was spec/v2.16.0+99cb098; SC-934). Three platform artifacts absorbed, v2.16.1
+  to v2.18.0; the bundle differs from v2.16.0 in four changed and 17 added lines. (1)
+  v2.16.1+8cf9914 (SC-842, Backbone PR #474): prose only, the `expiryMonth`, `expiryYear` and
+  `cardReplaced` descriptions name Worldpay Litle V11 and Adyen beside Chase Orbital and Worldpay
+  Litle as real-time account updaters. (2) v2.17.0+19b899b (EI-113, Backbone PR #477): the
+  optional response field `gatewayResponsePayload` on TransactionResponse, a string holding the
+  processing gateway's own answer as one JSON document, reduced to the keys the platform lists
+  for that gateway, with a card-number-shaped value masked; present only on a payment, capture,
+  void or refund sent directly to the gateway when the API key has the payload switched on, and
+  otherwise absent, never null or empty. (3) v2.18.0+834f684 (SC-934, Backbone PR #495): the
+  optional, nullable `transactionLinkId` (Mastercard Transaction Link ID) on StoredCredential,
+  the stored-credential block of PaymentRequest and AuthorizeRequest, with `maxLength: 22`, and
+  on StoredCredentialResponse, the block returned in TransactionResponse, without a bound. No SDK
+  refuses a longer value before sending (ADR-SDK-034; SC-886 removed the Python and PHP checks),
+  so the ADR-SDK-034 release gate holds no language back from this pin. Both new response fields
+  are additive; no error code, transactionType, reconcile verdict or status change, so the
+  failover classification surface is untouched (failover-contract §2). All four platform gates
+  pass on v2.18.0; provenance ciRunId 44756366634. Prior pin history: v2.1.2+9af661b (first
   pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
   v2.2.0+1e59620 (additive statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID
   response header documented) -> v2.3.0+80cc897 (validation reality matches the published
@@ -47,4 +51,7 @@ notes: >-
   which renumbers the implicit .NET enum values (NOTTRUSTED 2 -> 4; the wire value is the name);
   `merchantTrustData` redefined as the six-character trusted signal code; `acquirerMerchantId`
   stated optional; RTN reporting prose; the optional
-  `rtnData.additionalTransactionData.fraudPreventionPlatform`).
+  `rtnData.additionalTransactionData.fraudPreventionPlatform`) -> v2.16.0+99cb098 (SC-661,
+  `customerIp` on charge and authorize bounded at 45 characters, RefundCancelRequest
+  `merchantTransactionId` raised from 50 to 100; all six released from it on 2026-11-05 once
+  SC-886 removed the Python and PHP length checks).

@@ -52,6 +52,32 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-11-21)
+
+- **Spec re-pinned v2.16.0 → v2.18.0+834f684 (thirteenth pin, SC-934).** Three platform
+  artifacts published between 2026-11-12 and 2026-11-20 are absorbed in one bump. What merchants
+  gain: `transactionLinkId`, the Mastercard Transaction Link ID, on the `storedCredential` block
+  of the charge and authorize requests and of the transaction response (SC-934, v2.18.0); and
+  `gatewayResponsePayload` on the transaction response, the processing gateway's own answer as
+  one JSON document in a string, reduced to the keys the platform lists for that gateway with any
+  card-number-shaped value masked, and returned only on a payment, capture, void or refund sent
+  directly to the gateway for an API key with the payload switched on (EI-113, v2.17.0). v2.16.1
+  is prose only (SC-842): the expiry and `cardReplaced` descriptions name Worldpay Litle V11 and
+  Adyen as real-time account updaters. The spec bounds the request `transactionLinkId` at 22
+  characters, and no SDK refuses a longer value before sending (ADR-SDK-034: the Python
+  generation step strips the new bound, the PHP template emits no check, and the unused .NET
+  `Validate` keeps it as generated), so the ADR-SDK-034 release gate holds no language back.
+  Both response fields are additive; no error code, `transactionType`, reconcile verdict or
+  status changes, so the failover classification is unaffected. The regeneration touched 449
+  files, none new or deleted; 57 of them change beyond the version banner (the
+  `StoredCredential`, `StoredCredentialResponse`, `TransactionResponse` and
+  `PaymentMethodResponse` models, the two transaction-lookup unions that repeat
+  `TransactionResponse`'s fields, and their docs), and a second generation run changed nothing.
+  Verified locally with the stage-3 commands: .NET 84/84 (the two known CS0612 core warnings);
+  Java 99/99 (Temurin 21 container); PHP 112 tests, 277 assertions, strict PSR-4 clean (PHP 8.3
+  container); TypeScript strict core `tsc` and typecheck clean, 131/131; Python 166/166 (Python
+  3.12 container); Go build, vet, tests (73 including subtests) and staticcheck ok.
+
 ## Status snapshot (2026-11-05)
 
 - **SC-886: Python and PHP stop refusing over-long fields (ADR-SDK-034 implemented).** PHP forks

@@ -9,12 +9,12 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.16.0+99cb098`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.16.0%2B99cb098) (platform repo) |
-| Spec version | 2.16.0 |
-| Source commit | `99cb098c29d98fd20f9c94aa64dfe620410b839f` |
+| Release | [`spec/v2.18.0+834f684`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.18.0%2B834f684) (platform repo) |
+| Spec version | 2.18.0 |
+| Source commit | `834f68460f46750caef19592f68e2527a885455e` |
 | Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `c9cd081edc18db609ec5065bfae7b6ee52b83f6f1061b9d374791cc9ca6c1b20` |
-| Pinned | 2026-11-05 |
+| sha256 (`openapi.bundled.yaml`) | `df67b5f945bfae2c04b321168bf0040bb3d3fbd19e5c30953da03affc448a559` |
+| Pinned | 2026-11-21 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
@@ -65,17 +65,33 @@ schemas: `customerIp` on `PaymentRequest` / `AuthorizeRequest` gains `maxLength:
 naming IPv4 or IPv6 text, and `merchantTransactionId` on `RefundCancelRequest` rises from 50 to
 100 characters; Backbone's contract check records a longer `customerIp` without refusing it
 while its census runs, Olympus already declines one over 45 characters (50037), and the direct
-path accepts up to 50. The Python core and the PHP setters would refuse a longer `customerIp` before sending, so
-under ADR-SDK-034 (OQ-18) this pin releases .NET, Java, TypeScript and Go only, and Python and
-PHP release after their template revision; no response shape, error-code, verdict or status
-change).
+path accepts up to 50. The Python core and the PHP setters refused a longer `customerIp` before
+sending, so under ADR-SDK-034 (OQ-18) Python and PHP waited for their template revision
+(SC-886, RAP-sdk PR #121); all six released from this pin on 2026-11-05, .NET, Java,
+TypeScript, Go and Python at 0.9.0 and PHP at 0.10.0; no response shape, error-code, verdict or
+status change) → `v2.18.0+834f684` (2026-11-21, SC-934 — three platform artifacts in one bump;
+the bundle differs from v2.16.0 in four changed and 17 added lines: the `expiryMonth`,
+`expiryYear` and `cardReplaced` descriptions name Worldpay Litle V11 and Adyen as real-time
+account updaters (v2.16.1, SC-842, Backbone PR #474; prose only); the optional response field
+`gatewayResponsePayload` on `TransactionResponse`, the processing gateway's own answer as one
+JSON document in a string, reduced to the keys the platform lists for that gateway with a
+card-number-shaped value masked, present only on a payment, capture, void or refund sent
+directly to the gateway for an API key with the payload switched on (v2.17.0, EI-113, Backbone
+PR #477); the optional, nullable `transactionLinkId` (Mastercard Transaction Link ID) on the
+`StoredCredential` block of `PaymentRequest` / `AuthorizeRequest`, bounded at 22 characters,
+and on the `StoredCredentialResponse` block of `TransactionResponse` (v2.18.0, SC-934, Backbone
+PR #495). No SDK refuses a longer `transactionLinkId` before sending (ADR-SDK-034), so its
+release gate holds no language back from this pin; both response fields are additive; no
+error-code, verdict or status change).
 
-Eleven published artifacts were never consumed and are superseded rather than skipped:
+Thirteen published artifacts were never consumed and are superseded rather than skipped:
 `v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), `v2.8.0+95bd397`,
 `v2.9.0+026291d`, `v2.10.0+65b730f`, `v2.11.0+8241a0d`, `v2.12.0+c1c7485`,
 `v2.12.1+4bd7ff6` (2026-10-05 to 2026-10-19, absorbed by the v2.12.2 pin; `v2.12.0` breaks
 the .NET core build, so it is not a usable pin on its own), and `v2.13.1+f6b9766`,
-`v2.14.0+66c63c6`, `v2.14.1+d3c5b38` (2026-10-29 to 2026-11-02, absorbed by the v2.15.0 pin).
+`v2.14.0+66c63c6`, `v2.14.1+d3c5b38` (2026-10-29 to 2026-11-02, absorbed by the v2.15.0 pin),
+and `v2.16.1+8cf9914`, `v2.17.0+19b899b` (2026-11-12 and 2026-11-19, absorbed by the v2.18.0
+pin).
 
 [`openapi.bundled.yaml.sha256`](openapi.bundled.yaml.sha256) and
 [`provenance.json`](provenance.json) are verbatim copies of the release assets, committed as
@@ -86,7 +102,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.16.0+99cb098" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.18.0+834f684" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

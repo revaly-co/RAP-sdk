@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **LatestNetworkTransactionId** | Pointer to **NullableString** | Network transaction ID from the most recent transaction using this stored credential | [optional] 
 **InitialGatewayTransactionId** | Pointer to **NullableString** | Gateway transaction ID from the initial transaction that established the stored credential | [optional] 
 **LatestGatewayTransactionId** | Pointer to **NullableString** | Gateway transaction ID from the most recent transaction using this stored credential | [optional] 
+**TransactionLinkId** | Pointer to **NullableString** | Mastercard Transaction Link ID. Optional and accepted on every charge, but sent to the network only on connections Revaly has enabled for it, and only on merchant-initiated Mastercard charges. Send the value returned by the approved charge that set up the agreement, or, if the agreement was set up elsewhere, by the first approved charge after it. Never send a value from a declined response. Omit it and Revaly sends the value it keeps for the card, where it keeps one. Exactly 22 characters: letters, digits, hyphen and underscore. | [optional] 
 
 ## Methods
 
@@ -204,6 +205,41 @@ HasLatestGatewayTransactionId returns a boolean if a field has been set.
 `func (o *StoredCredential) UnsetLatestGatewayTransactionId()`
 
 UnsetLatestGatewayTransactionId ensures that no value is present for LatestGatewayTransactionId, not even an explicit nil
+### GetTransactionLinkId
+
+`func (o *StoredCredential) GetTransactionLinkId() string`
+
+GetTransactionLinkId returns the TransactionLinkId field if non-nil, zero value otherwise.
+
+### GetTransactionLinkIdOk
+
+`func (o *StoredCredential) GetTransactionLinkIdOk() (*string, bool)`
+
+GetTransactionLinkIdOk returns a tuple with the TransactionLinkId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTransactionLinkId
+
+`func (o *StoredCredential) SetTransactionLinkId(v string)`
+
+SetTransactionLinkId sets TransactionLinkId field to given value.
+
+### HasTransactionLinkId
+
+`func (o *StoredCredential) HasTransactionLinkId() bool`
+
+HasTransactionLinkId returns a boolean if a field has been set.
+
+### SetTransactionLinkIdNil
+
+`func (o *StoredCredential) SetTransactionLinkIdNil(b bool)`
+
+ SetTransactionLinkIdNil sets the value for TransactionLinkId to be an explicit nil
+
+### UnsetTransactionLinkId
+`func (o *StoredCredential) UnsetTransactionLinkId()`
+
+UnsetTransactionLinkId ensures that no value is present for TransactionLinkId, not even an explicit nil
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 
