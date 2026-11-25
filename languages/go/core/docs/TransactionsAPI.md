@@ -160,7 +160,7 @@ Name | Type | Description  | Notes
 
 ## ListTransactions
 
-> []TransactionListItem ListTransactions(ctx).XApiVersion(xApiVersion).Count(count).Order(order).SinceTransactionId(sinceTransactionId).StartDate(startDate).EndDate(endDate).CompletedOnly(completedOnly).ResponseType(responseType).Execute()
+> []ListTransactions200ResponseInner ListTransactions(ctx).XApiVersion(xApiVersion).Count(count).Order(order).SinceTransactionId(sinceTransactionId).StartDate(startDate).EndDate(endDate).CompletedOnly(completedOnly).ResponseType(responseType).Execute()
 
 List transactions
 
@@ -184,10 +184,10 @@ func main() {
 	count := int32(20) // int32 | Number of transactions to return per page (optional) (default to 20)
 	order := "asc" // string | Sort order for results. Default is asc. (optional) (default to "asc")
 	sinceTransactionId := "06CQR5TMB800000G0011NCFRVY37A" // string | Return transactions after this transaction ID (for pagination) (optional)
-	startDate := time.Now() // time.Time | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. (optional)
-	endDate := time.Now() // time.Time | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. (optional)
+	startDate := time.Now() // time.Time | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before `endDate` (or before now when `endDate` is also omitted). (optional)
+	endDate := time.Now() // time.Time | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so `2024-09-13T00:00:00Z` includes all of 13 September. (optional)
 	completedOnly := true // bool | Requests a list of transactions that have completed the approvals process. Default is false (all transactions). (optional) (default to false)
-	responseType := "detailed" // string | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  (optional) (default to "detailed")
+	responseType := "detailed" // string | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  (optional) (default to "detailed")
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -196,7 +196,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error when calling `TransactionsAPI.ListTransactions``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `ListTransactions`: []TransactionListItem
+	// response from `ListTransactions`: []ListTransactions200ResponseInner
 	fmt.Fprintf(os.Stdout, "Response from `TransactionsAPI.ListTransactions`: %v\n", resp)
 }
 ```
@@ -216,14 +216,14 @@ Name | Type | Description  | Notes
  **count** | **int32** | Number of transactions to return per page | [default to 20]
  **order** | **string** | Sort order for results. Default is asc. | [default to &quot;asc&quot;]
  **sinceTransactionId** | **string** | Return transactions after this transaction ID (for pagination) | 
- **startDate** | **time.Time** | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | 
- **endDate** | **time.Time** | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | 
+ **startDate** | **time.Time** | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | 
+ **endDate** | **time.Time** | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | 
  **completedOnly** | **bool** | Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [default to false]
- **responseType** | **string** | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  | [default to &quot;detailed&quot;]
+ **responseType** | **string** | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  | [default to &quot;detailed&quot;]
 
 ### Return type
 
-[**[]TransactionListItem**](TransactionListItem.md)
+[**[]ListTransactions200ResponseInner**](ListTransactions200ResponseInner.md)
 
 ### Authorization
 

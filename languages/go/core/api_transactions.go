@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.18.0
+API version: 2.19.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -527,13 +527,13 @@ func (r ApiListTransactionsRequest) SinceTransactionId(sinceTransactionId string
 	return r
 }
 
-// Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
+// Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted).
 func (r ApiListTransactionsRequest) StartDate(startDate time.Time) ApiListTransactionsRequest {
 	r.startDate = &startDate
 	return r
 }
 
-// End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
+// End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September.
 func (r ApiListTransactionsRequest) EndDate(endDate time.Time) ApiListTransactionsRequest {
 	r.endDate = &endDate
 	return r
@@ -545,13 +545,13 @@ func (r ApiListTransactionsRequest) CompletedOnly(completedOnly bool) ApiListTra
 	return r
 }
 
-// Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields. 
+// Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields. 
 func (r ApiListTransactionsRequest) ResponseType(responseType string) ApiListTransactionsRequest {
 	r.responseType = &responseType
 	return r
 }
 
-func (r ApiListTransactionsRequest) Execute() ([]TransactionListItem, *http.Response, error) {
+func (r ApiListTransactionsRequest) Execute() ([]ListTransactions200ResponseInner, *http.Response, error) {
 	return r.ApiService.ListTransactionsExecute(r)
 }
 
@@ -561,7 +561,11 @@ ListTransactions List transactions
 Retrieve a paginated list of transactions for the authenticated account.
 
 This endpoint returns transaction data with optional filtering and pagination support.
-Transactions are returned based on the specified order and count parameters.
+Transactions are returned based on the specified order and count parameters, ordered by transaction date.
+
+Each item is a flat `TransactionListItem`, except a payment-method operation (create, update, redact or
+recache) with the detailed response type, which is a `TransactionListPaymentMethodItem`: its fields are
+wrapped in `transaction`. A page can hold fewer than `count` items.
 
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
@@ -575,13 +579,13 @@ func (a *TransactionsAPIService) ListTransactions(ctx context.Context) ApiListTr
 }
 
 // Execute executes the request
-//  @return []TransactionListItem
-func (a *TransactionsAPIService) ListTransactionsExecute(r ApiListTransactionsRequest) ([]TransactionListItem, *http.Response, error) {
+//  @return []ListTransactions200ResponseInner
+func (a *TransactionsAPIService) ListTransactionsExecute(r ApiListTransactionsRequest) ([]ListTransactions200ResponseInner, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  []TransactionListItem
+		localVarReturnValue  []ListTransactions200ResponseInner
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "TransactionsAPIService.ListTransactions")

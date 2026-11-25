@@ -216,14 +216,18 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **list_transactions**
-> List[TransactionListItem] list_transactions(x_api_version=x_api_version, count=count, order=order, since_transaction_id=since_transaction_id, start_date=start_date, end_date=end_date, completed_only=completed_only, response_type=response_type)
+> List[ListTransactions200ResponseInner] list_transactions(x_api_version=x_api_version, count=count, order=order, since_transaction_id=since_transaction_id, start_date=start_date, end_date=end_date, completed_only=completed_only, response_type=response_type)
 
 List transactions
 
 Retrieve a paginated list of transactions for the authenticated account.
 
 This endpoint returns transaction data with optional filtering and pagination support.
-Transactions are returned based on the specified order and count parameters.
+Transactions are returned based on the specified order and count parameters, ordered by transaction date.
+
+Each item is a flat `TransactionListItem`, except a payment-method operation (create, update, redact or
+recache) with the detailed response type, which is a `TransactionListPaymentMethodItem`: its fields are
+wrapped in `transaction`. A page can hold fewer than `count` items.
 
 
 ### Example
@@ -232,7 +236,7 @@ Transactions are returned based on the specified order and count parameters.
 
 ```python
 import revaly_sdk_core
-from revaly_sdk_core.models.transaction_list_item import TransactionListItem
+from revaly_sdk_core.models.list_transactions200_response_inner import ListTransactions200ResponseInner
 from revaly_sdk_core.rest import ApiException
 from pprint import pprint
 
@@ -262,10 +266,10 @@ with revaly_sdk_core.ApiClient(configuration) as api_client:
     count = 20 # int | Number of transactions to return per page (optional) (default to 20)
     order = asc # str | Sort order for results. Default is asc. (optional) (default to asc)
     since_transaction_id = '06CQR5TMB800000G0011NCFRVY37A' # str | Return transactions after this transaction ID (for pagination) (optional)
-    start_date = '2024-09-12T00:00:00Z' # datetime | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. (optional)
-    end_date = '2024-09-13T00:00:00Z' # datetime | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. (optional)
+    start_date = '2024-09-12T00:00:00Z' # datetime | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before `endDate` (or before now when `endDate` is also omitted). (optional)
+    end_date = '2024-09-13T00:00:00Z' # datetime | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so `2024-09-13T00:00:00Z` includes all of 13 September. (optional)
     completed_only = False # bool | Requests a list of transactions that have completed the approvals process. Default is false (all transactions). (optional) (default to False)
-    response_type = detailed # str | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  (optional) (default to detailed)
+    response_type = detailed # str | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  (optional) (default to detailed)
 
     try:
         # List transactions
@@ -287,14 +291,14 @@ Name | Type | Description  | Notes
  **count** | **int**| Number of transactions to return per page | [optional] [default to 20]
  **order** | **str**| Sort order for results. Default is asc. | [optional] [default to asc]
  **since_transaction_id** | **str**| Return transactions after this transaction ID (for pagination) | [optional] 
- **start_date** | **datetime**| Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] 
- **end_date** | **datetime**| End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] 
+ **start_date** | **datetime**| Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | [optional] 
+ **end_date** | **datetime**| End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | [optional] 
  **completed_only** | **bool**| Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [optional] [default to False]
- **response_type** | **str**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed]
+ **response_type** | **str**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed]
 
 ### Return type
 
-[**List[TransactionListItem]**](TransactionListItem.md)
+[**List[ListTransactions200ResponseInner]**](ListTransactions200ResponseInner.md)
 
 ### Authorization
 

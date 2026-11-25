@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Success** | Pointer to **bool** | Indicates whether the notification was processed successfully | [optional] 
+**Success** | **bool** | Indicates whether the notification was processed successfully | 
 **Message** | Pointer to **NullableString** | Human-readable message about the notification processing result | [optional] 
 
 ## Methods
 
 ### NewNotifyResponse
 
-`func NewNotifyResponse() *NotifyResponse`
+`func NewNotifyResponse(success bool, ) *NotifyResponse`
 
 NewNotifyResponse instantiates a new NotifyResponse object
 This constructor will assign default values to properties that have it defined,
@@ -45,11 +45,6 @@ and a boolean to check if the value has been set.
 
 SetSuccess sets Success field to given value.
 
-### HasSuccess
-
-`func (o *NotifyResponse) HasSuccess() bool`
-
-HasSuccess returns a boolean if a field has been set.
 
 ### GetMessage
 

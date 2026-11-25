@@ -150,12 +150,12 @@ try {
 ## `listTransactions()`
 
 ```php
-listTransactions($x_api_version, $count, $order, $since_transaction_id, $start_date, $end_date, $completed_only, $response_type): \Revaly\Sdk\Core\Model\TransactionListItem[]
+listTransactions($x_api_version, $count, $order, $since_transaction_id, $start_date, $end_date, $completed_only, $response_type): \Revaly\Sdk\Core\Model\ListTransactions200ResponseInner[]
 ```
 
 List transactions
 
-Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters.
+Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters, ordered by transaction date.  Each item is a flat `TransactionListItem`, except a payment-method operation (create, update, redact or recache) with the detailed response type, which is a `TransactionListPaymentMethodItem`: its fields are wrapped in `transaction`. A page can hold fewer than `count` items.
 
 ### Example
 
@@ -182,10 +182,10 @@ $x_api_version = 2.1; // string | Selects the RAP API version for this request. 
 $count = 20; // int | Number of transactions to return per page
 $order = asc; // string | Sort order for results. Default is asc.
 $since_transaction_id = 06CQR5TMB800000G0011NCFRVY37A; // string | Return transactions after this transaction ID (for pagination)
-$start_date = 2024-09-12T00:00:00Z; // \DateTime | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
-$end_date = 2024-09-13T00:00:00Z; // \DateTime | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
+$start_date = 2024-09-12T00:00:00Z; // \DateTime | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before `endDate` (or before now when `endDate` is also omitted).
+$end_date = 2024-09-13T00:00:00Z; // \DateTime | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so `2024-09-13T00:00:00Z` includes all of 13 September.
 $completed_only = true; // bool | Requests a list of transactions that have completed the approvals process. Default is false (all transactions).
-$response_type = detailed; // string | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.
+$response_type = detailed; // string | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.
 
 try {
     $result = $apiInstance->listTransactions($x_api_version, $count, $order, $since_transaction_id, $start_date, $end_date, $completed_only, $response_type);
@@ -203,14 +203,14 @@ try {
 | **count** | **int**| Number of transactions to return per page | [optional] [default to 20] |
 | **order** | **string**| Sort order for results. Default is asc. | [optional] [default to &#39;asc&#39;] |
 | **since_transaction_id** | **string**| Return transactions after this transaction ID (for pagination) | [optional] |
-| **start_date** | **\DateTime**| Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] |
-| **end_date** | **\DateTime**| End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] |
+| **start_date** | **\DateTime**| Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | [optional] |
+| **end_date** | **\DateTime**| End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | [optional] |
 | **completed_only** | **bool**| Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [optional] [default to false] |
-| **response_type** | **string**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields. | [optional] [default to &#39;detailed&#39;] |
+| **response_type** | **string**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields. | [optional] [default to &#39;detailed&#39;] |
 
 ### Return type
 
-[**\Revaly\Sdk\Core\Model\TransactionListItem[]**](../Model/TransactionListItem.md)
+[**\Revaly\Sdk\Core\Model\ListTransactions200ResponseInner[]**](../Model/ListTransactions200ResponseInner.md)
 
 ### Authorization
 

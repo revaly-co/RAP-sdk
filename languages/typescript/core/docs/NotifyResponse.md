@@ -18,7 +18,7 @@ import type { NotifyResponse } from ''
 // TODO: Update the object below with actual values
 const example = {
   "success": true,
-  "message": Notification processed successfully,
+  "message": Event processed successfully,
 } satisfies NotifyResponse
 
 console.log(example)

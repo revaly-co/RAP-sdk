@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **payment_method_type** | **str** | Type of payment method to create: - **creditCard**: Use raw credit card details that will be tokenized - **gatewayPaymentMethodId**: Use an existing token from a supported payment gateway  | 
 **customer_id** | **str** | Unique identifier for the customer | [optional] 
-**payment_method** | [**PaymentMethod**](PaymentMethod.md) |  | [optional] 
+**payment_method** | [**PaymentMethod**](PaymentMethod.md) |  | 
 
 ## Example
 

@@ -15,6 +15,7 @@ docs/GatewayPaymentMethod.md
 docs/GetTransactionById200Response.md
 docs/GetTransactionByMerchantTransactionId200Response.md
 docs/InitiatedBy.md
+docs/ListTransactions200ResponseInner.md
 docs/NotifyApi.md
 docs/NotifyContactInformation.md
 docs/NotifyData.md
@@ -55,6 +56,9 @@ docs/ThreeDSContext.md
 docs/TransactionGateway.md
 docs/TransactionGroupResponse.md
 docs/TransactionListItem.md
+docs/TransactionListPaymentMethod.md
+docs/TransactionListPaymentMethodItem.md
+docs/TransactionListPaymentMethodItemTransaction.md
 docs/TransactionResponse.md
 docs/TransactionResponseDetails.md
 docs/TransactionsApi.md
@@ -88,6 +92,7 @@ revaly_sdk_core/models/gateway_payment_method.py
 revaly_sdk_core/models/get_transaction_by_id200_response.py
 revaly_sdk_core/models/get_transaction_by_merchant_transaction_id200_response.py
 revaly_sdk_core/models/initiated_by.py
+revaly_sdk_core/models/list_transactions200_response_inner.py
 revaly_sdk_core/models/notify_contact_information.py
 revaly_sdk_core/models/notify_data.py
 revaly_sdk_core/models/notify_request.py
@@ -125,6 +130,9 @@ revaly_sdk_core/models/three_ds_context.py
 revaly_sdk_core/models/transaction_gateway.py
 revaly_sdk_core/models/transaction_group_response.py
 revaly_sdk_core/models/transaction_list_item.py
+revaly_sdk_core/models/transaction_list_payment_method.py
+revaly_sdk_core/models/transaction_list_payment_method_item.py
+revaly_sdk_core/models/transaction_list_payment_method_item_transaction.py
 revaly_sdk_core/models/transaction_response.py
 revaly_sdk_core/models/transaction_response_details.py
 revaly_sdk_core/models/update_payment_method_request.py

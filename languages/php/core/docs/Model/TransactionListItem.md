@@ -4,16 +4,16 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**transaction_id** | **string** | Unique transaction identifier | [optional]
+**transaction_id** | **string** | Unique transaction identifier |
 **transaction_date** | **\DateTime** | Date and time when the transaction was processed (ISO 8601) | [optional]
 **transaction_status** | **int** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional]
 **response_code** | **string** | Response code from the processing result | [optional]
 **message** | **string** | Human-readable message about the transaction result | [optional]
-**transaction_type** | **string** | Type of transaction performed | [optional]
+**transaction_type** | **string** | Type of transaction performed: Charge, PreAuth (an authorization), Capture, Void, Refund, RefundedPayment, SuccessfulPayment (a payment recorded through &#x60;/notify&#x60;), Verify, or, for a payment-method operation, CreateCreditCard, CreateGatewayPaymentMethod, UpdatePaymentMethod, RedactPaymentMethod or RecachePaymentMethod | [optional]
 **retry_date** | **\DateTime** | Scheduled retry date, if applicable | [optional]
 **amount** | **int** | Transaction amount in smallest currency unit (e.g., cents for USD) | [optional]
 **initial_merchant_transaction_id** | **string** | The merchant transaction ID of the initial transaction in the recovery chain | [optional]
-**storage_state** | **string** | Payment method storage state at the time of transaction | [optional]
+**storage_state** | **string** | Storage state of the payment method. Returned on rows Olympus records (simplified and detailed); rows Backbone records report it in &#x60;paymentMethodStorageState&#x60; instead. | [optional]
 **completion_status** | **string** | Recovery completion status of the transaction (e.g., RecoverySuccessful, RecoveryDeclined) | [optional]
 **gateway_specific_response_fields** | **array<string,mixed>** | Gateway-specific response fields returned directly by the payment processor. Keyed by gateway type (e.g., chase_payment_tech, stripe_payment_intents, worldpay_litle). | [optional]
 **gateway_specific_fields** | **array<string,mixed>** | Gateway-specific request fields sent to the payment processor. Keyed by gateway type (e.g., chase_payment_tech, stripe_payment_intents, worldpay_litle). | [optional]
@@ -28,7 +28,7 @@ Name | Type | Description | Notes
 **order_id** | **string** | Order identifier from the merchant system | [optional]
 **statement_descriptor** | **string** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. | [optional]
 **payment_method_id** | **string** | Payment method identifier used for the transaction | [optional]
-**payment_method_storage_state** | **string** | Storage state of the payment method | [optional]
+**payment_method_storage_state** | **string** | Storage state of the payment method. Returned on detailed rows and on simplified rows Backbone records; a simplified row Olympus records reports it in &#x60;storageState&#x60; instead. | [optional]
 **payment_method_type** | **string** | Type of payment method used | [optional]
 **payment_method_merchant_account_reference_id** | **string** | Merchant account reference ID associated with the payment method | [optional]
 **vault_token** | **string** | Vault token for the credential this transaction ran against, reported flat on the row alongside the other &#x60;paymentMethod*&#x60; fields. Present only on rows that ran against a vault credential — omitted, not null or empty, on every other row. In practice this means the detailed response type: simplified rows carry no payment-method data to report a token from. | [optional]
@@ -36,6 +36,6 @@ Name | Type | Description | Notes
 **error_detail** | **string** | Detailed error message from the gateway response | [optional]
 **avs_code** | **string** | Address Verification System result code from the gateway | [optional]
 **gateway** | [**\Revaly\Sdk\Core\Model\TransactionGateway**](TransactionGateway.md) |  | [optional]
-**payment_method** | [**\Revaly\Sdk\Core\Model\PaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional]
+**payment_method** | [**\Revaly\Sdk\Core\Model\PaymentMethodResponse**](PaymentMethodResponse.md) | Not returned on a flat row. The payment method of a payment-method operation is reported in &#x60;transaction.paymentMethod&#x60; of a &#x60;TransactionListPaymentMethodItem&#x60;. | [optional]
 
 [[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

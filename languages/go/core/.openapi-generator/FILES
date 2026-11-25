@@ -21,6 +21,7 @@ docs/GatewayPaymentMethod.md
 docs/GetTransactionById200Response.md
 docs/GetTransactionByMerchantTransactionId200Response.md
 docs/InitiatedBy.md
+docs/ListTransactions200ResponseInner.md
 docs/NotifyAPI.md
 docs/NotifyContactInformation.md
 docs/NotifyData.md
@@ -61,6 +62,9 @@ docs/ThreeDSContext.md
 docs/TransactionGateway.md
 docs/TransactionGroupResponse.md
 docs/TransactionListItem.md
+docs/TransactionListPaymentMethod.md
+docs/TransactionListPaymentMethodItem.md
+docs/TransactionListPaymentMethodItemTransaction.md
 docs/TransactionResponse.md
 docs/TransactionResponseDetails.md
 docs/TransactionsAPI.md
@@ -81,6 +85,7 @@ model_gateway_payment_method.go
 model_get_transaction_by_id_200_response.go
 model_get_transaction_by_merchant_transaction_id_200_response.go
 model_initiated_by.go
+model_list_transactions_200_response_inner.go
 model_notify_contact_information.go
 model_notify_data.go
 model_notify_request.go
@@ -118,6 +123,9 @@ model_three_ds_context.go
 model_transaction_gateway.go
 model_transaction_group_response.go
 model_transaction_list_item.go
+model_transaction_list_payment_method.go
+model_transaction_list_payment_method_item.go
+model_transaction_list_payment_method_item_transaction.go
 model_transaction_response.go
 model_transaction_response_details.go
 model_update_payment_method_request.go

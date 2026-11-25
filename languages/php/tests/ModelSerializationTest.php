@@ -8,9 +8,13 @@ use PHPUnit\Framework\TestCase;
 use Revaly\Sdk\Core\Model\ErrorResponse;
 use Revaly\Sdk\Core\Model\GetTransactionById200Response;
 use Revaly\Sdk\Core\Model\GetTransactionByMerchantTransactionId200Response;
+use Revaly\Sdk\Core\Model\ListTransactions200ResponseInner;
 use Revaly\Sdk\Core\Model\StoredCredentialReasonType;
+use Revaly\Sdk\Core\Model\TransactionListPaymentMethod;
+use Revaly\Sdk\Core\Model\TransactionListPaymentMethodItemTransaction;
 use Revaly\Sdk\Core\ObjectSerializer;
 use Revaly\Sdk\Errors\FailureClassifier;
+use Revaly\Sdk\Testing\RapMockTransport;
 use Revaly\Sdk\Testing\SyntheticData;
 use Revaly\Sdk\Tests\Support\TestClients;
 
@@ -22,6 +26,18 @@ use Revaly\Sdk\Tests\Support\TestClients;
  */
 final class ModelSerializationTest extends TestCase
 {
+    /** A flat `listTransactions` row (the TransactionListItem branch). Synthetic values. */
+    private const LIST_FLAT_ROW = '{"transactionId":"t-1","transactionDate":"2025-09-13T03:19:54.86Z",'
+        . '"transactionStatus":1,"responseCode":"10000","transactionType":"Charge","amount":2500,'
+        . '"currencyCode":"USD"}';
+
+    /** A payment-method `listTransactions` row (the TransactionListPaymentMethodItem branch). */
+    private const LIST_PAYMENT_METHOD_ROW = '{"transaction":{"transactionId":"t-2",'
+        . '"transactionDate":"2025-12-02T14:44:42.209Z","transactionStatus":1,"message":"Succeeded!",'
+        . '"responseCode":"10000","transactionType":"CreateCreditCard","paymentMethod":{'
+        . '"paymentMethodId":"pm-1","lastFourDigits":"1111","firstSixDigits":"411111","cardType":"VISA",'
+        . '"storageState":"Cached","issuerIdentificationNumber":"41111111"}}}';
+
     public function testOneOfWrapperSilentlyMergesAllBranches(): void
     {
         // PROBE PIN: the core's oneOf response wrapper is ONE flattened class carrying
@@ -67,6 +83,78 @@ final class ModelSerializationTest extends TestCase
         self::assertInstanceOf(GetTransactionById200Response::class, $terminal);
         self::assertSame(SyntheticData::DEFAULT_TRANSACTION_ID, $terminal->getTransactionId());
         self::assertNull($terminal->getTransactions());
+    }
+
+    public function testListTransactionsFlatRowBindsTheTransactionListItemFields(): void
+    {
+        // PROBE PIN: the listTransactions item wrapper is the same merged shape — ONE
+        // class carrying the TransactionListItem fields AND the payment-method row's
+        // `transaction` side by side (DISCRIMINATOR = null). "Which branch" reads as which
+        // branch's fields are populated: a flat row sets the top-level fields and leaves
+        // getTransaction() null.
+        $row = ObjectSerializer::deserialize(
+            json_decode(self::LIST_FLAT_ROW),
+            ListTransactions200ResponseInner::class,
+        );
+        self::assertListFlatRow($row);
+    }
+
+    public function testListTransactionsPaymentMethodRowBindsTheNestedTransaction(): void
+    {
+        // The payment-method row populates only getTransaction(); the top-level flat
+        // fields stay null. The nested card fields are read through
+        // getTransaction()->getPaymentMethod().
+        $row = ObjectSerializer::deserialize(
+            json_decode(self::LIST_PAYMENT_METHOD_ROW),
+            ListTransactions200ResponseInner::class,
+        );
+        self::assertListPaymentMethodRow($row);
+    }
+
+    public function testListTransactionsFlatRowWithAnUnknownAdditiveFieldStillBindsTheFlatFields(): void
+    {
+        // A server-newer additive top-level field is dropped (the deserializer walks only
+        // the declared properties); it does not change which fields bind.
+        $flat = json_decode(self::LIST_FLAT_ROW);
+        $flat->futureAdditiveField = 'x';
+        self::assertListFlatRow(
+            ObjectSerializer::deserialize($flat, ListTransactions200ResponseInner::class),
+        );
+    }
+
+    public function testListTransactionsPaymentMethodRowWithAnUnknownAdditiveFieldStillBindsTheNestedTransaction(): void
+    {
+        $paymentMethod = json_decode(self::LIST_PAYMENT_METHOD_ROW);
+        $paymentMethod->futureAdditiveField = 'x';
+        self::assertListPaymentMethodRow(
+            ObjectSerializer::deserialize($paymentMethod, ListTransactions200ResponseInner::class),
+        );
+    }
+
+    public function testListTransactionsArrayOfWrapperDeserializesBothShapes(): void
+    {
+        $rows = ObjectSerializer::deserialize(
+            json_decode('[' . self::LIST_FLAT_ROW . ',' . self::LIST_PAYMENT_METHOD_ROW . ']'),
+            '\Revaly\Sdk\Core\Model\ListTransactions200ResponseInner[]',
+        );
+        self::assertIsArray($rows);
+        self::assertCount(2, $rows);
+        self::assertListFlatRow($rows[0]);
+        self::assertListPaymentMethodRow($rows[1]);
+    }
+
+    public function testListTransactionsCallThroughTheMockDecodesBothShapes(): void
+    {
+        $mock = new RapMockTransport();
+        $mock->stub('GET', '/transactions')
+            ->returns(200, '[' . self::LIST_FLAT_ROW . ',' . self::LIST_PAYMENT_METHOD_ROW . ']');
+
+        $rows = TestClients::withMock($mock)->transactions()->listTransactions();
+
+        self::assertIsArray($rows);
+        self::assertCount(2, $rows);
+        self::assertListFlatRow($rows[0]);
+        self::assertListPaymentMethodRow($rows[1]);
     }
 
     public function testErrorResponseCoercesUnknownCodesButTheClassifierReadsRaw(): void
@@ -116,5 +204,40 @@ final class ModelSerializationTest extends TestCase
             'recurring',
             ObjectSerializer::deserialize('recurring', StoredCredentialReasonType::class),
         );
+    }
+
+    private static function assertListFlatRow(mixed $row): void
+    {
+        self::assertInstanceOf(ListTransactions200ResponseInner::class, $row);
+        self::assertSame('t-1', $row->getTransactionId());
+        self::assertInstanceOf(\DateTime::class, $row->getTransactionDate());
+        self::assertSame(1, $row->getTransactionStatus());
+        self::assertSame('10000', $row->getResponseCode());
+        self::assertSame('Charge', $row->getTransactionType());
+        self::assertSame(2500, $row->getAmount());
+        self::assertSame('USD', $row->getCurrencyCode());
+        self::assertNull($row->getTransaction());
+    }
+
+    private static function assertListPaymentMethodRow(mixed $row): void
+    {
+        self::assertInstanceOf(ListTransactions200ResponseInner::class, $row);
+        self::assertNull($row->getTransactionId());
+        self::assertNull($row->getResponseCode());
+
+        $transaction = $row->getTransaction();
+        self::assertInstanceOf(TransactionListPaymentMethodItemTransaction::class, $transaction);
+        self::assertSame('t-2', $transaction->getTransactionId());
+        self::assertInstanceOf(\DateTime::class, $transaction->getTransactionDate());
+        self::assertSame(1, $transaction->getTransactionStatus());
+        self::assertSame('Succeeded!', $transaction->getMessage());
+        self::assertSame('CreateCreditCard', $transaction->getTransactionType());
+
+        $paymentMethod = $transaction->getPaymentMethod();
+        self::assertInstanceOf(TransactionListPaymentMethod::class, $paymentMethod);
+        self::assertSame('pm-1', $paymentMethod->getPaymentMethodId());
+        self::assertSame('1111', $paymentMethod->getLastFourDigits());
+        self::assertSame('411111', $paymentMethod->getFirstSixDigits());
+        self::assertSame('VISA', $paymentMethod->getCardType());
     }
 }

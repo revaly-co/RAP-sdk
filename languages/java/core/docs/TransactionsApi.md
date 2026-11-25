@@ -355,11 +355,11 @@ ApiResponse<[**GetTransactionByMerchantTransactionId200Response**](GetTransactio
 
 ## listTransactions
 
-> List<TransactionListItem> listTransactions(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType)
+> List<ListTransactions200ResponseInner> listTransactions(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType)
 
 List transactions
 
-Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters. 
+Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters, ordered by transaction date.  Each item is a flat &#x60;TransactionListItem&#x60;, except a payment-method operation (create, update, redact or recache) with the detailed response type, which is a &#x60;TransactionListPaymentMethodItem&#x60;: its fields are wrapped in &#x60;transaction&#x60;. A page can hold fewer than &#x60;count&#x60; items. 
 
 ### Example
 
@@ -388,12 +388,12 @@ public class Example {
         Integer count = 20; // Integer | Number of transactions to return per page
         String order = "asc"; // String | Sort order for results. Default is asc.
         String sinceTransactionId = "06CQR5TMB800000G0011NCFRVY37A"; // String | Return transactions after this transaction ID (for pagination)
-        OffsetDateTime startDate = OffsetDateTime.parse("2024-09-12T00:00:00Z"); // OffsetDateTime | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
-        OffsetDateTime endDate = OffsetDateTime.parse("2024-09-13T00:00:00Z"); // OffsetDateTime | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
+        OffsetDateTime startDate = OffsetDateTime.parse("2024-09-12T00:00:00Z"); // OffsetDateTime | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before `endDate` (or before now when `endDate` is also omitted).
+        OffsetDateTime endDate = OffsetDateTime.parse("2024-09-13T00:00:00Z"); // OffsetDateTime | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so `2024-09-13T00:00:00Z` includes all of 13 September.
         Boolean completedOnly = false; // Boolean | Requests a list of transactions that have completed the approvals process. Default is false (all transactions).
-        String responseType = "detailed"; // String | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields. 
+        String responseType = "detailed"; // String | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields. 
         try {
-            List<TransactionListItem> result = apiInstance.listTransactions(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType);
+            List<ListTransactions200ResponseInner> result = apiInstance.listTransactions(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType);
             System.out.println(result);
         } catch (ApiException e) {
             System.err.println("Exception when calling TransactionsApi#listTransactions");
@@ -415,14 +415,14 @@ public class Example {
 | **count** | **Integer**| Number of transactions to return per page | [optional] [default to 20] |
 | **order** | **String**| Sort order for results. Default is asc. | [optional] [default to asc] [enum: asc, desc] |
 | **sinceTransactionId** | **String**| Return transactions after this transaction ID (for pagination) | [optional] |
-| **startDate** | **OffsetDateTime**| Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] |
-| **endDate** | **OffsetDateTime**| End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] |
+| **startDate** | **OffsetDateTime**| Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | [optional] |
+| **endDate** | **OffsetDateTime**| End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | [optional] |
 | **completedOnly** | **Boolean**| Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [optional] [default to false] |
-| **responseType** | **String**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed] [enum: detailed, simplified] |
+| **responseType** | **String**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed] [enum: detailed, simplified] |
 
 ### Return type
 
-[**List&lt;TransactionListItem&gt;**](TransactionListItem.md)
+[**List&lt;ListTransactions200ResponseInner&gt;**](ListTransactions200ResponseInner.md)
 
 
 ### Authorization
@@ -447,11 +447,11 @@ public class Example {
 
 ## listTransactionsWithHttpInfo
 
-> ApiResponse<List<TransactionListItem>> listTransactionsWithHttpInfo(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType)
+> ApiResponse<List<ListTransactions200ResponseInner>> listTransactionsWithHttpInfo(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType)
 
 List transactions
 
-Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters. 
+Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters, ordered by transaction date.  Each item is a flat &#x60;TransactionListItem&#x60;, except a payment-method operation (create, update, redact or recache) with the detailed response type, which is a &#x60;TransactionListPaymentMethodItem&#x60;: its fields are wrapped in &#x60;transaction&#x60;. A page can hold fewer than &#x60;count&#x60; items. 
 
 ### Example
 
@@ -481,12 +481,12 @@ public class Example {
         Integer count = 20; // Integer | Number of transactions to return per page
         String order = "asc"; // String | Sort order for results. Default is asc.
         String sinceTransactionId = "06CQR5TMB800000G0011NCFRVY37A"; // String | Return transactions after this transaction ID (for pagination)
-        OffsetDateTime startDate = OffsetDateTime.parse("2024-09-12T00:00:00Z"); // OffsetDateTime | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
-        OffsetDateTime endDate = OffsetDateTime.parse("2024-09-13T00:00:00Z"); // OffsetDateTime | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS.
+        OffsetDateTime startDate = OffsetDateTime.parse("2024-09-12T00:00:00Z"); // OffsetDateTime | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before `endDate` (or before now when `endDate` is also omitted).
+        OffsetDateTime endDate = OffsetDateTime.parse("2024-09-13T00:00:00Z"); // OffsetDateTime | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so `2024-09-13T00:00:00Z` includes all of 13 September.
         Boolean completedOnly = false; // Boolean | Requests a list of transactions that have completed the approvals process. Default is false (all transactions).
-        String responseType = "detailed"; // String | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields. 
+        String responseType = "detailed"; // String | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields. 
         try {
-            ApiResponse<List<TransactionListItem>> response = apiInstance.listTransactionsWithHttpInfo(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType);
+            ApiResponse<List<ListTransactions200ResponseInner>> response = apiInstance.listTransactionsWithHttpInfo(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType);
             System.out.println("Status code: " + response.getStatusCode());
             System.out.println("Response headers: " + response.getHeaders());
             System.out.println("Response body: " + response.getData());
@@ -510,14 +510,14 @@ public class Example {
 | **count** | **Integer**| Number of transactions to return per page | [optional] [default to 20] |
 | **order** | **String**| Sort order for results. Default is asc. | [optional] [default to asc] [enum: asc, desc] |
 | **sinceTransactionId** | **String**| Return transactions after this transaction ID (for pagination) | [optional] |
-| **startDate** | **OffsetDateTime**| Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] |
-| **endDate** | **OffsetDateTime**| End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional] |
+| **startDate** | **OffsetDateTime**| Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | [optional] |
+| **endDate** | **OffsetDateTime**| End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | [optional] |
 | **completedOnly** | **Boolean**| Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [optional] [default to false] |
-| **responseType** | **String**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed] [enum: detailed, simplified] |
+| **responseType** | **String**| Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed] [enum: detailed, simplified] |
 
 ### Return type
 
-ApiResponse<[**List&lt;TransactionListItem&gt;**](TransactionListItem.md)>
+ApiResponse<[**List&lt;ListTransactions200ResponseInner&gt;**](ListTransactions200ResponseInner.md)>
 
 
 ### Authorization

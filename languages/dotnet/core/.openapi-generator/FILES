@@ -19,6 +19,7 @@ docs/models/GatewayPaymentMethod.md
 docs/models/GetTransactionById200Response.md
 docs/models/GetTransactionByMerchantTransactionId200Response.md
 docs/models/InitiatedBy.md
+docs/models/ListTransactions200ResponseInner.md
 docs/models/NotifyContactInformation.md
 docs/models/NotifyData.md
 docs/models/NotifyRequest.md
@@ -56,6 +57,9 @@ docs/models/ThreeDSContext.md
 docs/models/TransactionGateway.md
 docs/models/TransactionGroupResponse.md
 docs/models/TransactionListItem.md
+docs/models/TransactionListPaymentMethod.md
+docs/models/TransactionListPaymentMethodItem.md
+docs/models/TransactionListPaymentMethodItemTransaction.md
 docs/models/TransactionResponse.md
 docs/models/TransactionResponseDetails.md
 docs/models/UpdatePaymentMethodRequest.md
@@ -102,6 +106,7 @@ src/Revaly.Sdk.Core/Model/GatewayPaymentMethod.cs
 src/Revaly.Sdk.Core/Model/GetTransactionById200Response.cs
 src/Revaly.Sdk.Core/Model/GetTransactionByMerchantTransactionId200Response.cs
 src/Revaly.Sdk.Core/Model/InitiatedBy.cs
+src/Revaly.Sdk.Core/Model/ListTransactions200ResponseInner.cs
 src/Revaly.Sdk.Core/Model/NotifyContactInformation.cs
 src/Revaly.Sdk.Core/Model/NotifyData.cs
 src/Revaly.Sdk.Core/Model/NotifyRequest.cs
@@ -139,6 +144,9 @@ src/Revaly.Sdk.Core/Model/ThreeDSContext.cs
 src/Revaly.Sdk.Core/Model/TransactionGateway.cs
 src/Revaly.Sdk.Core/Model/TransactionGroupResponse.cs
 src/Revaly.Sdk.Core/Model/TransactionListItem.cs
+src/Revaly.Sdk.Core/Model/TransactionListPaymentMethod.cs
+src/Revaly.Sdk.Core/Model/TransactionListPaymentMethodItem.cs
+src/Revaly.Sdk.Core/Model/TransactionListPaymentMethodItemTransaction.cs
 src/Revaly.Sdk.Core/Model/TransactionResponse.cs
 src/Revaly.Sdk.Core/Model/TransactionResponseDetails.cs
 src/Revaly.Sdk.Core/Model/UpdatePaymentMethodRequest.cs

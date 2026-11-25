@@ -6,13 +6,13 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **PaymentMethodType** | **string** | Type of payment method to create: - **creditCard**: Use raw credit card details that will be tokenized - **gatewayPaymentMethodId**: Use an existing token from a supported payment gateway  | 
 **CustomerId** | Pointer to **NullableString** | Unique identifier for the customer | [optional] 
-**PaymentMethod** | Pointer to [**PaymentMethod**](PaymentMethod.md) |  | [optional] 
+**PaymentMethod** | [**PaymentMethod**](PaymentMethod.md) |  | 
 
 ## Methods
 
 ### NewCreatePaymentMethodRequest
 
-`func NewCreatePaymentMethodRequest(paymentMethodType string, ) *CreatePaymentMethodRequest`
+`func NewCreatePaymentMethodRequest(paymentMethodType string, paymentMethod PaymentMethod, ) *CreatePaymentMethodRequest`
 
 NewCreatePaymentMethodRequest instantiates a new CreatePaymentMethodRequest object
 This constructor will assign default values to properties that have it defined,
@@ -101,11 +101,6 @@ and a boolean to check if the value has been set.
 
 SetPaymentMethod sets PaymentMethod field to given value.
 
-### HasPaymentMethod
-
-`func (o *CreatePaymentMethodRequest) HasPaymentMethod() bool`
-
-HasPaymentMethod returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

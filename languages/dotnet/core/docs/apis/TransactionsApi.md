@@ -100,11 +100,11 @@ Retrieve detailed information about a specific transaction by its merchant trans
 
 <a id="listtransactions"></a>
 # **ListTransactions**
-> List&lt;TransactionListItem&gt; ListTransactions (string xApiVersion = null, int count = null, string order = null, string sinceTransactionId = null, DateTime startDate = null, DateTime endDate = null, bool completedOnly = null, string responseType = null)
+> List&lt;ListTransactions200ResponseInner&gt; ListTransactions (string xApiVersion = null, int count = null, string order = null, string sinceTransactionId = null, DateTime startDate = null, DateTime endDate = null, bool completedOnly = null, string responseType = null)
 
 List transactions
 
-Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters. 
+Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters, ordered by transaction date.  Each item is a flat `TransactionListItem`, except a payment-method operation (create, update, redact or recache) with the detailed response type, which is a `TransactionListPaymentMethodItem`: its fields are wrapped in `transaction`. A page can hold fewer than `count` items. 
 
 
 ### Parameters
@@ -115,14 +115,14 @@ Retrieve a paginated list of transactions for the authenticated account.  This e
 | **count** | **int** | Number of transactions to return per page | [optional] [default to 20] |
 | **order** | **string** | Sort order for results. Default is asc. | [optional] [default to asc] |
 | **sinceTransactionId** | **string** | Return transactions after this transaction ID (for pagination) | [optional]  |
-| **startDate** | **DateTime** | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional]  |
-| **endDate** | **DateTime** | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [optional]  |
+| **startDate** | **DateTime** | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | [optional]  |
+| **endDate** | **DateTime** | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | [optional]  |
 | **completedOnly** | **bool** | Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [optional] [default to false] |
-| **responseType** | **string** | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed] |
+| **responseType** | **string** | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  | [optional] [default to detailed] |
 
 ### Return type
 
-[**List&lt;TransactionListItem&gt;**](TransactionListItem.md)
+[**List&lt;ListTransactions200ResponseInner&gt;**](ListTransactions200ResponseInner.md)
 
 ### Authorization
 
