@@ -184,11 +184,11 @@ example().catch(console.error);
 
 ## listTransactions
 
-> Array&lt;TransactionListItem&gt; listTransactions(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType)
+> Array&lt;ListTransactions200ResponseInner&gt; listTransactions(xApiVersion, count, order, sinceTransactionId, startDate, endDate, completedOnly, responseType)
 
 List transactions
 
-Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters. 
+Retrieve a paginated list of transactions for the authenticated account.  This endpoint returns transaction data with optional filtering and pagination support. Transactions are returned based on the specified order and count parameters, ordered by transaction date.  Each item is a flat &#x60;TransactionListItem&#x60;, except a payment-method operation (create, update, redact or recache) with the detailed response type, which is a &#x60;TransactionListPaymentMethodItem&#x60;: its fields are wrapped in &#x60;transaction&#x60;. A page can hold fewer than &#x60;count&#x60; items. 
 
 ### Example
 
@@ -218,13 +218,13 @@ async function example() {
     order: asc,
     // string | Return transactions after this transaction ID (for pagination) (optional)
     sinceTransactionId: 06CQR5TMB800000G0011NCFRVY37A,
-    // Date | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. (optional)
+    // Date | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before `endDate` (or before now when `endDate` is also omitted). (optional)
     startDate: 2024-09-12T00:00:00Z,
-    // Date | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. (optional)
+    // Date | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so `2024-09-13T00:00:00Z` includes all of 13 September. (optional)
     endDate: 2024-09-13T00:00:00Z,
     // boolean | Requests a list of transactions that have completed the approvals process. Default is false (all transactions). (optional)
     completedOnly: true,
-    // 'detailed' | 'simplified' | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  (optional)
+    // 'detailed' | 'simplified' | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  (optional)
     responseType: detailed,
   } satisfies ListTransactionsRequest;
 
@@ -249,14 +249,14 @@ example().catch(console.error);
 | **count** | `number` | Number of transactions to return per page | [Optional] [Defaults to `20`] |
 | **order** | `asc`, `desc` | Sort order for results. Default is asc. | [Optional] [Defaults to `&#39;asc&#39;`] [Enum: asc, desc] |
 | **sinceTransactionId** | `string` | Return transactions after this transaction ID (for pagination) | [Optional] [Defaults to `undefined`] |
-| **startDate** | `Date` | Start of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [Optional] [Defaults to `undefined`] |
-| **endDate** | `Date` | End of the date range for returned transactions. Format YYYY-MM-DDTHH:MM:SS. | [Optional] [Defaults to `undefined`] |
+| **startDate** | `Date` | Start of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range starts 90 days before &#x60;endDate&#x60; (or before now when &#x60;endDate&#x60; is also omitted). | [Optional] [Defaults to `undefined`] |
+| **endDate** | `Date` | End of the date range for returned transactions, inclusive. Format YYYY-MM-DDTHH:MM:SS. When omitted, the range ends now. A value whose UTC time is exactly midnight is read as the end of that UTC day, so &#x60;2024-09-13T00:00:00Z&#x60; includes all of 13 September. | [Optional] [Defaults to `undefined`] |
 | **completedOnly** | `boolean` | Requests a list of transactions that have completed the approvals process. Default is false (all transactions). | [Optional] [Defaults to `false`] |
-| **responseType** | `detailed`, `simplified` | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). detailed returns all available fields.  | [Optional] [Defaults to `&#39;detailed&#39;`] [Enum: detailed, simplified] |
+| **responseType** | `detailed`, `simplified` | Determines response verbosity. simplified returns limited fields (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). detailed returns all available fields.  | [Optional] [Defaults to `&#39;detailed&#39;`] [Enum: detailed, simplified] |
 
 ### Return type
 
-[**Array&lt;TransactionListItem&gt;**](TransactionListItem.md)
+[**Array&lt;ListTransactions200ResponseInner&gt;**](ListTransactions200ResponseInner.md)
 
 ### Authorization
 

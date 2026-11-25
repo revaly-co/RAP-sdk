@@ -6,7 +6,7 @@ Response to a notification request indicating processing status
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**success** | **bool** | Indicates whether the notification was processed successfully | [optional] 
+**success** | **bool** | Indicates whether the notification was processed successfully | 
 **message** | **str** | Human-readable message about the notification processing result | [optional] 
 
 ## Example

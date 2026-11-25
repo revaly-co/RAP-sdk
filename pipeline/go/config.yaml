@@ -1,12 +1,14 @@
 # Stage-2 generation config — Go core (normative flag set: ADR-SDK-023 table;
 # evidence: docs/generator-bakeoff.md §2/§A). Consumed by pipeline/generate.sh inside the
 # digest-pinned generator container; spec/output/template paths are supplied by the script.
-# NOTE: the bake-off's "stdlib-only" observation HOLDS again since 2026-08-27 — SC-408
-# B4 (spec v2.4.0) switched the lookup unions oneOf -> anyOf, the generator force-imports
-# gopkg.in/validator.v2 only into oneOf models, and the v2.4.0 spec carries none, so the
-# dependency is dropped from languages/go/go.mod + go.sum. (History: 2026-07-18 through
-# v0.5.x the two oneOf wrappers carried the import, never invoked — the model_oneof fork
-# below referenced it solely to keep the files compiling.)
+# NOTE: the bake-off's "stdlib-only" observation NO LONGER holds since 2026-11-25 — spec
+# v2.19.0 (SC-409) makes each listTransactions item a oneOf (ListTransactions200ResponseInner),
+# and the generator force-imports gopkg.in/validator.v2 into every oneOf model, so
+# languages/go/go.mod + go.sum require gopkg.in/validator.v2 v2.0.1 again. The import is
+# never invoked on the decode path: the model_oneof fork below references it solely to keep
+# the file compiling. (History: 2026-07-18 through v0.5.x the two lookup oneOf wrappers
+# carried the same import; SC-408 B4 / spec v2.4.0 switched those to anyOf on 2026-08-27,
+# and the dependency was dropped until v2.19.0.)
 # Maintained template surface (re-diff against the embedded originals on any generator
 # upgrade — upgrades are ADR-SDK-023 revisions):
 #   * templates/partial_header.mustache (generated-code banner);

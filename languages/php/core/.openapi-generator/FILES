@@ -20,6 +20,7 @@ docs/Model/GatewayPaymentMethod.md
 docs/Model/GetTransactionById200Response.md
 docs/Model/GetTransactionByMerchantTransactionId200Response.md
 docs/Model/InitiatedBy.md
+docs/Model/ListTransactions200ResponseInner.md
 docs/Model/NotifyContactInformation.md
 docs/Model/NotifyData.md
 docs/Model/NotifyRequest.md
@@ -57,6 +58,9 @@ docs/Model/ThreeDSContext.md
 docs/Model/TransactionGateway.md
 docs/Model/TransactionGroupResponse.md
 docs/Model/TransactionListItem.md
+docs/Model/TransactionListPaymentMethod.md
+docs/Model/TransactionListPaymentMethodItem.md
+docs/Model/TransactionListPaymentMethodItemTransaction.md
 docs/Model/TransactionResponse.md
 docs/Model/TransactionResponseDetails.md
 docs/Model/UpdatePaymentMethodRequest.md
@@ -84,6 +88,7 @@ lib/Model/GatewayPaymentMethod.php
 lib/Model/GetTransactionById200Response.php
 lib/Model/GetTransactionByMerchantTransactionId200Response.php
 lib/Model/InitiatedBy.php
+lib/Model/ListTransactions200ResponseInner.php
 lib/Model/ModelInterface.php
 lib/Model/NotifyContactInformation.php
 lib/Model/NotifyData.php
@@ -122,6 +127,9 @@ lib/Model/ThreeDSContext.php
 lib/Model/TransactionGateway.php
 lib/Model/TransactionGroupResponse.php
 lib/Model/TransactionListItem.php
+lib/Model/TransactionListPaymentMethod.php
+lib/Model/TransactionListPaymentMethodItem.php
+lib/Model/TransactionListPaymentMethodItemTransaction.php
 lib/Model/TransactionResponse.php
 lib/Model/TransactionResponseDetails.php
 lib/Model/UpdatePaymentMethodRequest.php

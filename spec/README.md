@@ -9,12 +9,12 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.18.0+834f684`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.18.0%2B834f684) (platform repo) |
-| Spec version | 2.18.0 |
-| Source commit | `834f68460f46750caef19592f68e2527a885455e` |
-| Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `df67b5f945bfae2c04b321168bf0040bb3d3fbd19e5c30953da03affc448a559` |
-| Pinned | 2026-11-21 |
+| Release | [`spec/v2.19.0+ec71a82`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.19.0%2Bec71a82) (platform repo) |
+| Spec version | 2.19.0 |
+| Source commit | `ec71a824de502d4d1cdb1cef1b5ff34e1d9f428c` |
+| Gates | lint ✅ · bundle ✅ · breaking allowlisted (two spec-accuracy entries) · contract suite ✅ (see [`provenance.json`](provenance.json)) |
+| sha256 (`openapi.bundled.yaml`) | `43f47ef26d5696173c8bb5b0e5e9ef251cbc6975599e26a4fd1071b4ca5e84a1` |
+| Pinned | 2026-11-25 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
@@ -82,7 +82,19 @@ PR #477); the optional, nullable `transactionLinkId` (Mastercard Transaction Lin
 and on the `StoredCredentialResponse` block of `TransactionResponse` (v2.18.0, SC-934, Backbone
 PR #495). No SDK refuses a longer `transactionLinkId` before sending (ADR-SDK-034), so its
 release gate holds no language back from this pin; both response fields are additive; no
-error-code, verdict or status change).
+error-code, verdict or status change; released 2026-11-23 as v0.10.0, PHP v0.11.0) →
+`v2.19.0+ec71a82` (2026-11-25, SC-409 — Backbone PR #512, the remainder of the SC-408
+spec-drift audit; the bundle loses 25 lines and gains 261: each `listTransactions` item is now
+a `oneOf` of the flat `TransactionListItem`, which gains `required: [transactionId]`, and the
+new `TransactionListPaymentMethodItem`, a detailed payment-method operation whose fields are
+wrapped in `transaction` and whose payment method is the new flat `TransactionListPaymentMethod`;
+the generator emits the union as `ListTransactions200ResponseInner`, so the `listTransactions`
+return type changes in all six SDKs; `CreatePaymentMethodRequest.paymentMethod` becomes required
+(the platform already answered 400 without it; ADR-SDK-034 §2 keeps generated required-field
+checks); `NotifyResponse.success` becomes required and the `/notify` per-event requirements are
+documented; the list's deprecated top-level `paymentMethod`, default window, `endDate` rule and
+`transactionType` names are documented. The breaking gate reports `allowlisted` for the
+required `paymentMethod` and the list item `oneOf`; no error-code, verdict or status change).
 
 Thirteen published artifacts were never consumed and are superseded rather than skipped:
 `v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), `v2.8.0+95bd397`,
@@ -102,7 +114,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.18.0+834f684" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.19.0+ec71a82" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

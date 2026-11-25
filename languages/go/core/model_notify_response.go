@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.18.0
+API version: 2.19.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -16,6 +16,8 @@ package core
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the NotifyResponse type satisfies the MappedNullable interface at compile time
@@ -24,17 +26,20 @@ var _ MappedNullable = &NotifyResponse{}
 // NotifyResponse Response to a notification request indicating processing status
 type NotifyResponse struct {
 	// Indicates whether the notification was processed successfully
-	Success *bool `json:"success,omitempty"`
+	Success bool `json:"success"`
 	// Human-readable message about the notification processing result
 	Message NullableString `json:"message,omitempty"`
 }
+
+type _NotifyResponse NotifyResponse
 
 // NewNotifyResponse instantiates a new NotifyResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewNotifyResponse() *NotifyResponse {
+func NewNotifyResponse(success bool) *NotifyResponse {
 	this := NotifyResponse{}
+	this.Success = success
 	return &this
 }
 
@@ -46,36 +51,28 @@ func NewNotifyResponseWithDefaults() *NotifyResponse {
 	return &this
 }
 
-// GetSuccess returns the Success field value if set, zero value otherwise.
+// GetSuccess returns the Success field value
 func (o *NotifyResponse) GetSuccess() bool {
-	if o == nil || IsNil(o.Success) {
+	if o == nil {
 		var ret bool
 		return ret
 	}
-	return *o.Success
+
+	return o.Success
 }
 
-// GetSuccessOk returns a tuple with the Success field value if set, nil otherwise
+// GetSuccessOk returns a tuple with the Success field value
 // and a boolean to check if the value has been set.
 func (o *NotifyResponse) GetSuccessOk() (*bool, bool) {
-	if o == nil || IsNil(o.Success) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Success, true
+	return &o.Success, true
 }
 
-// HasSuccess returns a boolean if a field has been set.
-func (o *NotifyResponse) HasSuccess() bool {
-	if o != nil && !IsNil(o.Success) {
-		return true
-	}
-
-	return false
-}
-
-// SetSuccess gets a reference to the given bool and assigns it to the Success field.
+// SetSuccess sets field value
 func (o *NotifyResponse) SetSuccess(v bool) {
-	o.Success = &v
+	o.Success = v
 }
 
 // GetMessage returns the Message field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -130,13 +127,48 @@ func (o NotifyResponse) MarshalJSON() ([]byte, error) {
 
 func (o NotifyResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Success) {
-		toSerialize["success"] = o.Success
-	}
+	toSerialize["success"] = o.Success
 	if o.Message.IsSet() {
 		toSerialize["message"] = o.Message.Get()
 	}
 	return toSerialize, nil
+}
+
+func (o *NotifyResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"success",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varNotifyResponse := _NotifyResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varNotifyResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = NotifyResponse(varNotifyResponse)
+
+	return err
 }
 
 type NullableNotifyResponse struct {

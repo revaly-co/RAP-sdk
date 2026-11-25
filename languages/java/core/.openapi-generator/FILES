@@ -15,6 +15,7 @@ docs/GatewayPaymentMethod.md
 docs/GetTransactionById200Response.md
 docs/GetTransactionByMerchantTransactionId200Response.md
 docs/InitiatedBy.md
+docs/ListTransactions200ResponseInner.md
 docs/NotifyApi.md
 docs/NotifyContactInformation.md
 docs/NotifyData.md
@@ -55,6 +56,9 @@ docs/ThreeDSContext.md
 docs/TransactionGateway.md
 docs/TransactionGroupResponse.md
 docs/TransactionListItem.md
+docs/TransactionListPaymentMethod.md
+docs/TransactionListPaymentMethodItem.md
+docs/TransactionListPaymentMethodItemTransaction.md
 docs/TransactionResponse.md
 docs/TransactionResponseDetails.md
 docs/TransactionsApi.md
@@ -93,6 +97,7 @@ src/main/java/co/revaly/sdk/core/model/GatewayPaymentMethod.java
 src/main/java/co/revaly/sdk/core/model/GetTransactionById200Response.java
 src/main/java/co/revaly/sdk/core/model/GetTransactionByMerchantTransactionId200Response.java
 src/main/java/co/revaly/sdk/core/model/InitiatedBy.java
+src/main/java/co/revaly/sdk/core/model/ListTransactions200ResponseInner.java
 src/main/java/co/revaly/sdk/core/model/NotifyContactInformation.java
 src/main/java/co/revaly/sdk/core/model/NotifyData.java
 src/main/java/co/revaly/sdk/core/model/NotifyRequest.java
@@ -130,6 +135,9 @@ src/main/java/co/revaly/sdk/core/model/ThreeDSContext.java
 src/main/java/co/revaly/sdk/core/model/TransactionGateway.java
 src/main/java/co/revaly/sdk/core/model/TransactionGroupResponse.java
 src/main/java/co/revaly/sdk/core/model/TransactionListItem.java
+src/main/java/co/revaly/sdk/core/model/TransactionListPaymentMethod.java
+src/main/java/co/revaly/sdk/core/model/TransactionListPaymentMethodItem.java
+src/main/java/co/revaly/sdk/core/model/TransactionListPaymentMethodItemTransaction.java
 src/main/java/co/revaly/sdk/core/model/TransactionResponse.java
 src/main/java/co/revaly/sdk/core/model/TransactionResponseDetails.java
 src/main/java/co/revaly/sdk/core/model/UpdatePaymentMethodRequest.java

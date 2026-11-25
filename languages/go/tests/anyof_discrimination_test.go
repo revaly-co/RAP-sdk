@@ -1,4 +1,4 @@
-// anyOf wrapper discrimination — pins the forked model_anyof.mustache behavior
+// anyOf / oneOf wrapper discrimination — pins the forked model_anyof.mustache behavior
 // (pipeline/go/templates/, recorded in pipeline/go/config.yaml) on the two
 // transaction-lookup response wrappers (spec v2.4.0, SC-408 B4: the unions
 // switched oneOf -> anyOf with branches ordered most-specific first).
@@ -12,11 +12,21 @@
 // declaration order wins), then a lenient recognized-field-coverage pass so
 // additive platform fields (minor releases) keep binding. These tests pin all
 // of that.
+//
+// The list-item cases pin the model_oneof fork on ListTransactions200ResponseInner
+// (spec v2.19.0: listTransactions items became oneOf TransactionListItem |
+// TransactionListPaymentMethodItem): a flat row and a payment-method row each
+// bind their own branch, with and without an additive top-level field, and a
+// whole list array decodes item by item. The payment-method row carries the
+// lastFourDigits / firstSixDigits pattern constraints — the shape that matched
+// zero schemas under the stock validator.v2 pass the fork replaced.
 package tests
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	core "github.com/revaly-co/rap-sdk/languages/go/core"
 )
@@ -162,5 +172,126 @@ func TestGetActualInstanceAndMarshalRoundTrip(t *testing.T) {
 	var re core.GetTransactionByMerchantTransactionId200Response
 	if err := re.UnmarshalJSON(out); err != nil || re.TransactionResponse == nil {
 		t.Fatalf("round-trip: err=%v", err)
+	}
+}
+
+const listFlatPayload = `{"transactionId":"t-1","transactionDate":"2025-09-13T03:19:54.86Z","transactionStatus":1,"responseCode":"10000","transactionType":"Charge","amount":2500,"currencyCode":"USD"}`
+
+const listPaymentMethodPayload = `{"transaction":{"transactionId":"t-2","transactionDate":"2025-12-02T14:44:42.209Z","transactionStatus":1,"message":"Succeeded!","responseCode":"10000","transactionType":"CreateCreditCard","paymentMethod":{"paymentMethodId":"pm-1","lastFourDigits":"1111","firstSixDigits":"411111","cardType":"VISA","storageState":"Cached","issuerIdentificationNumber":"41111111"}}}`
+
+func boundListItem(t *testing.T, payload string) *core.ListTransactions200ResponseInner {
+	t.Helper()
+	var w core.ListTransactions200ResponseInner
+	if err := w.UnmarshalJSON([]byte(payload)); err != nil {
+		t.Fatalf("UnmarshalJSON failed: %v (payload %s)", err, payload)
+	}
+	return &w
+}
+
+func TestListItemBindsTransactionListItem(t *testing.T) {
+	w := boundListItem(t, listFlatPayload)
+	if w.TransactionListItem == nil {
+		t.Fatal("expected TransactionListItem branch")
+	}
+	if w.TransactionListPaymentMethodItem != nil {
+		t.Fatal("TransactionListPaymentMethodItem branch must stay nil")
+	}
+	item := w.TransactionListItem
+	if got := item.GetTransactionId(); got != "t-1" {
+		t.Fatalf("transactionId = %q, want t-1", got)
+	}
+	if got, want := item.GetTransactionDate(), time.Date(2025, 9, 13, 3, 19, 54, 860000000, time.UTC); !got.Equal(want) {
+		t.Fatalf("transactionDate = %v, want %v", got, want)
+	}
+	if got := item.GetTransactionStatus(); got != 1 {
+		t.Fatalf("transactionStatus = %d, want 1", got)
+	}
+	if got := item.GetResponseCode(); got != "10000" {
+		t.Fatalf("responseCode = %q, want 10000", got)
+	}
+	if got := item.GetTransactionType(); got != "Charge" {
+		t.Fatalf("transactionType = %q, want Charge", got)
+	}
+	if got := item.GetAmount(); got != 2500 {
+		t.Fatalf("amount = %d, want 2500", got)
+	}
+	if got := item.GetCurrencyCode(); got != "USD" {
+		t.Fatalf("currencyCode = %q, want USD", got)
+	}
+}
+
+// The payment-method row carries pattern-constrained card fields
+// (lastFourDigits ^[0-9]{4}$, firstSixDigits ^[0-9]{6}$) — the validator.v2
+// shape that once matched zero schemas — and must still bind by names.
+func TestListItemBindsTransactionListPaymentMethodItem(t *testing.T) {
+	w := boundListItem(t, listPaymentMethodPayload)
+	if w.TransactionListPaymentMethodItem == nil {
+		t.Fatal("expected TransactionListPaymentMethodItem branch")
+	}
+	if w.TransactionListItem != nil {
+		t.Fatal("TransactionListItem branch must stay nil")
+	}
+	tx := w.TransactionListPaymentMethodItem.GetTransaction()
+	if got := tx.GetTransactionId(); got != "t-2" {
+		t.Fatalf("transaction.transactionId = %q, want t-2", got)
+	}
+	if got := tx.GetTransactionType(); got != "CreateCreditCard" {
+		t.Fatalf("transaction.transactionType = %q, want CreateCreditCard", got)
+	}
+	pm := tx.GetPaymentMethod()
+	if got := pm.GetLastFourDigits(); got != "1111" {
+		t.Fatalf("transaction.paymentMethod.lastFourDigits = %q, want 1111", got)
+	}
+	if got := pm.GetFirstSixDigits(); got != "411111" {
+		t.Fatalf("transaction.paymentMethod.firstSixDigits = %q, want 411111", got)
+	}
+	if got := pm.GetCardType(); got != "VISA" {
+		t.Fatalf("transaction.paymentMethod.cardType = %q, want VISA", got)
+	}
+}
+
+func TestListItemAdditiveFieldStillBindsTransactionListItem(t *testing.T) {
+	w := boundListItem(t, withAdditive(listFlatPayload, "futureAdditiveField", `"x"`))
+	if w.TransactionListItem == nil {
+		t.Fatal("expected TransactionListItem branch despite additive field")
+	}
+	if w.TransactionListPaymentMethodItem != nil {
+		t.Fatal("TransactionListPaymentMethodItem branch must stay nil")
+	}
+	if got := w.TransactionListItem.GetTransactionId(); got != "t-1" {
+		t.Fatalf("transactionId = %q, want t-1", got)
+	}
+}
+
+func TestListItemAdditiveFieldStillBindsTransactionListPaymentMethodItem(t *testing.T) {
+	w := boundListItem(t, withAdditive(listPaymentMethodPayload, "futureAdditiveField", `"x"`))
+	if w.TransactionListPaymentMethodItem == nil {
+		t.Fatal("expected TransactionListPaymentMethodItem branch despite additive field")
+	}
+	if w.TransactionListItem != nil {
+		t.Fatal("TransactionListItem branch must stay nil")
+	}
+	tx := w.TransactionListPaymentMethodItem.GetTransaction()
+	pm := tx.GetPaymentMethod()
+	if got := pm.GetLastFourDigits(); got != "1111" {
+		t.Fatalf("transaction.paymentMethod.lastFourDigits = %q, want 1111", got)
+	}
+}
+
+// A listTransactions 200 body is a JSON array of wrappers; each item binds its
+// own branch independently.
+func TestListTransactionsArrayBindsEachItem(t *testing.T) {
+	var items []core.ListTransactions200ResponseInner
+	if err := json.Unmarshal([]byte("["+listFlatPayload+","+listPaymentMethodPayload+"]"), &items); err != nil {
+		t.Fatalf("json.Unmarshal failed: %v", err)
+	}
+	if n := len(items); n != 2 {
+		t.Fatalf("items len = %d, want 2", n)
+	}
+	if items[0].TransactionListItem == nil || items[0].TransactionListPaymentMethodItem != nil {
+		t.Fatalf("items[0] = %T, want *core.TransactionListItem", items[0].GetActualInstance())
+	}
+	if items[1].TransactionListPaymentMethodItem == nil || items[1].TransactionListItem != nil {
+		t.Fatalf("items[1] = %T, want *core.TransactionListPaymentMethodItem", items[1].GetActualInstance())
 	}
 }

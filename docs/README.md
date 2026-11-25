@@ -52,6 +52,59 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-11-25)
+
+- **Spec re-pinned v2.18.0 → v2.19.0+ec71a82 (fourteenth pin, SC-409).** One platform artifact,
+  published 2026-11-24 (Backbone PR #512), finishes the SC-408 spec-drift audit. What merchants
+  gain: `listTransactions` now describes the body production returns. Until this pin, a
+  payment-method operation in detailed mode (create, update, redact or recache) arrived inside a
+  `transaction` envelope that the generated `TransactionListItem` could not read, so an SDK
+  caller got an empty or wrong object for that row. Each item is now a `oneOf` of the flat
+  `TransactionListItem` (which gains `required: [transactionId]`) and the new
+  `TransactionListPaymentMethodItem`, whose payment method is the new flat
+  `TransactionListPaymentMethod`. The generator emits the union as
+  `ListTransactions200ResponseInner` in all six cores, so **the `listTransactions` return type
+  changes in every SDK** (a source-breaking change for any caller that names the item type; no
+  SDK client called the endpoint in the 30 days to 2026-11-24, per SC-409). Also in the pin:
+  `CreatePaymentMethodRequest.paymentMethod` becomes required (the platform already answered 400
+  without it; ADR-SDK-034 §2 keeps generated required-field checks, and the .NET and Go
+  constructors now take it as a required argument); `NotifyResponse.success` becomes required;
+  the `/notify` per-event requirements, the list's 90-day default window, the midnight-UTC
+  `endDate` rule and the `transactionType` names are documented; the list row's top-level
+  `paymentMethod`, which the platform never sends, is deprecated. The platform's breaking gate
+  reports `allowlisted` for the two spec-accuracy entries, which stage 1 accepts. No error code,
+  verdict or status changes, and `listTransactions` is not on the reconcile path, so the
+  failover classification is unaffected. **Go is no longer stdlib-only:** the generator
+  force-imports `gopkg.in/validator.v2` into every `oneOf` model, so `go.mod` requires v2.0.1
+  again (the same version the lookup wrappers carried through v0.5.x; never invoked on the
+  decode path, `pipeline/go/config.yaml`). Each language gains tests pinning that a flat row and
+  a payment-method row bind their own branch, with and without an unknown additive field, and
+  that a mixed page decodes row by row. The regeneration touched 507 files: 48 new (the wrapper,
+  the two new models and the inline `transaction` model, with their docs, ×6), none deleted, and
+  84 of the 459 modified files change beyond the version banner (counting the generator file
+  lists, READMEs and package indexes); a second generation run changed nothing. Verified locally with the stage-3 commands: .NET 89/89 (four CS0612 warnings, the two
+  known core ones plus two from the deprecated `TransactionListItem.PaymentMethod`); Java
+  105/105 (Temurin 21 container, spotless clean); PHP 118 tests, 373 assertions, strict PSR-4
+  clean (PHP 8.3 container); TypeScript strict core `tsc`, typecheck and lint clean, 137/137;
+  Python 172/172, ruff clean (Python 3.12 container); Go `go mod verify`, build, vet, tests (78
+  including subtests), gofmt and staticcheck ok. Known edges (follow-up, not decided here): a
+  payment-method row that breaks its own schema is handled differently per language, because
+  the generated read-side checks differ. The case that matters: Python returns such a row as an
+  empty `TransactionListItem` instead of an error when its card digits break their pattern or
+  its `transactionStatus` is missing or not a number, and Java does the same when
+  `transactionStatus` is not a number or `transactionDate` has no UTC offset. In both, the flat
+  branch accepts any object and the `oneOf` forks bind a single lenient match without their
+  strict and coverage pass (pinned by one test in each language, to be flipped by a fork
+  revision under ADR-SDK-023 if one is chosen). Otherwise .NET raises for a missing or
+  non-numeric `transactionStatus`, Go raises for those and for an offset-less `transactionDate`,
+  PHP raises only for broken card digits, and every other case returns the payment-method row
+  with the value as sent (PHP coerces a non-numeric status to 0; TypeScript reads an offset-less
+  date in the host's time zone). That is no worse than v0.10.0, where every payment-method row
+  came back empty, and Backbone normalizes the card digits before it stores a payment-method row
+  (ADR 021, SC-879), so only a row stored before 2026-11-05 can carry malformed digits. The PHP
+  core's merged union model also reports `valid() === false` on a flat row (nothing in the
+  runtime calls `valid()`).
+
 ## Status snapshot (2026-11-21)
 
 - **Spec re-pinned v2.16.0 → v2.18.0+834f684 (thirteenth pin, SC-934).** Three platform

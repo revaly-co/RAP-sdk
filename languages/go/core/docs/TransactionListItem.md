@@ -4,16 +4,16 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**TransactionId** | Pointer to **NullableString** | Unique transaction identifier | [optional] 
+**TransactionId** | **NullableString** | Unique transaction identifier | 
 **TransactionDate** | Pointer to **time.Time** | Date and time when the transaction was processed (ISO 8601) | [optional] 
 **TransactionStatus** | Pointer to **int32** | Current status of the transaction (1 &#x3D; Approved, 2 &#x3D; Declined, 3 &#x3D; Error) | [optional] 
 **ResponseCode** | Pointer to **NullableString** | Response code from the processing result | [optional] 
 **Message** | Pointer to **NullableString** | Human-readable message about the transaction result | [optional] 
-**TransactionType** | Pointer to **NullableString** | Type of transaction performed | [optional] 
+**TransactionType** | Pointer to **NullableString** | Type of transaction performed: Charge, PreAuth (an authorization), Capture, Void, Refund, RefundedPayment, SuccessfulPayment (a payment recorded through &#x60;/notify&#x60;), Verify, or, for a payment-method operation, CreateCreditCard, CreateGatewayPaymentMethod, UpdatePaymentMethod, RedactPaymentMethod or RecachePaymentMethod | [optional] 
 **RetryDate** | Pointer to **NullableTime** | Scheduled retry date, if applicable | [optional] 
 **Amount** | Pointer to **NullableInt64** | Transaction amount in smallest currency unit (e.g., cents for USD) | [optional] 
 **InitialMerchantTransactionId** | Pointer to **NullableString** | The merchant transaction ID of the initial transaction in the recovery chain | [optional] 
-**StorageState** | Pointer to **NullableString** | Payment method storage state at the time of transaction | [optional] 
+**StorageState** | Pointer to **NullableString** | Storage state of the payment method. Returned on rows Olympus records (simplified and detailed); rows Backbone records report it in &#x60;paymentMethodStorageState&#x60; instead. | [optional] 
 **CompletionStatus** | Pointer to **NullableString** | Recovery completion status of the transaction (e.g., RecoverySuccessful, RecoveryDeclined) | [optional] 
 **GatewaySpecificResponseFields** | Pointer to **map[string]interface{}** | Gateway-specific response fields returned directly by the payment processor. Keyed by gateway type (e.g., chase_payment_tech, stripe_payment_intents, worldpay_litle).  | [optional] 
 **GatewaySpecificFields** | Pointer to **map[string]interface{}** | Gateway-specific request fields sent to the payment processor. Keyed by gateway type (e.g., chase_payment_tech, stripe_payment_intents, worldpay_litle).  | [optional] 
@@ -28,7 +28,7 @@ Name | Type | Description | Notes
 **OrderId** | Pointer to **NullableString** | Order identifier from the merchant system | [optional] 
 **StatementDescriptor** | Pointer to **NullableString** | Merchant-supplied text intended for the customer&#39;s card or bank statement, echoed back bounded to 255 characters. Adapted per gateway (length/charset) at submission and never blocks the charge. | [optional] 
 **PaymentMethodId** | Pointer to **NullableString** | Payment method identifier used for the transaction | [optional] 
-**PaymentMethodStorageState** | Pointer to **NullableString** | Storage state of the payment method | [optional] 
+**PaymentMethodStorageState** | Pointer to **NullableString** | Storage state of the payment method. Returned on detailed rows and on simplified rows Backbone records; a simplified row Olympus records reports it in &#x60;storageState&#x60; instead. | [optional] 
 **PaymentMethodType** | Pointer to **NullableString** | Type of payment method used | [optional] 
 **PaymentMethodMerchantAccountReferenceId** | Pointer to **NullableString** | Merchant account reference ID associated with the payment method | [optional] 
 **VaultToken** | Pointer to **NullableString** | Vault token for the credential this transaction ran against, reported flat on the row alongside the other &#x60;paymentMethod*&#x60; fields. Present only on rows that ran against a vault credential — omitted, not null or empty, on every other row. In practice this means the detailed response type: simplified rows carry no payment-method data to report a token from. | [optional] 
@@ -36,13 +36,13 @@ Name | Type | Description | Notes
 **ErrorDetail** | Pointer to **NullableString** | Detailed error message from the gateway response | [optional] 
 **AvsCode** | Pointer to **NullableString** | Address Verification System result code from the gateway | [optional] 
 **Gateway** | Pointer to [**NullableTransactionGateway**](TransactionGateway.md) |  | [optional] 
-**PaymentMethod** | Pointer to [**NullablePaymentMethodResponse**](PaymentMethodResponse.md) |  | [optional] 
+**PaymentMethod** | Pointer to [**NullablePaymentMethodResponse**](PaymentMethodResponse.md) | Not returned on a flat row. The payment method of a payment-method operation is reported in &#x60;transaction.paymentMethod&#x60; of a &#x60;TransactionListPaymentMethodItem&#x60;. | [optional] 
 
 ## Methods
 
 ### NewTransactionListItem
 
-`func NewTransactionListItem() *TransactionListItem`
+`func NewTransactionListItem(transactionId NullableString, ) *TransactionListItem`
 
 NewTransactionListItem instantiates a new TransactionListItem object
 This constructor will assign default values to properties that have it defined,
@@ -76,11 +76,6 @@ and a boolean to check if the value has been set.
 
 SetTransactionId sets TransactionId field to given value.
 
-### HasTransactionId
-
-`func (o *TransactionListItem) HasTransactionId() bool`
-
-HasTransactionId returns a boolean if a field has been set.
 
 ### SetTransactionIdNil
 

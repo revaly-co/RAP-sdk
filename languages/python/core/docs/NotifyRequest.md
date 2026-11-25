@@ -6,7 +6,7 @@ Notification request to inform Revaly of specific business events
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**event_type** | **str** | Type of business event being reported. The event type determines how Revaly processes the notification.  - **recordPayment**: Record a payment transaction - **recordRefund**: Record a refund transaction - **recordChargeback**: Record a chargeback on a transaction - **endOutreach**: End an outreach campaign for a customer - **updateCustomerData**: Update customer information and contact details  | 
+**event_type** | **str** | Type of business event being reported. The event type determines how Revaly processes the notification.  - **recordPayment**: Record a payment transaction - **recordRefund**: Record a refund transaction. Requires &#x60;data.transactionId&#x60;. - **recordChargeback**: Record a chargeback on a transaction. Requires &#x60;data.transactionId&#x60;. - **endOutreach**: End an outreach campaign for a customer. Requires &#x60;data.customerId&#x60;. - **updateCustomerData**: Update customer information and contact details. Requires &#x60;data.customerId&#x60;.  | 
 **data** | [**NotifyData**](NotifyData.md) |  | [optional] 
 
 ## Example

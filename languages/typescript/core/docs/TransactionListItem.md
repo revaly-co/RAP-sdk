@@ -1,7 +1,7 @@
 
 # TransactionListItem
 
-Transaction item returned from the list transactions endpoint. In simplified mode, only a subset of fields is returned (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). In detailed mode, additional fields are returned (excludes customVariable1-5 and initialTransactionId). 
+A flat row of the list transactions endpoint: every payment operation, and every row in simplified mode. A payment-method operation (create, update, redact or recache) in detailed mode is returned as a `TransactionListPaymentMethodItem` instead. A field with no value is omitted. A row is recorded by Backbone or by Olympus, whichever records the transaction first; where the two differ, the field\'s description says so. In simplified mode, only a subset of fields is returned (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). In detailed mode, additional fields are returned (excludes customVariable1-5 and initialTransactionId). 
 
 ## Properties
 
@@ -57,7 +57,7 @@ const example = {
   "retryDate": null,
   "amount": 100,
   "initialMerchantTransactionId": dac0680e-87fd-4416-a8ee-019adf85d861,
-  "storageState": null,
+  "storageState": Stored,
   "completionStatus": RecoverySuccessful,
   "gatewaySpecificResponseFields": {"chase_payment_tech":{"HostRespCode":"100","HostAVSRespCode":"I3","MITReceivedTransactionID":null,"trace_number":null,"proc_status":"0"}},
   "gatewaySpecificFields": {"chase_payment_tech":{"mit_msg_type":"CREC"}},

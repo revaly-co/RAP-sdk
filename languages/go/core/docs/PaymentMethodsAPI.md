@@ -34,7 +34,7 @@ import (
 )
 
 func main() {
-	createPaymentMethodRequest := *openapiclient.NewCreatePaymentMethodRequest("creditCard") // CreatePaymentMethodRequest | 
+	createPaymentMethodRequest := *openapiclient.NewCreatePaymentMethodRequest("creditCard", *openapiclient.NewPaymentMethod()) // CreatePaymentMethodRequest | 
 	xApiVersion := "2.1" // string | Selects the RAP API version for this request. New integrations should pin `2.1` (identical to `2.0` today; future refinements land there). Omit to use the base version (`2.0`). A value naming an unsupported version — including an empty value — returns HTTP 400; if the header is sent, it must name a supported version. See the API description for the full version policy. (optional) (default to "2.0")
 
 	configuration := openapiclient.NewConfiguration()

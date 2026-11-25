@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.18.0
+API version: 2.19.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -29,7 +29,7 @@ type CreatePaymentMethodRequest struct {
 	PaymentMethodType string `json:"paymentMethodType"`
 	// Unique identifier for the customer
 	CustomerId NullableString `json:"customerId,omitempty"`
-	PaymentMethod *PaymentMethod `json:"paymentMethod,omitempty"`
+	PaymentMethod PaymentMethod `json:"paymentMethod"`
 }
 
 type _CreatePaymentMethodRequest CreatePaymentMethodRequest
@@ -38,9 +38,10 @@ type _CreatePaymentMethodRequest CreatePaymentMethodRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreatePaymentMethodRequest(paymentMethodType string) *CreatePaymentMethodRequest {
+func NewCreatePaymentMethodRequest(paymentMethodType string, paymentMethod PaymentMethod) *CreatePaymentMethodRequest {
 	this := CreatePaymentMethodRequest{}
 	this.PaymentMethodType = paymentMethodType
+	this.PaymentMethod = paymentMethod
 	return &this
 }
 
@@ -118,36 +119,28 @@ func (o *CreatePaymentMethodRequest) UnsetCustomerId() {
 	o.CustomerId.Unset()
 }
 
-// GetPaymentMethod returns the PaymentMethod field value if set, zero value otherwise.
+// GetPaymentMethod returns the PaymentMethod field value
 func (o *CreatePaymentMethodRequest) GetPaymentMethod() PaymentMethod {
-	if o == nil || IsNil(o.PaymentMethod) {
+	if o == nil {
 		var ret PaymentMethod
 		return ret
 	}
-	return *o.PaymentMethod
+
+	return o.PaymentMethod
 }
 
-// GetPaymentMethodOk returns a tuple with the PaymentMethod field value if set, nil otherwise
+// GetPaymentMethodOk returns a tuple with the PaymentMethod field value
 // and a boolean to check if the value has been set.
 func (o *CreatePaymentMethodRequest) GetPaymentMethodOk() (*PaymentMethod, bool) {
-	if o == nil || IsNil(o.PaymentMethod) {
+	if o == nil {
 		return nil, false
 	}
-	return o.PaymentMethod, true
+	return &o.PaymentMethod, true
 }
 
-// HasPaymentMethod returns a boolean if a field has been set.
-func (o *CreatePaymentMethodRequest) HasPaymentMethod() bool {
-	if o != nil && !IsNil(o.PaymentMethod) {
-		return true
-	}
-
-	return false
-}
-
-// SetPaymentMethod gets a reference to the given PaymentMethod and assigns it to the PaymentMethod field.
+// SetPaymentMethod sets field value
 func (o *CreatePaymentMethodRequest) SetPaymentMethod(v PaymentMethod) {
-	o.PaymentMethod = &v
+	o.PaymentMethod = v
 }
 
 func (o CreatePaymentMethodRequest) MarshalJSON() ([]byte, error) {
@@ -164,9 +157,7 @@ func (o CreatePaymentMethodRequest) ToMap() (map[string]interface{}, error) {
 	if o.CustomerId.IsSet() {
 		toSerialize["customerId"] = o.CustomerId.Get()
 	}
-	if !IsNil(o.PaymentMethod) {
-		toSerialize["paymentMethod"] = o.PaymentMethod
-	}
+	toSerialize["paymentMethod"] = o.PaymentMethod
 	return toSerialize, nil
 }
 
@@ -176,6 +167,7 @@ func (o *CreatePaymentMethodRequest) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"paymentMethodType",
+		"paymentMethod",
 	}
 
 	allProperties := make(map[string]interface{})

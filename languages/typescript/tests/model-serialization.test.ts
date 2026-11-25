@@ -3,16 +3,22 @@ import {
     ErrorResponseFromJSON,
     GetTransactionById200ResponseFromJSON,
     GetTransactionByMerchantTransactionId200ResponseFromJSON,
+    instanceOfTransactionListItem,
+    instanceOfTransactionListPaymentMethodItem,
+    ListTransactions200ResponseInnerFromJSON,
     PaymentRequestToJSON,
+    RapMockTransport,
     StoredCredentialReasonTypeFromJSON,
     TransactionResponseFromJSON,
 } from '../runtime/src/index';
 import type {
     PendingTransactionResponse,
     TransactionGroupResponse,
+    TransactionListItem,
+    TransactionListPaymentMethodItem,
     TransactionResponse,
 } from '../runtime/src/index';
-import { syntheticCardPayment } from './support/TestClients';
+import { mockedClient, syntheticCardPayment } from './support/TestClients';
 
 /**
  * Pinned probes of the generated core's serialization behaviour — the per-language trap
@@ -73,6 +79,112 @@ describe('union wrapper discrimination (fixed by the modelGeneric template fork)
 
         expect(bound.transactions).toHaveLength(1);
         expect(bound.transactions?.[0]?.transactionId).toBe('txn-synthetic-1');
+    });
+});
+
+const flatListRow = {
+    transactionId: 't-1',
+    transactionDate: '2025-09-13T03:19:54.86Z',
+    transactionStatus: 1,
+    responseCode: '10000',
+    transactionType: 'Charge',
+    amount: 2500,
+    currencyCode: 'USD',
+};
+
+const paymentMethodListRow = {
+    transaction: {
+        transactionId: 't-2',
+        transactionDate: '2025-12-02T14:44:42.209Z',
+        transactionStatus: 1,
+        message: 'Succeeded!',
+        responseCode: '10000',
+        transactionType: 'CreateCreditCard',
+        paymentMethod: {
+            paymentMethodId: 'pm-1',
+            lastFourDigits: '1111',
+            firstSixDigits: '411111',
+            cardType: 'VISA',
+            storageState: 'Cached',
+            issuerIdentificationNumber: '41111111',
+        },
+    },
+};
+
+describe('listTransactions item wrapper (oneOf TransactionListItem | TransactionListPaymentMethodItem)', () => {
+    // Stock typescript-fetch oneOf: the first branch whose required-field instanceOf
+    // guard matches wins (TransactionListItem requires `transactionId`,
+    // TransactionListPaymentMethodItem requires `transaction`); no branch matching
+    // yields `{}`.
+    test('a flat row binds TransactionListItem with its fields readable', () => {
+        const bound = ListTransactions200ResponseInnerFromJSON(flatListRow);
+
+        expect(instanceOfTransactionListItem(bound)).toBe(true);
+        expect(instanceOfTransactionListPaymentMethodItem(bound)).toBe(false);
+        const item = bound as TransactionListItem;
+        expect(item.transactionId).toBe('t-1');
+        expect(item.transactionDate?.toISOString()).toBe('2025-09-13T03:19:54.860Z');
+        expect(item.transactionStatus).toBe(1);
+        expect(item.responseCode).toBe('10000');
+        expect(item.transactionType).toBe('Charge');
+        expect(item.amount).toBe(2500);
+        expect(item.currencyCode).toBe('USD');
+    });
+
+    test('a payment-method row binds TransactionListPaymentMethodItem with the nested card readable', () => {
+        const bound = ListTransactions200ResponseInnerFromJSON(paymentMethodListRow);
+
+        expect(instanceOfTransactionListPaymentMethodItem(bound)).toBe(true);
+        expect(instanceOfTransactionListItem(bound)).toBe(false);
+        const item = bound as TransactionListPaymentMethodItem;
+        expect(item.transaction.transactionId).toBe('t-2');
+        expect(item.transaction.transactionDate.toISOString()).toBe('2025-12-02T14:44:42.209Z');
+        expect(item.transaction.transactionType).toBe('CreateCreditCard');
+        expect(item.transaction.paymentMethod?.paymentMethodId).toBe('pm-1');
+        expect(item.transaction.paymentMethod?.lastFourDigits).toBe('1111');
+        expect(item.transaction.paymentMethod?.firstSixDigits).toBe('411111');
+    });
+
+    test('a flat row with an unknown additive field still binds TransactionListItem', () => {
+        const bound = ListTransactions200ResponseInnerFromJSON({ ...flatListRow, futureAdditiveField: 'x' });
+
+        expect(instanceOfTransactionListItem(bound)).toBe(true);
+        expect(instanceOfTransactionListPaymentMethodItem(bound)).toBe(false);
+        expect((bound as TransactionListItem).transactionId).toBe('t-1');
+    });
+
+    test('a payment-method row with an unknown additive field still binds TransactionListPaymentMethodItem', () => {
+        const bound = ListTransactions200ResponseInnerFromJSON({ ...paymentMethodListRow, futureAdditiveField: 'x' });
+
+        expect(instanceOfTransactionListPaymentMethodItem(bound)).toBe(true);
+        expect(instanceOfTransactionListItem(bound)).toBe(false);
+        expect((bound as TransactionListPaymentMethodItem).transaction.paymentMethod?.lastFourDigits).toBe('1111');
+    });
+
+    test('a row of neither shape does not masquerade as TransactionListItem: it maps to {}', () => {
+        const bound = ListTransactions200ResponseInnerFromJSON({
+            transactionDate: '2025-09-13T03:19:54.86Z',
+            transactionStatus: 1,
+            responseCode: '10000',
+        });
+
+        expect(instanceOfTransactionListItem(bound)).toBe(false);
+        expect(instanceOfTransactionListPaymentMethodItem(bound)).toBe(false);
+        expect(bound).toEqual({});
+    });
+
+    test('listTransactions through the mock transport decodes each row to its own branch', async () => {
+        const mock = new RapMockTransport();
+        mock.stub('GET', '/transactions').returns(200, JSON.stringify([flatListRow, paymentMethodListRow]));
+
+        const rows = await mockedClient(mock).transactions.listTransactions();
+
+        expect(rows).toHaveLength(2);
+        expect(instanceOfTransactionListItem(rows[0] as object)).toBe(true);
+        expect((rows[0] as TransactionListItem).transactionId).toBe('t-1');
+        expect(instanceOfTransactionListPaymentMethodItem(rows[1] as object)).toBe(true);
+        expect(instanceOfTransactionListItem(rows[1] as object)).toBe(false);
+        expect((rows[1] as TransactionListPaymentMethodItem).transaction.paymentMethod?.lastFourDigits).toBe('1111');
     });
 });
 

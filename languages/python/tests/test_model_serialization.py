@@ -5,15 +5,21 @@ oneOf -> anyOf with branches ordered most-specific first): discrimination is
 the STOCK anyOf template — ``from_json`` tries branches in declaration order
 and pydantic enforces each branch's required members while ignoring unknown
 fields, so binding is names-only and additive server-side schema evolution
-keeps binding. No python template fork is needed for anyOf (the forked
-``model_oneof.mustache`` stays for any future oneOf; the v2.4.0 spec has
-none). The runtime keeps reading raw bodies everywhere (repo rule 5) — these
-pins serve merchants calling the generated lookups directly.
+keeps binding. No python template fork is needed for anyOf.
+
+oneOf wrapper (spec v2.19.0, SC-409: each ``listTransactions`` item is a
+flat ``TransactionListItem`` or a ``TransactionListPaymentMethodItem``): the
+forked ``model_oneof.mustache`` discriminates it — strict names-and-aliases
+pass first, then the recognized-field coverage tiebreak, so additive
+server-side fields keep binding. The runtime keeps reading raw bodies
+everywhere (repo rule 5) — these pins serve merchants calling the generated
+lookups and list directly.
 """
 
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -25,16 +31,51 @@ from revaly_sdk_core.models.get_transaction_by_id200_response import (
 from revaly_sdk_core.models.get_transaction_by_merchant_transaction_id200_response import (
     GetTransactionByMerchantTransactionId200Response,
 )
+from revaly_sdk_core.models.list_transactions200_response_inner import (
+    ListTransactions200ResponseInner,
+)
 from revaly_sdk_core.models.payment_request import PaymentRequest
 from revaly_sdk_core.models.pending_transaction_response import PendingTransactionResponse
 from revaly_sdk_core.models.stored_credential import StoredCredential
 from revaly_sdk_core.models.transaction_group_response import TransactionGroupResponse
+from revaly_sdk_core.models.transaction_list_item import TransactionListItem
+from revaly_sdk_core.models.transaction_list_payment_method_item import (
+    TransactionListPaymentMethodItem,
+)
 from revaly_sdk_core.models.transaction_response import TransactionResponse
 from revaly_sdk.testing import synthetic_data
 
 TERMINAL_BODY = synthetic_data.transaction(1)
 GROUP_BODY = synthetic_data.transaction_group()
 PENDING_BODY = synthetic_data.pending()
+
+LIST_FLAT_ROW = {
+    "transactionId": "t-1",
+    "transactionDate": "2025-09-13T03:19:54.86Z",
+    "transactionStatus": 1,
+    "responseCode": "10000",
+    "transactionType": "Charge",
+    "amount": 2500,
+    "currencyCode": "USD",
+}
+LIST_PAYMENT_METHOD_ROW = {
+    "transaction": {
+        "transactionId": "t-2",
+        "transactionDate": "2025-12-02T14:44:42.209Z",
+        "transactionStatus": 1,
+        "message": "Succeeded!",
+        "responseCode": "10000",
+        "transactionType": "CreateCreditCard",
+        "paymentMethod": {
+            "paymentMethodId": "pm-1",
+            "lastFourDigits": "1111",
+            "firstSixDigits": "411111",
+            "cardType": "VISA",
+            "storageState": "Cached",
+            "issuerIdentificationNumber": "41111111",
+        },
+    }
+}
 
 
 # ---- anyOf wrapper discrimination (stock template, ordered branches) ---------
@@ -145,6 +186,81 @@ def test_branch_models_bind_directly_from_raw():
     transaction = TransactionResponse.from_json(TERMINAL_BODY)
     assert transaction.transaction_status == 1
     assert transaction.merchant_transaction_id == synthetic_data.DEFAULT_MERCHANT_TRANSACTION_ID
+
+
+# ---- oneOf list-row wrapper (spec v2.19.0: forked model_oneof template) ------
+
+
+def test_list_row_wrapper_binds_flat_item():
+    wrapper = ListTransactions200ResponseInner.from_json(json.dumps(LIST_FLAT_ROW))
+    assert isinstance(wrapper.actual_instance, TransactionListItem)
+    row = wrapper.actual_instance
+    assert row.transaction_id == "t-1"
+    assert row.transaction_date == datetime(2025, 9, 13, 3, 19, 54, 860000, tzinfo=timezone.utc)
+    assert row.transaction_status == 1
+    assert row.response_code == "10000"
+    assert row.transaction_type == "Charge"
+    assert row.amount == 2500
+    assert row.currency_code == "USD"
+
+
+def test_list_row_wrapper_binds_payment_method_item():
+    # The flat branch lenient-matches this body too (its one required member,
+    # transactionId, is nullable and from_dict passes it as None); the strict
+    # names pass picks the branch that recognizes `transaction`.
+    wrapper = ListTransactions200ResponseInner.from_json(json.dumps(LIST_PAYMENT_METHOD_ROW))
+    assert isinstance(wrapper.actual_instance, TransactionListPaymentMethodItem)
+    transaction = wrapper.actual_instance.transaction
+    assert transaction.transaction_id == "t-2"
+    assert transaction.transaction_type == "CreateCreditCard"
+    assert transaction.payment_method is not None
+    assert transaction.payment_method.last_four_digits == "1111"
+
+
+@pytest.mark.parametrize(
+    ("row", "branch_cls"),
+    [
+        (LIST_FLAT_ROW, TransactionListItem),
+        (LIST_PAYMENT_METHOD_ROW, TransactionListPaymentMethodItem),
+    ],
+    ids=["flat", "payment_method"],
+)
+def test_list_row_wrapper_binds_additive_row(row, branch_cls):
+    # A server newer than the pinned spec (additive top-level field) must keep
+    # binding. A flat row binds by elimination (the payment-method branch requires
+    # `transaction`); a payment-method row lenient-matches both branches, neither
+    # strict-matches the unknown name, and the coverage tiebreak decides (names only).
+    body = json.dumps({**row, "futureAdditiveField": "x"})
+    wrapper = ListTransactions200ResponseInner.from_json(body)
+    assert isinstance(wrapper.actual_instance, branch_cls)
+
+
+def test_list_transactions_call_decodes_each_row_branch(mock_transport, client):
+    mock_transport.list_transactions().returns(
+        200, json.dumps([LIST_FLAT_ROW, LIST_PAYMENT_METHOD_ROW])
+    )
+    rows = client.transactions.list_transactions()
+    assert [type(row.actual_instance) for row in rows] == [
+        TransactionListItem,
+        TransactionListPaymentMethodItem,
+    ]
+
+
+def test_list_row_wrapper_binds_malformed_payment_method_row_as_empty_flat_item():
+    # KNOWN EDGE, pinned so a fork revision flips it deliberately (precedent:
+    # ADR-SDK-034 §3). A payment-method row whose card digits break their
+    # pattern fails the payment-method branch; the flat branch lenient-matches
+    # any object (its one required member is nullable), and the fork binds a
+    # single lenient match without the strict/coverage pass — so the row comes
+    # back as an EMPTY TransactionListItem, not an error. PHP raises here
+    # instead; .NET, Go, Java and TypeScript return the payment-method row
+    # with the value as sent. Backbone normalizes the digits before it stores a
+    # row (ADR 021, SC-879), so only a row stored before 2026-11-05 can do this.
+    row = json.loads(json.dumps(LIST_PAYMENT_METHOD_ROW))
+    row["transaction"]["paymentMethod"]["lastFourDigits"] = ""
+    wrapper = ListTransactions200ResponseInner.from_json(json.dumps(row))
+    assert isinstance(wrapper.actual_instance, TransactionListItem)
+    assert wrapper.actual_instance.transaction_id is None
 
 
 # ---- §A3: closed standalone enums on response models -------------------------

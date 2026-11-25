@@ -10,7 +10,7 @@ Request to create a new payment method
 |------------ | ------------- | ------------- | -------------|
 |**paymentMethodType** | [**PaymentMethodTypeEnum**](#PaymentMethodTypeEnum) | Type of payment method to create: - **creditCard**: Use raw credit card details that will be tokenized - **gatewayPaymentMethodId**: Use an existing token from a supported payment gateway  |  |
 |**customerId** | **String** | Unique identifier for the customer |  [optional] |
-|**paymentMethod** | [**PaymentMethod**](PaymentMethod.md) |  |  [optional] |
+|**paymentMethod** | [**PaymentMethod**](PaymentMethod.md) |  |  |
 
 
 

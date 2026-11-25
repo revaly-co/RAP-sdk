@@ -2,25 +2,48 @@ package co.revaly.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.revaly.sdk.core.ApiClient;
 import co.revaly.sdk.core.model.GetTransactionByMerchantTransactionId200Response;
+import co.revaly.sdk.core.model.ListTransactions200ResponseInner;
 import co.revaly.sdk.core.model.PaymentRequest;
 import co.revaly.sdk.core.model.PendingTransactionResponse;
+import co.revaly.sdk.core.model.TransactionListItem;
+import co.revaly.sdk.core.model.TransactionListPaymentMethodItem;
 import co.revaly.sdk.core.model.TransactionResponse;
 import co.revaly.sdk.testing.SyntheticData;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
  * Core-serialization probes for the two cross-language generator traps found on the dotnet runtime
  * (optional-enum write crash; anyOf/oneOf response binding), pinned here as java regression facts.
  * The oneOf discrimination defect is FIXED by the oneof_model.mustache template fork — the wrapper
- * tests below pin the forked behaviour (strict pass, coverage tiebreak, both wrappers).
+ * tests below pin the forked behaviour (strict pass, coverage tiebreak, all three wrappers).
  */
 class ModelSerializationTests {
+
+    // GET /transactions row shapes (spec v2.19.0): the flat TransactionListItem and the
+    // nested TransactionListPaymentMethodItem. Synthetic values only (ADR-SDK-020).
+    private static final String FLAT_ROW =
+            "{\"transactionId\":\"t-1\",\"transactionDate\":\"2025-09-13T03:19:54.86Z\","
+                    + "\"transactionStatus\":1,\"responseCode\":\"10000\","
+                    + "\"transactionType\":\"Charge\",\"amount\":2500,\"currencyCode\":\"USD\"}";
+    private static final String PAYMENT_METHOD_ROW =
+            "{\"transaction\":{\"transactionId\":\"t-2\","
+                    + "\"transactionDate\":\"2025-12-02T14:44:42.209Z\",\"transactionStatus\":1,"
+                    + "\"message\":\"Succeeded!\",\"responseCode\":\"10000\","
+                    + "\"transactionType\":\"CreateCreditCard\",\"paymentMethod\":{"
+                    + "\"paymentMethodId\":\"pm-1\",\"lastFourDigits\":\"1111\","
+                    + "\"firstSixDigits\":\"411111\",\"cardType\":\"VISA\","
+                    + "\"storageState\":\"Cached\",\"issuerIdentificationNumber\":\"41111111\"}}}";
 
     private final ObjectMapper mapper = ApiClient.createDefaultObjectMapper();
 
@@ -115,6 +138,103 @@ class ModelSerializationTests {
                         co.revaly.sdk.core.model.GetTransactionById200Response.class);
 
         assertEquals(1, wrapper.getTransactionResponse().getTransactionStatus());
+    }
+
+    @Test
+    void listItemWrapperDiscriminatesFlatRows() throws Exception {
+        // Same forked deserializer, third wrapper: the GET /transactions array items.
+        ListTransactions200ResponseInner wrapper =
+                mapper.readValue(FLAT_ROW, ListTransactions200ResponseInner.class);
+
+        TransactionListItem row =
+                assertInstanceOf(TransactionListItem.class, wrapper.getActualInstance());
+        assertEquals("t-1", row.getTransactionId());
+        assertEquals(
+                Instant.parse("2025-09-13T03:19:54.86Z"), row.getTransactionDate().toInstant());
+        assertEquals(1, row.getTransactionStatus());
+        assertEquals("10000", row.getResponseCode());
+        assertEquals("Charge", row.getTransactionType());
+        assertEquals(2500L, row.getAmount());
+        assertEquals("USD", row.getCurrencyCode());
+    }
+
+    @Test
+    void listItemWrapperDiscriminatesPaymentMethodRows() throws Exception {
+        ListTransactions200ResponseInner wrapper =
+                mapper.readValue(PAYMENT_METHOD_ROW, ListTransactions200ResponseInner.class);
+
+        TransactionListPaymentMethodItem row =
+                assertInstanceOf(
+                        TransactionListPaymentMethodItem.class, wrapper.getActualInstance());
+        assertEquals("t-2", row.getTransaction().getTransactionId());
+        assertEquals(1, row.getTransaction().getTransactionStatus());
+        assertEquals("CreateCreditCard", row.getTransaction().getTransactionType());
+        assertEquals("1111", row.getTransaction().getPaymentMethod().getLastFourDigits());
+    }
+
+    @Test
+    void listItemWrapperSurvivesAdditiveFieldsOnFlatRows() throws Exception {
+        // Both strict attempts fail; the coverage tiebreak must still bind the flat branch.
+        String flatPlusUnknown = FLAT_ROW.replaceFirst("\\{", "{\"futureAdditiveField\":\"x\",");
+
+        ListTransactions200ResponseInner wrapper =
+                mapper.readValue(flatPlusUnknown, ListTransactions200ResponseInner.class);
+
+        TransactionListItem row =
+                assertInstanceOf(TransactionListItem.class, wrapper.getActualInstance());
+        assertEquals("t-1", row.getTransactionId());
+    }
+
+    @Test
+    void listItemWrapperSurvivesAdditiveFieldsOnPaymentMethodRows() throws Exception {
+        String paymentMethodPlusUnknown =
+                PAYMENT_METHOD_ROW.replaceFirst("\\{", "{\"futureAdditiveField\":\"x\",");
+
+        ListTransactions200ResponseInner wrapper =
+                mapper.readValue(paymentMethodPlusUnknown, ListTransactions200ResponseInner.class);
+
+        TransactionListPaymentMethodItem row =
+                assertInstanceOf(
+                        TransactionListPaymentMethodItem.class, wrapper.getActualInstance());
+        assertEquals("1111", row.getTransaction().getPaymentMethod().getLastFourDigits());
+    }
+
+    @Test
+    void listTransactionsArrayDecodesEachRowToItsBranch() throws Exception {
+        // The generated listTransactions decodes its 200 body with exactly this TypeReference.
+        List<ListTransactions200ResponseInner> rows =
+                mapper.readValue(
+                        "[" + FLAT_ROW + "," + PAYMENT_METHOD_ROW + "]",
+                        new TypeReference<List<ListTransactions200ResponseInner>>() {});
+
+        assertEquals(2, rows.size());
+        TransactionListItem flat =
+                assertInstanceOf(TransactionListItem.class, rows.get(0).getActualInstance());
+        TransactionListPaymentMethodItem nested =
+                assertInstanceOf(
+                        TransactionListPaymentMethodItem.class, rows.get(1).getActualInstance());
+        assertEquals("t-1", flat.getTransactionId());
+        assertEquals("t-2", nested.getTransaction().getTransactionId());
+    }
+
+    @Test
+    void listItemWrapperBindsAMalformedPaymentMethodRowAsAnEmptyFlatRow() throws Exception {
+        // KNOWN EDGE, pinned so a fork revision flips it deliberately (precedent: ADR-SDK-034
+        // §3). A payment-method row the nested branch cannot decode (here a non-numeric
+        // transactionStatus) leaves the flat branch as the only lenient match — it accepts any
+        // object, because its one required member is nullable and not enforced on read — and
+        // the fork binds a single lenient match without the strict/coverage pass. The row
+        // comes back as an EMPTY TransactionListItem, not an error; .NET and Go raise instead.
+        String malformed =
+                PAYMENT_METHOD_ROW.replace(
+                        "\"transactionStatus\":1", "\"transactionStatus\":\"x\"");
+
+        ListTransactions200ResponseInner wrapper =
+                mapper.readValue(malformed, ListTransactions200ResponseInner.class);
+
+        TransactionListItem row =
+                assertInstanceOf(TransactionListItem.class, wrapper.getActualInstance());
+        assertNull(row.getTransactionId());
     }
 
     @Test

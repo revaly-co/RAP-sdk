@@ -3,7 +3,7 @@ Revaly
 
 Payment processing API for transaction and payment method management.  ## API Versioning  RAP supports an explicit, selectable API version so you can build against a stable, pinned contract while existing integrations keep working unchanged.  - **How to select a version:** send the `X-Api-Version` request header   (e.g. `X-Api-Version: 2.0`). The version lives in the header — request   URLs do not change. - **Default when omitted:** requests without the header (or with an   unrecognised header name) bind to the **base version `2.0`**, which is the   current contract. Existing integrations therefore continue unchanged. - **Unsupported versions:** a header naming a version that does not exist   returns **HTTP 400** with a structured error listing the supported   versions — a request is never silently bound to a different contract.   This includes an **empty or whitespace value**: if the `X-Api-Version`   header is present, it must name a supported version. Only a fully   absent header binds to the default. - **Supported versions** are advertised via the `api-supported-versions`   header on every response from the versioned API endpoints (payments,   payment methods, transactions, notify). Currently: `2.0`, `2.1`. - **Which version to use:** new integrations should pin **`2.1`**. It is   behaviourally identical to `2.0` today, and it is where future contract   refinements will land — pinning it now means you never migrate the   header. `2.0` is the frozen launch contract and remains the binding for   requests that send no version header.  ## Request tracing  Every API response — success and error alike — carries an `X-Correlation-ID` header. Send your own value (any non-empty string) and it is echoed back verbatim; omit it and the platform generates one. Quote the id when contacting support: it joins the request directly to platform telemetry. Treat it as an opaque string. 
 
-API version: 2.18.0
+API version: 2.19.0
 
 RAP SDK generated core — DO NOT EDIT (ADR-SDK-001; CI regeneration-diff enforced).
 Regenerate only via pipeline/generate.sh: spec input pinned by spec/pin.yaml
@@ -17,15 +17,17 @@ package core
 import (
 	"encoding/json"
 	"time"
+	"bytes"
+	"fmt"
 )
 
 // checks if the TransactionListItem type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &TransactionListItem{}
 
-// TransactionListItem Transaction item returned from the list transactions endpoint. In simplified mode, only a subset of fields is returned (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState, completionStatus). In detailed mode, additional fields are returned (excludes customVariable1-5 and initialTransactionId). 
+// TransactionListItem A flat row of the list transactions endpoint: every payment operation, and every row in simplified mode. A payment-method operation (create, update, redact or recache) in detailed mode is returned as a `TransactionListPaymentMethodItem` instead. A field with no value is omitted. A row is recorded by Backbone or by Olympus, whichever records the transaction first; where the two differ, the field's description says so. In simplified mode, only a subset of fields is returned (transactionId, transactionDate, transactionStatus, responseCode, message, transactionType, retryDate, amount, initialMerchantTransactionId, paymentMethodStorageState or storageState, completionStatus). In detailed mode, additional fields are returned (excludes customVariable1-5 and initialTransactionId). 
 type TransactionListItem struct {
 	// Unique transaction identifier
-	TransactionId NullableString `json:"transactionId,omitempty"`
+	TransactionId NullableString `json:"transactionId"`
 	// Date and time when the transaction was processed (ISO 8601)
 	TransactionDate *time.Time `json:"transactionDate,omitempty"`
 	// Current status of the transaction (1 = Approved, 2 = Declined, 3 = Error)
@@ -34,7 +36,7 @@ type TransactionListItem struct {
 	ResponseCode NullableString `json:"responseCode,omitempty"`
 	// Human-readable message about the transaction result
 	Message NullableString `json:"message,omitempty"`
-	// Type of transaction performed
+	// Type of transaction performed: Charge, PreAuth (an authorization), Capture, Void, Refund, RefundedPayment, SuccessfulPayment (a payment recorded through `/notify`), Verify, or, for a payment-method operation, CreateCreditCard, CreateGatewayPaymentMethod, UpdatePaymentMethod, RedactPaymentMethod or RecachePaymentMethod
 	TransactionType NullableString `json:"transactionType,omitempty"`
 	// Scheduled retry date, if applicable
 	RetryDate NullableTime `json:"retryDate,omitempty"`
@@ -42,7 +44,7 @@ type TransactionListItem struct {
 	Amount NullableInt64 `json:"amount,omitempty"`
 	// The merchant transaction ID of the initial transaction in the recovery chain
 	InitialMerchantTransactionId NullableString `json:"initialMerchantTransactionId,omitempty"`
-	// Payment method storage state at the time of transaction
+	// Storage state of the payment method. Returned on rows Olympus records (simplified and detailed); rows Backbone records report it in `paymentMethodStorageState` instead.
 	StorageState NullableString `json:"storageState,omitempty"`
 	// Recovery completion status of the transaction (e.g., RecoverySuccessful, RecoveryDeclined)
 	CompletionStatus NullableString `json:"completionStatus,omitempty"`
@@ -72,7 +74,7 @@ type TransactionListItem struct {
 	StatementDescriptor NullableString `json:"statementDescriptor,omitempty"`
 	// Payment method identifier used for the transaction
 	PaymentMethodId NullableString `json:"paymentMethodId,omitempty"`
-	// Storage state of the payment method
+	// Storage state of the payment method. Returned on detailed rows and on simplified rows Backbone records; a simplified row Olympus records reports it in `storageState` instead.
 	PaymentMethodStorageState NullableString `json:"paymentMethodStorageState,omitempty"`
 	// Type of payment method used
 	PaymentMethodType NullableString `json:"paymentMethodType,omitempty"`
@@ -87,15 +89,20 @@ type TransactionListItem struct {
 	// Address Verification System result code from the gateway
 	AvsCode NullableString `json:"avsCode,omitempty"`
 	Gateway NullableTransactionGateway `json:"gateway,omitempty"`
+	// Not returned on a flat row. The payment method of a payment-method operation is reported in `transaction.paymentMethod` of a `TransactionListPaymentMethodItem`.
+	// Deprecated
 	PaymentMethod NullablePaymentMethodResponse `json:"paymentMethod,omitempty"`
 }
+
+type _TransactionListItem TransactionListItem
 
 // NewTransactionListItem instantiates a new TransactionListItem object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewTransactionListItem() *TransactionListItem {
+func NewTransactionListItem(transactionId NullableString) *TransactionListItem {
 	this := TransactionListItem{}
+	this.TransactionId = transactionId
 	return &this
 }
 
@@ -107,16 +114,18 @@ func NewTransactionListItemWithDefaults() *TransactionListItem {
 	return &this
 }
 
-// GetTransactionId returns the TransactionId field value if set, zero value otherwise (both if not set or set to explicit null).
+// GetTransactionId returns the TransactionId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *TransactionListItem) GetTransactionId() string {
-	if o == nil || IsNil(o.TransactionId.Get()) {
+	if o == nil || o.TransactionId.Get() == nil {
 		var ret string
 		return ret
 	}
+
 	return *o.TransactionId.Get()
 }
 
-// GetTransactionIdOk returns a tuple with the TransactionId field value if set, nil otherwise
+// GetTransactionIdOk returns a tuple with the TransactionId field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *TransactionListItem) GetTransactionIdOk() (*string, bool) {
@@ -126,27 +135,9 @@ func (o *TransactionListItem) GetTransactionIdOk() (*string, bool) {
 	return o.TransactionId.Get(), o.TransactionId.IsSet()
 }
 
-// HasTransactionId returns a boolean if a field has been set.
-func (o *TransactionListItem) HasTransactionId() bool {
-	if o != nil && o.TransactionId.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetTransactionId gets a reference to the given NullableString and assigns it to the TransactionId field.
+// SetTransactionId sets field value
 func (o *TransactionListItem) SetTransactionId(v string) {
 	o.TransactionId.Set(&v)
-}
-// SetTransactionIdNil sets the value for TransactionId to be an explicit nil
-func (o *TransactionListItem) SetTransactionIdNil() {
-	o.TransactionId.Set(nil)
-}
-
-// UnsetTransactionId ensures that no value is present for TransactionId, not even an explicit nil
-func (o *TransactionListItem) UnsetTransactionId() {
-	o.TransactionId.Unset()
 }
 
 // GetTransactionDate returns the TransactionDate field value if set, zero value otherwise.
@@ -1414,6 +1405,7 @@ func (o *TransactionListItem) UnsetGateway() {
 }
 
 // GetPaymentMethod returns the PaymentMethod field value if set, zero value otherwise (both if not set or set to explicit null).
+// Deprecated
 func (o *TransactionListItem) GetPaymentMethod() PaymentMethodResponse {
 	if o == nil || IsNil(o.PaymentMethod.Get()) {
 		var ret PaymentMethodResponse
@@ -1425,6 +1417,7 @@ func (o *TransactionListItem) GetPaymentMethod() PaymentMethodResponse {
 // GetPaymentMethodOk returns a tuple with the PaymentMethod field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
+// Deprecated
 func (o *TransactionListItem) GetPaymentMethodOk() (*PaymentMethodResponse, bool) {
 	if o == nil {
 		return nil, false
@@ -1442,6 +1435,7 @@ func (o *TransactionListItem) HasPaymentMethod() bool {
 }
 
 // SetPaymentMethod gets a reference to the given NullablePaymentMethodResponse and assigns it to the PaymentMethod field.
+// Deprecated
 func (o *TransactionListItem) SetPaymentMethod(v PaymentMethodResponse) {
 	o.PaymentMethod.Set(&v)
 }
@@ -1465,9 +1459,7 @@ func (o TransactionListItem) MarshalJSON() ([]byte, error) {
 
 func (o TransactionListItem) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if o.TransactionId.IsSet() {
-		toSerialize["transactionId"] = o.TransactionId.Get()
-	}
+	toSerialize["transactionId"] = o.TransactionId.Get()
 	if !IsNil(o.TransactionDate) {
 		toSerialize["transactionDate"] = o.TransactionDate
 	}
@@ -1565,6 +1557,43 @@ func (o TransactionListItem) ToMap() (map[string]interface{}, error) {
 		toSerialize["paymentMethod"] = o.PaymentMethod.Get()
 	}
 	return toSerialize, nil
+}
+
+func (o *TransactionListItem) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"transactionId",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varTransactionListItem := _TransactionListItem{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varTransactionListItem)
+
+	if err != nil {
+		return err
+	}
+
+	*o = TransactionListItem(varTransactionListItem)
+
+	return err
 }
 
 type NullableTransactionListItem struct {

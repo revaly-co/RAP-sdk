@@ -2,7 +2,7 @@
 
 Revaly
 
-- API version: 2.18.0
+- API version: 2.19.0
 
 - Generator version: 7.23.0
 
@@ -200,6 +200,7 @@ Class | Method | HTTP request | Description
  - [GetTransactionById200Response](docs/GetTransactionById200Response.md)
  - [GetTransactionByMerchantTransactionId200Response](docs/GetTransactionByMerchantTransactionId200Response.md)
  - [InitiatedBy](docs/InitiatedBy.md)
+ - [ListTransactions200ResponseInner](docs/ListTransactions200ResponseInner.md)
  - [NotifyContactInformation](docs/NotifyContactInformation.md)
  - [NotifyData](docs/NotifyData.md)
  - [NotifyRequest](docs/NotifyRequest.md)
@@ -237,6 +238,9 @@ Class | Method | HTTP request | Description
  - [TransactionGateway](docs/TransactionGateway.md)
  - [TransactionGroupResponse](docs/TransactionGroupResponse.md)
  - [TransactionListItem](docs/TransactionListItem.md)
+ - [TransactionListPaymentMethod](docs/TransactionListPaymentMethod.md)
+ - [TransactionListPaymentMethodItem](docs/TransactionListPaymentMethodItem.md)
+ - [TransactionListPaymentMethodItemTransaction](docs/TransactionListPaymentMethodItemTransaction.md)
  - [TransactionResponse](docs/TransactionResponse.md)
  - [TransactionResponseDetails](docs/TransactionResponseDetails.md)
  - [UpdatePaymentMethodRequest](docs/UpdatePaymentMethodRequest.md)
