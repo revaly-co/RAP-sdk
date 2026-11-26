@@ -4,10 +4,10 @@
 PR #118 by the fresh-context review of 2026-11-03, SC-869) · closes OQ-18 · implemented
 2026-11-05 (SC-886, see Implementation below) · no failover-contract
 change: a request the SDK no longer refuses is sent and classified like any other request
-**Amendment:** proposed 2026-11-26 (SC-1018, OQ-19), not yet ratified: decision 2 would no longer
-apply to the `rtnData` block in the Python and PHP SDKs. See
+**Amendment:** accepted 2026-11-26 by Dimitri Pankov as RAP SDK author (SC-1018, closes OQ-19):
+decision 2 no longer applies to the `rtnData` block in the Python and PHP SDKs. See
 [Amendment](#amendment--2026-11-26-sc-1018-python-and-php-do-not-refuse-or-rewrite-rtndata-values-before-sending)
-below; until it is ratified, decision 2 applies unchanged.
+below; the implementation is pending under SC-1018.
 **Source:** spec pins v2.15.0+693a36b (SC-869: the 256-character `description` bound from SC-785)
 and v2.16.0+99cb098 (SC-661: the 45-character `customerIp` bound)
 **Owner:** SC Eng
@@ -131,9 +131,9 @@ OQ-18 asked (a) whether the Python and PHP refusal is acceptable or the platform
 
 ## Amendment — 2026-11-26 (SC-1018): Python and PHP do not refuse or rewrite `rtnData` values before sending
 
-**Status:** Proposed — drafted 2026-11-26 for ratification by Dimitri Pankov as RAP SDK author
-(SC-1018, tracked as OQ-19). Until it is ratified, decision 2 applies to `rtnData` unchanged.
-No failover-contract change.
+**Status:** Accepted — decided 2026-11-26 by Dimitri Pankov as RAP SDK author (SC-1018, closes
+OQ-19). The implementation is pending under SC-1018 (acceptance criteria 3 to 6); until it is
+released, the published Python and PHP packages keep the checks. No failover-contract change.
 
 ### Context
 
@@ -177,7 +177,7 @@ No failover-contract change.
   as it is. `rtnData` is request-only, so passing an unlisted request value through does not
   touch that rule.
 
-### Decision (proposed)
+### Decision
 
 1. **For the `rtnData` block, the Python and PHP SDKs neither refuse a request nor replace a
    value before sending** because the value breaks a documented pattern, value list, minimum

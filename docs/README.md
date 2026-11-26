@@ -100,9 +100,10 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 - **Released 2026-11-26 off `45e360c` (PR #129):** .NET, Java, TypeScript, Python and Go 0.11.1
   and PHP 0.12.1, a patch. All seven tag runs were green, all six registries served the new
   versions by 18:57 UTC, and the release-notes drift check found nothing.
-- **The `rtnData` edge above is now SC-1018 (OQ-19).** An amendment to ADR-SDK-034 is proposed
-  and awaits the owner's ratification. It would stop the Python and PHP SDKs refusing or
-  rewriting an `rtnData` value for a pattern, value list, minimum or `minLength`: a Python
+- **The `rtnData` edge above is now SC-1018 (OQ-19, closed).** The ADR-SDK-034 amendment was
+  accepted on 2026-11-26 (Dimitri, as SDK author); the implementation is pending. It stops the
+  Python and PHP SDKs refusing or rewriting an `rtnData` value for a pattern, value list,
+  minimum or `minLength`: a Python
   generation step and a PHP revision scoped to the `RtnData` models, released as a patch.
   Types and formats stay checked, and the Java sentinel and .NET closed value lists are kept. The
   production census (SC-1018 comment 28268, the 30 days to 2026-11-26) found no SDK charge or
