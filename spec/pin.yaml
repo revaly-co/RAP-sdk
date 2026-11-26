@@ -16,7 +16,7 @@ sha256:
 pinnedAt: "2026-11-26"
 notes: >-
   Fifteenth pin (was spec/v2.19.0+ec71a82; EI-117). Two platform artifacts in one bump; the bundle
-  differs from v2.19.0 in six changed and seven added lines, and no schema shape changes. (1)
+  differs from v2.19.0 in four changed and seven added lines, and no schema shape changes. (1)
   v2.20.0+92f2191 (Backbone PR #516): the RtnData description states that every field is an
   optional signal, that no rtnData value ever refuses the payment that carries it, and that the
   lengths, formats and value lists describe what the card issuers can use; a value outside them,

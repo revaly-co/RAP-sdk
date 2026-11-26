@@ -96,7 +96,7 @@ documented; the list's deprecated top-level `paymentMethod`, default window, `en
 `transactionType` names are documented. The breaking gate reports `allowlisted` for the
 required `paymentMethod` and the list item `oneOf`; no error-code, verdict or status change;
 released 2026-11-25 as v0.11.0, PHP v0.12.0) → `v2.21.0+66e302b` (2026-11-26, EI-117 — two
-platform artifacts in one bump; the bundle differs from v2.19.0 in six changed and seven added
+platform artifacts in one bump; the bundle differs from v2.19.0 in four changed and seven added
 lines and no schema shape changes: the `RtnData` description states that every field is an
 optional signal and that no `rtnData` value ever refuses the payment that carries it, since
 RTN trims, converts, shortens or leaves out a value outside the documented lengths, formats and
