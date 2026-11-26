@@ -450,56 +450,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['item_count']) && ($this->container['item_count'] < 0)) {
-            $invalidProperties[] = "invalid value for 'item_count', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['highest_price_item_price']) && ($this->container['highest_price_item_price'] < 0)) {
-            $invalidProperties[] = "invalid value for 'highest_price_item_price', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['pre_order_date']) && !preg_match("/^\\d{8}$/", $this->container['pre_order_date'])) {
-            $invalidProperties[] = "invalid value for 'pre_order_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        if (!is_null($this->container['installment_payment_count']) && ($this->container['installment_payment_count'] < 0)) {
-            $invalidProperties[] = "invalid value for 'installment_payment_count', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['recurring_interval_days']) && ($this->container['recurring_interval_days'] < 1)) {
-            $invalidProperties[] = "invalid value for 'recurring_interval_days', must be bigger than or equal to 1.";
-        }
-
-        if (!is_null($this->container['recurring_end_date']) && !preg_match("/^\\d{8}$/", $this->container['recurring_end_date'])) {
-            $invalidProperties[] = "invalid value for 'recurring_end_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        $allowedValues = $this->getAlternatePaymentIndicatorAllowableValues();
-        if (!is_null($this->container['alternate_payment_indicator']) && !in_array($this->container['alternate_payment_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'alternate_payment_indicator', must be one of '%s'",
-                $this->container['alternate_payment_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['gift_card_count']) && ($this->container['gift_card_count'] < 0)) {
-            $invalidProperties[] = "invalid value for 'gift_card_count', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['gift_card_amount']) && ($this->container['gift_card_amount'] < 0)) {
-            $invalidProperties[] = "invalid value for 'gift_card_amount', must be bigger than or equal to 0.";
-        }
-
-        $allowedValues = $this->getIsCouponUsedAllowableValues();
-        if (!is_null($this->container['is_coupon_used']) && !in_array($this->container['is_coupon_used'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'is_coupon_used', must be one of '%s'",
-                $this->container['is_coupon_used'],
-                implode("', '", $allowedValues)
-            );
-        }
-
         return $invalidProperties;
     }
 
@@ -565,9 +515,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable item_count cannot be null');
         }
 
-        if (($item_count < 0)) {
-            throw new \InvalidArgumentException('invalid value for $item_count when calling RtnDataOrderData., must be bigger than or equal to 0.');
-        }
 
         $this->container['item_count'] = $item_count;
 
@@ -597,9 +544,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable highest_price_item_price cannot be null');
         }
 
-        if (($highest_price_item_price < 0)) {
-            throw new \InvalidArgumentException('invalid value for $highest_price_item_price when calling RtnDataOrderData., must be bigger than or equal to 0.');
-        }
 
         $this->container['highest_price_item_price'] = $highest_price_item_price;
 
@@ -710,9 +654,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable pre_order_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($pre_order_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$pre_order_date when calling RtnDataOrderData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['pre_order_date'] = $pre_order_date;
 
@@ -769,9 +710,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable installment_payment_count cannot be null');
         }
 
-        if (($installment_payment_count < 0)) {
-            throw new \InvalidArgumentException('invalid value for $installment_payment_count when calling RtnDataOrderData., must be bigger than or equal to 0.');
-        }
 
         $this->container['installment_payment_count'] = $installment_payment_count;
 
@@ -828,9 +766,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable recurring_interval_days cannot be null');
         }
 
-        if (($recurring_interval_days < 1)) {
-            throw new \InvalidArgumentException('invalid value for $recurring_interval_days when calling RtnDataOrderData., must be bigger than or equal to 1.');
-        }
 
         $this->container['recurring_interval_days'] = $recurring_interval_days;
 
@@ -860,9 +795,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable recurring_end_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($recurring_end_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$recurring_end_date when calling RtnDataOrderData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['recurring_end_date'] = $recurring_end_date;
 
@@ -890,10 +822,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         if (is_null($alternate_payment_indicator)) {
             throw new \InvalidArgumentException('non-nullable alternate_payment_indicator cannot be null');
-        }
-        $allowedValues = $this->getAlternatePaymentIndicatorAllowableValues();
-        if (!in_array($alternate_payment_indicator, $allowedValues, true)) {
-            $alternate_payment_indicator = self::ALTERNATE_PAYMENT_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['alternate_payment_indicator'] = $alternate_payment_indicator;
 
@@ -923,9 +851,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable gift_card_count cannot be null');
         }
 
-        if (($gift_card_count < 0)) {
-            throw new \InvalidArgumentException('invalid value for $gift_card_count when calling RtnDataOrderData., must be bigger than or equal to 0.');
-        }
 
         $this->container['gift_card_count'] = $gift_card_count;
 
@@ -955,9 +880,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable gift_card_amount cannot be null');
         }
 
-        if (($gift_card_amount < 0)) {
-            throw new \InvalidArgumentException('invalid value for $gift_card_amount when calling RtnDataOrderData., must be bigger than or equal to 0.');
-        }
 
         $this->container['gift_card_amount'] = $gift_card_amount;
 
@@ -1097,10 +1019,6 @@ class RtnDataOrderData implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         if (is_null($is_coupon_used)) {
             throw new \InvalidArgumentException('non-nullable is_coupon_used cannot be null');
-        }
-        $allowedValues = $this->getIsCouponUsedAllowableValues();
-        if (!in_array($is_coupon_used, $allowedValues, true)) {
-            $is_coupon_used = self::IS_COUPON_USED_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['is_coupon_used'] = $is_coupon_used;
 

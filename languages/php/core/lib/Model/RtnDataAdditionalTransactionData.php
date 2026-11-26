@@ -508,72 +508,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
     {
         $invalidProperties = [];
 
-        $allowedValues = $this->getProviderAuthDecisionAllowableValues();
-        if (!is_null($this->container['provider_auth_decision']) && !in_array($this->container['provider_auth_decision'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'provider_auth_decision', must be one of '%s'",
-                $this->container['provider_auth_decision'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getPaymentRailAllowableValues();
-        if (!is_null($this->container['payment_rail']) && !in_array($this->container['payment_rail'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'payment_rail', must be one of '%s'",
-                $this->container['payment_rail'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getPosEntryModeAllowableValues();
-        if (!is_null($this->container['pos_entry_mode']) && !in_array($this->container['pos_entry_mode'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'pos_entry_mode', must be one of '%s'",
-                $this->container['pos_entry_mode'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getMerchantTrustLevelAllowableValues();
-        if (!is_null($this->container['merchant_trust_level']) && !in_array($this->container['merchant_trust_level'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'merchant_trust_level', must be one of '%s'",
-                $this->container['merchant_trust_level'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getCardBrandAllowableValues();
-        if (!is_null($this->container['card_brand']) && !in_array($this->container['card_brand'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'card_brand', must be one of '%s'",
-                $this->container['card_brand'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getMessageCategoryAllowableValues();
-        if (!is_null($this->container['message_category']) && !in_array($this->container['message_category'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'message_category', must be one of '%s'",
-                $this->container['message_category'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['fraud_prevention_platform']) && !preg_match("/^[A-Za-z0-9._:-]{1,128}$/", $this->container['fraud_prevention_platform'])) {
-            $invalidProperties[] = "invalid value for 'fraud_prevention_platform', must be conform to the pattern /^[A-Za-z0-9._:-]{1,128}$/.";
-        }
-
-        if (!is_null($this->container['full_pan']) && (mb_strlen($this->container['full_pan']) < 13)) {
-            $invalidProperties[] = "invalid value for 'full_pan', the character length must be bigger than or equal to 13.";
-        }
-
-        if (!is_null($this->container['full_pan']) && !preg_match("/^\\d{13,19}$/", $this->container['full_pan'])) {
-            $invalidProperties[] = "invalid value for 'full_pan', must be conform to the pattern /^\\d{13,19}$/.";
-        }
-
         return $invalidProperties;
     }
 
@@ -610,10 +544,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
     {
         if (is_null($provider_auth_decision)) {
             throw new \InvalidArgumentException('non-nullable provider_auth_decision cannot be null');
-        }
-        $allowedValues = $this->getProviderAuthDecisionAllowableValues();
-        if (!in_array($provider_auth_decision, $allowedValues, true)) {
-            $provider_auth_decision = self::PROVIDER_AUTH_DECISION_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['provider_auth_decision'] = $provider_auth_decision;
 
@@ -669,10 +599,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($payment_rail)) {
             throw new \InvalidArgumentException('non-nullable payment_rail cannot be null');
         }
-        $allowedValues = $this->getPaymentRailAllowableValues();
-        if (!in_array($payment_rail, $allowedValues, true)) {
-            $payment_rail = self::PAYMENT_RAIL_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['payment_rail'] = $payment_rail;
 
         return $this;
@@ -699,10 +625,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
     {
         if (is_null($pos_entry_mode)) {
             throw new \InvalidArgumentException('non-nullable pos_entry_mode cannot be null');
-        }
-        $allowedValues = $this->getPosEntryModeAllowableValues();
-        if (!in_array($pos_entry_mode, $allowedValues, true)) {
-            $pos_entry_mode = self::POS_ENTRY_MODE_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['pos_entry_mode'] = $pos_entry_mode;
 
@@ -760,10 +682,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($merchant_trust_level)) {
             throw new \InvalidArgumentException('non-nullable merchant_trust_level cannot be null');
         }
-        $allowedValues = $this->getMerchantTrustLevelAllowableValues();
-        if (!in_array($merchant_trust_level, $allowedValues, true)) {
-            $merchant_trust_level = self::MERCHANT_TRUST_LEVEL_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['merchant_trust_level'] = $merchant_trust_level;
 
         return $this;
@@ -820,10 +738,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
         if (is_null($card_brand)) {
             throw new \InvalidArgumentException('non-nullable card_brand cannot be null');
         }
-        $allowedValues = $this->getCardBrandAllowableValues();
-        if (!in_array($card_brand, $allowedValues, true)) {
-            $card_brand = self::CARD_BRAND_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['card_brand'] = $card_brand;
 
         return $this;
@@ -850,10 +764,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
     {
         if (is_null($message_category)) {
             throw new \InvalidArgumentException('non-nullable message_category cannot be null');
-        }
-        $allowedValues = $this->getMessageCategoryAllowableValues();
-        if (!in_array($message_category, $allowedValues, true)) {
-            $message_category = self::MESSAGE_CATEGORY_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['message_category'] = $message_category;
 
@@ -883,9 +793,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
             throw new \InvalidArgumentException('non-nullable fraud_prevention_platform cannot be null');
         }
 
-        if ((!preg_match("/^[A-Za-z0-9._:-]{1,128}$/", ObjectSerializer::toString($fraud_prevention_platform)))) {
-            throw new \InvalidArgumentException("invalid value for \$fraud_prevention_platform when calling RtnDataAdditionalTransactionData., must conform to the pattern /^[A-Za-z0-9._:-]{1,128}$/.");
-        }
 
         $this->container['fraud_prevention_platform'] = $fraud_prevention_platform;
 
@@ -915,12 +822,6 @@ class RtnDataAdditionalTransactionData implements ModelInterface, ArrayAccess, \
             throw new \InvalidArgumentException('non-nullable full_pan cannot be null');
         }
 
-        if ((mb_strlen($full_pan) < 13)) {
-            throw new \InvalidArgumentException('invalid length for $full_pan when calling RtnDataAdditionalTransactionData., must be bigger than or equal to 13.');
-        }
-        if ((!preg_match("/^\\d{13,19}$/", ObjectSerializer::toString($full_pan)))) {
-            throw new \InvalidArgumentException("invalid value for \$full_pan when calling RtnDataAdditionalTransactionData., must conform to the pattern /^\\d{13,19}$/.");
-        }
 
         $this->container['full_pan'] = $full_pan;
 

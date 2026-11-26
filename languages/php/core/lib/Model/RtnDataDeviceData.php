@@ -463,28 +463,6 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) < 2)) {
-            $invalidProperties[] = "invalid value for 'country', the character length must be bigger than or equal to 2.";
-        }
-
-        $allowedValues = $this->getChannelAllowableValues();
-        if (!is_null($this->container['channel']) && !in_array($this->container['channel'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'channel', must be one of '%s'",
-                $this->container['channel'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getDeviceTypeAllowableValues();
-        if (!is_null($this->container['device_type']) && !in_array($this->container['device_type'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'device_type', must be one of '%s'",
-                $this->container['device_type'],
-                implode("', '", $allowedValues)
-            );
-        }
-
         return $invalidProperties;
     }
 
@@ -610,9 +588,6 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
             throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
 
-        if ((mb_strlen($country) < 2)) {
-            throw new \InvalidArgumentException('invalid length for $country when calling RtnDataDeviceData., must be bigger than or equal to 2.');
-        }
 
         $this->container['country'] = $country;
 
@@ -890,10 +865,6 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($channel)) {
             throw new \InvalidArgumentException('non-nullable channel cannot be null');
         }
-        $allowedValues = $this->getChannelAllowableValues();
-        if (!in_array($channel, $allowedValues, true)) {
-            $channel = self::CHANNEL_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['channel'] = $channel;
 
         return $this;
@@ -1001,10 +972,6 @@ class RtnDataDeviceData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         if (is_null($device_type)) {
             throw new \InvalidArgumentException('non-nullable device_type cannot be null');
-        }
-        $allowedValues = $this->getDeviceTypeAllowableValues();
-        if (!in_array($device_type, $allowedValues, true)) {
-            $device_type = self::DEVICE_TYPE_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['device_type'] = $device_type;
 

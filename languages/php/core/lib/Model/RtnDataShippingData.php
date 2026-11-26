@@ -467,49 +467,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        $allowedValues = $this->getShippingIndicatorAllowableValues();
-        if (!is_null($this->container['shipping_indicator']) && !in_array($this->container['shipping_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'shipping_indicator', must be one of '%s'",
-                $this->container['shipping_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) < 2)) {
-            $invalidProperties[] = "invalid value for 'country', the character length must be bigger than or equal to 2.";
-        }
-
-        if (!is_null($this->container['address_first_used_date']) && !preg_match("/^\\d{8}$/", $this->container['address_first_used_date'])) {
-            $invalidProperties[] = "invalid value for 'address_first_used_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        $allowedValues = $this->getAddressFirstUsedIndicatorAllowableValues();
-        if (!is_null($this->container['address_first_used_indicator']) && !in_array($this->container['address_first_used_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'address_first_used_indicator', must be one of '%s'",
-                $this->container['address_first_used_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getDeliveryTimeframeIndicatorAllowableValues();
-        if (!is_null($this->container['delivery_timeframe_indicator']) && !in_array($this->container['delivery_timeframe_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'delivery_timeframe_indicator', must be one of '%s'",
-                $this->container['delivery_timeframe_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['shipping_address_count']) && ($this->container['shipping_address_count'] < 0)) {
-            $invalidProperties[] = "invalid value for 'shipping_address_count', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_ship_to_address_change']) && ($this->container['days_since_ship_to_address_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_ship_to_address_change', must be bigger than or equal to 0.";
-        }
-
         return $invalidProperties;
     }
 
@@ -546,10 +503,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($shipping_indicator)) {
             throw new \InvalidArgumentException('non-nullable shipping_indicator cannot be null');
-        }
-        $allowedValues = $this->getShippingIndicatorAllowableValues();
-        if (!in_array($shipping_indicator, $allowedValues, true)) {
-            $shipping_indicator = self::SHIPPING_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['shipping_indicator'] = $shipping_indicator;
 
@@ -753,9 +706,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
 
-        if ((mb_strlen($country) < 2)) {
-            throw new \InvalidArgumentException('invalid length for $country when calling RtnDataShippingData., must be bigger than or equal to 2.');
-        }
 
         $this->container['country'] = $country;
 
@@ -785,9 +735,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable address_first_used_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($address_first_used_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$address_first_used_date when calling RtnDataShippingData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['address_first_used_date'] = $address_first_used_date;
 
@@ -815,10 +762,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($address_first_used_indicator)) {
             throw new \InvalidArgumentException('non-nullable address_first_used_indicator cannot be null');
-        }
-        $allowedValues = $this->getAddressFirstUsedIndicatorAllowableValues();
-        if (!in_array($address_first_used_indicator, $allowedValues, true)) {
-            $address_first_used_indicator = self::ADDRESS_FIRST_USED_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['address_first_used_indicator'] = $address_first_used_indicator;
 
@@ -902,10 +845,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($delivery_timeframe_indicator)) {
             throw new \InvalidArgumentException('non-nullable delivery_timeframe_indicator cannot be null');
-        }
-        $allowedValues = $this->getDeliveryTimeframeIndicatorAllowableValues();
-        if (!in_array($delivery_timeframe_indicator, $allowedValues, true)) {
-            $delivery_timeframe_indicator = self::DELIVERY_TIMEFRAME_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['delivery_timeframe_indicator'] = $delivery_timeframe_indicator;
 
@@ -1022,9 +961,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable shipping_address_count cannot be null');
         }
 
-        if (($shipping_address_count < 0)) {
-            throw new \InvalidArgumentException('invalid value for $shipping_address_count when calling RtnDataShippingData., must be bigger than or equal to 0.');
-        }
 
         $this->container['shipping_address_count'] = $shipping_address_count;
 
@@ -1054,9 +990,6 @@ class RtnDataShippingData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_ship_to_address_change cannot be null');
         }
 
-        if (($days_since_ship_to_address_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_ship_to_address_change when calling RtnDataShippingData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_ship_to_address_change'] = $days_since_ship_to_address_change;
 

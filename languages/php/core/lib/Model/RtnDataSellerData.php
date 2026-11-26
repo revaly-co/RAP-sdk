@@ -405,24 +405,6 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         $invalidProperties = [];
 
-        $allowedValues = $this->getSellerRegionAllowableValues();
-        if (!is_null($this->container['seller_region']) && !in_array($this->container['seller_region'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'seller_region', must be one of '%s'",
-                $this->container['seller_region'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getTransactionTypeIndicatorAllowableValues();
-        if (!is_null($this->container['transaction_type_indicator']) && !in_array($this->container['transaction_type_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'transaction_type_indicator', must be one of '%s'",
-                $this->container['transaction_type_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
         return $invalidProperties;
     }
 
@@ -744,10 +726,6 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
         if (is_null($seller_region)) {
             throw new \InvalidArgumentException('non-nullable seller_region cannot be null');
         }
-        $allowedValues = $this->getSellerRegionAllowableValues();
-        if (!in_array($seller_region, $allowedValues, true)) {
-            $seller_region = self::SELLER_REGION_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['seller_region'] = $seller_region;
 
         return $this;
@@ -801,10 +779,6 @@ class RtnDataSellerData implements ModelInterface, ArrayAccess, \JsonSerializabl
     {
         if (is_null($transaction_type_indicator)) {
             throw new \InvalidArgumentException('non-nullable transaction_type_indicator cannot be null');
-        }
-        $allowedValues = $this->getTransactionTypeIndicatorAllowableValues();
-        if (!in_array($transaction_type_indicator, $allowedValues, true)) {
-            $transaction_type_indicator = self::TRANSACTION_TYPE_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['transaction_type_indicator'] = $transaction_type_indicator;
 
