@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Revaly\Sdk\Tests\Support;
 
 use Psr\Log\LoggerInterface;
+use Revaly\Sdk\Core\Model\AuthorizeRequest;
 use Revaly\Sdk\Core\Model\PaymentRequest;
 use Revaly\Sdk\RapClient;
 use Revaly\Sdk\Testing\RapMockTransport;
@@ -45,6 +46,17 @@ final class TestClients
     public static function chargeRequest(): PaymentRequest
     {
         $request = new PaymentRequest();
+        $request->setAmount(1999);
+        $request->setMerchantTransactionId(SyntheticData::DEFAULT_MERCHANT_TRANSACTION_ID);
+        $request->setCurrency('USD');
+
+        return $request;
+    }
+
+    /** A minimal authorize request (required fields only). */
+    public static function authorizeRequest(): AuthorizeRequest
+    {
+        $request = new AuthorizeRequest();
         $request->setAmount(1999);
         $request->setMerchantTransactionId(SyntheticData::DEFAULT_MERCHANT_TRANSACTION_ID);
         $request->setCurrency('USD');
