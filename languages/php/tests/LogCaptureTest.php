@@ -29,6 +29,38 @@ final class LogCaptureTest extends TestCase
 {
     private const SYNTHETIC_EMAIL = 'customer@synthetic.test';
 
+    /**
+     * PCI DSS lets a PAN be shown with at most its first six and last four digits, so seven
+     * digits of the test number in a row (space or dash separators dropped) show more than any
+     * permitted rendering. It catches a value cut below the 15 characters the prefix needle
+     * covers; six would flag the six-digit BIN that PCI permits.
+     */
+    private const PAN_DIGIT_WINDOW = 7;
+
+    /** How many digit runs in $haystack hold PAN_DIGIT_WINDOW digits of the test number in a row. */
+    private static function panDigitRuns(string $haystack): int
+    {
+        $pan = TestClients::SYNTHETIC_PAN;
+        $windows = [];
+        for ($i = 0; $i + self::PAN_DIGIT_WINDOW <= strlen($pan); $i++) {
+            $windows[] = substr($pan, $i, self::PAN_DIGIT_WINDOW);
+        }
+        $windows = array_values(array_unique($windows));
+        preg_match_all('/\d(?:[ -]?\d)*/', $haystack, $runs);
+        $hits = 0;
+        foreach ($runs[0] as $run) {
+            $digits = str_replace([' ', '-'], '', $run);
+            foreach ($windows as $window) {
+                if (str_contains($digits, $window)) {
+                    $hits++;
+                    break;
+                }
+            }
+        }
+
+        return $hits;
+    }
+
     /** @return array<string, array{string}> */
     public static function rtnDataOperations(): array
     {
@@ -99,6 +131,10 @@ final class LogCaptureTest extends TestCase
         foreach ([$spacedPan, substr($spacedPan, 0, 15), TestClients::SYNTHETIC_PAN, self::SYNTHETIC_EMAIL, TestClients::API_KEY] as $needle) {
             self::assertStringNotContainsString($needle, $haystack);
         }
+        // The haystack renders each Throwable in log context in full (CollectingLogger), and no
+        // part of it holds seven digits of the test number in a row, the shape a value cut
+        // below 15 characters leaves.
+        self::assertSame(0, self::panDigitRuns($haystack), 'seven digits of the test number in a row were logged');
     }
 
     /** A charge request carrying synthetic card material that must never be logged. */

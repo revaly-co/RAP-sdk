@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 import pytest
 
@@ -32,11 +33,56 @@ SENSITIVE = (SYNTHETIC_PAN, SYNTHETIC_CVV, SYNTHETIC_API_KEY, "Cardholder", "Syn
 # documented fullPan pattern), and a synthetic customer email.
 SPACED_PAN = " ".join(SYNTHETIC_PAN[i : i + 4] for i in range(0, len(SYNTHETIC_PAN), 4))
 SYNTHETIC_EMAIL = "customer@synthetic.test"
+# PCI DSS lets a PAN be shown with at most its first six and last four digits, so seven digits
+# of the test number in a row (space or dash separators dropped) show more than any permitted
+# rendering. It catches a value cut below the 15 characters the prefix needle covers; six would
+# flag the six-digit BIN that PCI permits.
+PAN_DIGIT_WINDOW = 7
+PAN_WINDOWS = frozenset(
+    SYNTHETIC_PAN[i : i + PAN_DIGIT_WINDOW]
+    for i in range(len(SYNTHETIC_PAN) - PAN_DIGIT_WINDOW + 1)
+)
+DIGIT_RUN = re.compile(r"\d(?:[ -]?\d)*")
+# What the logging module itself sets on every record: timestamps, thread and process ids and
+# the source location. The runtime cannot write these (logging refuses an `extra` key naming
+# one), and they hold arbitrary digits, so only the full-value needles search them.
+LOGGING_BOOKKEEPING = frozenset(vars(logging.makeLogRecord({}))) - {
+    "msg",
+    "args",
+    "exc_info",
+    "exc_text",
+    "stack_info",
+}
 
 
 def _assert_values_free(text: str) -> None:
     for sentinel in SENSITIVE:
         assert sentinel not in text
+
+
+def _record_texts(record: logging.LogRecord) -> tuple[list[str], list[str]]:
+    """Every attribute of a captured record as text (str and repr of each, the exception
+    formatted with its chain), and the part of that text the runtime supplied: the message,
+    its arguments, `extra` fields, the exception and the stack, without logging's bookkeeping."""
+    every, supplied = [record.getMessage()], [record.getMessage()]
+    for name, value in vars(record).items():
+        texts = [str(value), repr(value)]
+        if name == "exc_info" and value:
+            texts.append(logging.Formatter().formatException(value))
+        every += texts
+        if name not in LOGGING_BOOKKEEPING:
+            supplied += texts
+    return every, supplied
+
+
+def _pan_digit_runs(texts: list[str]) -> int:
+    """How many digit runs in texts hold PAN_DIGIT_WINDOW digits of the test number in a row."""
+    return sum(
+        1
+        for text in texts
+        for run in DIGIT_RUN.findall(text)
+        if any(window in re.sub(r"[ -]", "", run) for window in PAN_WINDOWS)
+    )
 
 
 def test_default_level_success_is_values_free(caplog):
@@ -196,6 +242,16 @@ def test_rtn_data_card_material_is_sent_but_never_logged_or_traced(caplog, opera
         for needle in (SPACED_PAN, SPACED_PAN[:15], SYNTHETIC_PAN, SYNTHETIC_EMAIL):
             assert needle not in text
         _assert_values_free(text)
+    # Not only the message: every attribute of every record (arguments, `extra` fields, the
+    # exception and the stack) is searched, and no text the runtime supplied holds seven digits
+    # of the test number in a row, the shape a value cut below 15 characters leaves.
+    records = [_record_texts(record) for record in caplog.records]
+    for text in (text for every, _ in records for text in every):
+        for needle in (SPACED_PAN, SPACED_PAN[:15], SYNTHETIC_PAN, SYNTHETIC_EMAIL):
+            assert needle not in text
+        assert SYNTHETIC_API_KEY not in text
+    supplied = surfaces + [text for _, given in records for text in given]
+    assert _pan_digit_runs(supplied) == 0, "seven digits of the test number in a row were logged"
 
 
 def test_silent_by_default_without_app_configuration(caplog):

@@ -225,7 +225,9 @@ def test_unlisted_value_list_entry_is_sent_as_given(mock_transport):
     assert _charge(mock_transport, request) == UNLISTED_VALUES
 
 
-@pytest.mark.parametrize(
+# D1: one value of the wrong type per kind of check the family keeps (strict int, the
+# purchaseDate date-time, strict str, strict bool), and the pydantic error each must raise.
+WRONG_TYPES = pytest.mark.parametrize(
     ("block", "values", "error_type"),
     [
         ("orderData", {"itemCount": "3"}, "int_type"),
@@ -235,6 +237,9 @@ def test_unlisted_value_list_entry_is_sent_as_given(mock_transport):
     ],
     ids=["int", "date-time", "string", "bool"],
 )
+
+
+@WRONG_TYPES
 def test_wrong_type_is_still_refused(block, values, error_type):
     # D1: types and formats stay in every SDK; the typed model is the SDK's interface.
     with pytest.raises(ValidationError) as refused:
@@ -243,3 +248,43 @@ def test_wrong_type_is_still_refused(block, values, error_type):
     errors = refused.value.errors()
     assert len(errors) == 1
     assert errors[0]["type"] == error_type
+
+
+@WRONG_TYPES
+def test_assigned_wrong_type_is_still_refused(block, values, error_type):
+    # D1 on the assignment path (X6): validate_assignment=True is what runs the type check on
+    # setattr, so a family generated without it would accept "3" for itemCount and send it.
+    request = _payment_request(RtnData(**{_attr(block): BLOCK_MODELS[block]()}))
+    model = getattr(request.rtn_data, _attr(block))
+    ((attr, value),) = _fields(block, values).items()
+
+    with pytest.raises(ValidationError) as refused:
+        setattr(model, attr, value)
+
+    errors = refused.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["type"] == error_type
+    assert errors[0]["loc"] == (attr,)
+    assert getattr(model, attr) is None  # the refused value is not kept, so it is never sent
+
+
+@WRONG_TYPES
+def test_from_dict_wrong_type_is_still_refused(block, values, error_type):
+    # D1 on the dict path: PaymentRequest.from_dict reads the nested rtnData through each
+    # block's from_dict (the ADR's "Python's strict models refuse one read from a dictionary").
+    ((wire_key, _),) = values.items()
+
+    with pytest.raises(ValidationError) as refused:
+        PaymentRequest.from_dict(
+            {
+                "amount": 1,
+                "merchantTransactionId": SYNTHETIC_MTX,
+                "currency": "USD",
+                "rtnData": {block: values},
+            }
+        )
+
+    errors = refused.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["type"] == error_type
+    assert errors[0]["loc"] == (wire_key,)
