@@ -9,12 +9,12 @@ before anything downstream runs (`../docs/pipeline-and-release.md` §2).
 
 | Field | Value |
 | --- | --- |
-| Release | [`spec/v2.19.0+ec71a82`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.19.0%2Bec71a82) (platform repo) |
-| Spec version | 2.19.0 |
-| Source commit | `ec71a824de502d4d1cdb1cef1b5ff34e1d9f428c` |
-| Gates | lint ✅ · bundle ✅ · breaking allowlisted (two spec-accuracy entries) · contract suite ✅ (see [`provenance.json`](provenance.json)) |
-| sha256 (`openapi.bundled.yaml`) | `43f47ef26d5696173c8bb5b0e5e9ef251cbc6975599e26a4fd1071b4ca5e84a1` |
-| Pinned | 2026-11-25 |
+| Release | [`spec/v2.21.0+66e302b`](https://github.com/revaly-co/Backbone/releases/tag/spec%2Fv2.21.0%2B66e302b) (platform repo) |
+| Spec version | 2.21.0 |
+| Source commit | `66e302b23f3ea0d740bcb10d4efd2e5c6ace566f` |
+| Gates | lint ✅ · bundle ✅ · breaking ✅ · contract suite ✅ (see [`provenance.json`](provenance.json)) |
+| sha256 (`openapi.bundled.yaml`) | `c8e8c5a7efee972cca00598a5ca8ca8b420b64e6f85cbf5e9d0031eb6400849d` |
+| Pinned | 2026-11-26 |
 
 Pin history: `v2.1.2+9af661b` (2026-07-14, first pin — int64 `maximum` fix, Backbone PR #241)
 → `v2.1.3+e75c71a` (2026-07-15 — orphan `PaymentMethodRequest` schema dropped, Backbone PR #242)
@@ -94,16 +94,28 @@ return type changes in all six SDKs; `CreatePaymentMethodRequest.paymentMethod` 
 checks); `NotifyResponse.success` becomes required and the `/notify` per-event requirements are
 documented; the list's deprecated top-level `paymentMethod`, default window, `endDate` rule and
 `transactionType` names are documented. The breaking gate reports `allowlisted` for the
-required `paymentMethod` and the list item `oneOf`; no error-code, verdict or status change).
+required `paymentMethod` and the list item `oneOf`; no error-code, verdict or status change;
+released 2026-11-25 as v0.11.0, PHP v0.12.0) → `v2.21.0+66e302b` (2026-11-26, EI-117 — two
+platform artifacts in one bump; the bundle differs from v2.19.0 in six changed and seven added
+lines and no schema shape changes: the `RtnData` description states that every field is an
+optional signal and that no `rtnData` value ever refuses the payment that carries it, since
+RTN trims, converts, shortens or leaves out a value outside the documented lengths, formats and
+value lists, and `rtnData.customerData.email` is bounded at 256 characters instead of 30
+(v2.20.0, Backbone PR #516); the lookup by merchant transaction ID returns
+`gatewayResponsePayload` for the attempt it returns when the payload is switched on for the
+calling API key, which the operation and the field's description now state (v2.21.0, EI-117,
+Backbone PRs #509, #515 and #520; prose only, the field exists since v2.18.0). No SDK refuses a
+longer string before sending (ADR-SDK-034); the breaking gate reports `pass`; no error-code,
+verdict or status change).
 
-Thirteen published artifacts were never consumed and are superseded rather than skipped:
+Fourteen published artifacts were never consumed and are superseded rather than skipped:
 `v2.3.1+40d659b` (2026-08-10), `v2.5.0+6d41224` (2026-08-27), `v2.8.0+95bd397`,
 `v2.9.0+026291d`, `v2.10.0+65b730f`, `v2.11.0+8241a0d`, `v2.12.0+c1c7485`,
 `v2.12.1+4bd7ff6` (2026-10-05 to 2026-10-19, absorbed by the v2.12.2 pin; `v2.12.0` breaks
 the .NET core build, so it is not a usable pin on its own), and `v2.13.1+f6b9766`,
 `v2.14.0+66c63c6`, `v2.14.1+d3c5b38` (2026-10-29 to 2026-11-02, absorbed by the v2.15.0 pin),
 and `v2.16.1+8cf9914`, `v2.17.0+19b899b` (2026-11-12 and 2026-11-19, absorbed by the v2.18.0
-pin).
+pin), and `v2.20.0+92f2191` (2026-11-25, absorbed by the v2.21.0 pin).
 
 [`openapi.bundled.yaml.sha256`](openapi.bundled.yaml.sha256) and
 [`provenance.json`](provenance.json) are verbatim copies of the release assets, committed as
@@ -114,7 +126,7 @@ review- and CI-verifiable evidence alongside the pin.
 From the repo root:
 
 ```sh
-gh release download "spec/v2.19.0+ec71a82" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
+gh release download "spec/v2.21.0+66e302b" -R revaly-co/Backbone -D /tmp/rap-spec --clobber
 (cd /tmp/rap-spec && sha256sum -c openapi.bundled.yaml.sha256)
 diff /tmp/rap-spec/openapi.bundled.yaml.sha256 spec/openapi.bundled.yaml.sha256
 diff /tmp/rap-spec/provenance.json spec/provenance.json

@@ -4,41 +4,37 @@
 # check openapi.bundled.yaml against `sha256` (and the committed .sha256 / provenance.json
 # copies), then re-lint + re-bundle as defense in depth (docs/pipeline-and-release.md §2).
 repo: revaly-co/Backbone
-releaseTag: spec/v2.19.0+ec71a82
-specVersion: 2.19.0
-sourceCommit: ec71a824de502d4d1cdb1cef1b5ff34e1d9f428c
+releaseTag: spec/v2.21.0+66e302b
+specVersion: 2.21.0
+sourceCommit: 66e302b23f3ea0d740bcb10d4efd2e5c6ace566f
 assets:
   spec: openapi.bundled.yaml
   checksum: openapi.bundled.yaml.sha256
   provenance: provenance.json
 sha256:
-  openapi.bundled.yaml: 43f47ef26d5696173c8bb5b0e5e9ef251cbc6975599e26a4fd1071b4ca5e84a1
-pinnedAt: "2026-11-25"
+  openapi.bundled.yaml: c8e8c5a7efee972cca00598a5ca8ca8b420b64e6f85cbf5e9d0031eb6400849d
+pinnedAt: "2026-11-26"
 notes: >-
-  Fourteenth pin (was spec/v2.18.0+834f684; SC-409). One platform artifact, v2.19.0+ec71a82
-  (SC-409, Backbone PR #512, the remainder of the SC-408 spec-drift audit); the bundle loses 25
-  lines and gains 261 against v2.18.0. (1) listTransactions: each 200 item is now a `oneOf` of
-  the flat TransactionListItem, which gains `required: [transactionId]`, and the new
-  TransactionListPaymentMethodItem, the shape of a payment-method operation (create, update,
-  redact or recache) in detailed mode, whose fields are wrapped in `transaction` (required
-  transactionId, transactionDate, transactionStatus) and whose payment method is the new flat
-  TransactionListPaymentMethod (BIN under `issuerIdentificationNumber`). The generator emits the
-  item union as ListTransactions200ResponseInner in all six cores, so the listTransactions
-  return type changes in every SDK. The top-level `paymentMethod` on TransactionListItem, which
-  the platform never sends, is deprecated; the `storageState` / `paymentMethodStorageState`
-  split, the 90-day default window, the midnight-UTC `endDate` rule and the transactionType names
-  (PreAuth, SuccessfulPayment, Verify, the payment-method operation names) are documented. (2)
-  CreatePaymentMethodRequest gains `required: [paymentMethod]` (M7; the platform already answered
-  400 without it). Generated required-field checks stay as generated (ADR-SDK-034 §2 limits that
-  ADR to `maxLength`), and the .NET and Go constructors take `paymentMethod` as a required
-  argument. (3) NotifyResponse gains `required: [success]` and NotifyData documents which events
-  need `transactionId` or `customerId` (M8, M13). The platform's breaking-change gate reports
-  `allowlisted` for the two spec-accuracy entries (the required `paymentMethod` and the list item
-  `oneOf`); stage 1 accepts `allowlisted`. No error code, transactionType value set, reconcile
-  verdict or status change, and listTransactions is not on the reconcile path, so the failover
-  classification surface is untouched (failover-contract §2). Lint, bundle and contract suite pass
-  on v2.19.0; provenance ciRunId 45493686940. Prior pin history: v2.1.2+9af661b (first
-  pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
+  Fifteenth pin (was spec/v2.19.0+ec71a82; EI-117). Two platform artifacts in one bump; the bundle
+  differs from v2.19.0 in six changed and seven added lines, and no schema shape changes. (1)
+  v2.20.0+92f2191 (Backbone PR #516): the RtnData description states that every field is an
+  optional signal, that no rtnData value ever refuses the payment that carries it, and that the
+  lengths, formats and value lists describe what the card issuers can use; a value outside them,
+  or of the wrong JSON type, is accepted and RTN trims, converts, shortens or leaves out that one
+  value. `rtnData.customerData.email` maxLength rises from 30 to 256. No SDK refuses a longer
+  string before sending (ADR-SDK-034), so the raised bound changes no SDK behaviour; the
+  patterns, value lists and minimums that the spec keeps on rtnData are still checked by the
+  cores that generate those checks (ADR-SDK-034 §2). (2) v2.21.0+66e302b (EI-117, Backbone PRs
+  #509, #515 and #520): prose only. The lookup by merchant transaction ID
+  (`GET /transactions/merchant/{merchantTransactionId}`) returns `gatewayResponsePayload` on its
+  single TransactionResponse when the payload is switched on for the calling API key, for the
+  attempt it returns; the field's description names the lookup. The field already exists on
+  TransactionResponse since v2.18.0, so the generated types are unchanged. The breaking-change
+  gate reports `pass` on both artifacts. No error code, transactionType value set, reconcile
+  verdict or status change, so the failover classification surface is untouched
+  (failover-contract §2). Lint, bundle and contract suite pass on v2.21.0; provenance ciRunId
+  45862195011. v2.20.0+92f2191 is superseded by this pin, not skipped. Prior pin history:
+  v2.1.2+9af661b (first pin, int64 maximum fix) -> v2.1.3+e75c71a (orphan PaymentMethodRequest dropped) ->
   v2.2.0+1e59620 (additive statementDescriptor, STR-108) -> v2.2.1+c4000e9 (X-Correlation-ID
   response header documented) -> v2.3.0+80cc897 (validation reality matches the published
   contract) -> v2.4.0+4ce73e2 (nested vaultToken on charge/authorize, lookup unions oneOf ->
@@ -62,4 +58,7 @@ notes: >-
   SC-886 removed the Python and PHP length checks) -> v2.18.0+834f684 (SC-934, three artifacts
   v2.16.1 to v2.18.0: real-time account-updater prose, the optional `gatewayResponsePayload` on
   TransactionResponse (EI-113), the optional `transactionLinkId` on the stored-credential
-  blocks; released 2026-11-23 as v0.10.0, PHP v0.11.0).
+  blocks; released 2026-11-23 as v0.10.0, PHP v0.11.0) -> v2.19.0+ec71a82 (SC-409, the
+  listTransactions item `oneOf` of TransactionListItem and TransactionListPaymentMethodItem, emitted as
+  ListTransactions200ResponseInner in all six cores; CreatePaymentMethodRequest.paymentMethod and
+  NotifyResponse.success required; released 2026-11-25 as v0.11.0, PHP v0.12.0).
