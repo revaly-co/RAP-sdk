@@ -52,6 +52,52 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-11-26)
+
+- **Spec re-pinned v2.19.0 → v2.21.0+66e302b (fifteenth pin, EI-117).** Two platform artifacts
+  published on 2026-11-25 and 2026-11-26 are absorbed in one bump; the bundle differs from
+  v2.19.0 in four changed and seven added lines, and no schema shape changes. v2.20.0 (Backbone
+  PR #516) states in the `RtnData` description that every field is an optional signal and that
+  no `rtnData` value ever refuses the payment that carries it: the documented lengths, formats
+  and value lists describe what the card issuers can use, and RTN trims, converts, shortens or
+  leaves out a value outside them. It also raises `rtnData.customerData.email` from 30 to 256
+  characters. v2.21.0 (EI-117, Backbone PRs #509, #515 and #520) is prose only: the lookup by
+  merchant transaction ID returns `gatewayResponsePayload` for the attempt it returns when the
+  payload is switched on for the calling API key, and the operation and the field's description
+  say so. The field exists on `TransactionResponse` since v2.18.0, so no generated type changes.
+  The breaking gate reports `pass` on both artifacts; no error code, verdict or status changes,
+  so the failover classification is unaffected. The regeneration touched 462 core files, none
+  new or deleted; 40 change beyond the version line, all of them descriptions except the .NET
+  `RtnDataCustomerData.Validate` email bound (30 to 256), which nothing in the core or runtime
+  calls. A second generation run changed nothing. Because no SDK refuses a longer string before
+  sending (ADR-SDK-034), the raised email bound changes no SDK behaviour, and no release gate
+  holds a language back. Verified locally with the stage-3 commands: .NET 89/89 (the four known
+  CS0612 warnings), format clean; Java 105/105 (Temurin 21 container), spotless clean; PHP 118 tests, 373 assertions,
+  strict PSR-4 clean (PHP 8.3 container); TypeScript strict core `tsc`, typecheck and lint clean,
+  137/137; Python 172/172, ruff clean (Python 3.12 container); Go `go mod verify`, build, vet,
+  tests, gofmt and staticcheck v0.7.0 ok. **Known edge (follow-up for the owner, not decided
+  here):** the platform no longer refuses any `rtnData` value, but ADR-SDK-034 §2 keeps the
+  generated pattern, value-list, minimum and `minLength` checks, and the generated value lists
+  are closed enums in two languages, so four SDKs still act on some `rtnData` values before
+  sending. Measured on the regenerated cores with synthetic values: Python
+  refuses the whole request (pydantic `ValidationError`, on construction and on `from_dict`) for
+  a value that breaks a pattern (an eight-digit date given as `2024-01-15`, a 129-character
+  `fraudPreventionPlatform`), a minimum (`-1` for a count, `0` for `recurringIntervalDays`) or a
+  `minLength` (a one-letter `country`), and sends an out-of-list value unchanged. PHP's setters
+  refuse the same cases (`InvalidArgumentException`) and replace an out-of-list value with
+  `unknown_default_open_api` on the wire (for example `accountAgeIndicator` `05`); PHP's array
+  constructor checks nothing and sends every value as given. A longer `email` is sent by both.
+  Read from the generated code, not run: Java and .NET type each value list as a closed enum.
+  Java's `fromValue` maps an out-of-list value to `UNKNOWN_DEFAULT_OPEN_API`, which is sent as
+  `unknown_default_open_api`, and the .NET enum cannot hold one (`FromString` throws
+  `NotImplementedException`); neither checks patterns, minimums or `minLength` before sending
+  (.NET's `Validate` is never called). TypeScript and Go send every value as given (Go's
+  `validate` tags are never invoked). This is not new with this pin: the same checks applied
+  under v2.19.0, when the platform also refused such values. Changing it means extending
+  ADR-SDK-034 to `rtnData` patterns, value lists and minimums: a Python generation step and a PHP
+  template revision under ADR-SDK-023, as SC-886 did for `maxLength`, plus open value lists in
+  the Java and .NET cores if value lists are in scope.
+
 ## Status snapshot (2026-11-25)
 
 - **Spec re-pinned v2.18.0 → v2.19.0+ec71a82 (fourteenth pin, SC-409).** One platform artifact,

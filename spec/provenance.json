@@ -1,18 +1,18 @@
 {
-  "specVersion": "2.19.0",
-  "sourceCommit": "ec71a824de502d4d1cdb1cef1b5ff34e1d9f428c",
+  "specVersion": "2.21.0",
+  "sourceCommit": "66e302b23f3ea0d740bcb10d4efd2e5c6ace566f",
   "sourceRef": "refs/heads/main",
   "bundlerVersion": "@redocly/cli@2.38.0",
   "oasdiffVersion": "1.22.0",
-  "ciRunId": "45493686940",
-  "ciRunUrl": "https://github.com/revaly-co/Backbone/actions/runs/45493686940",
+  "ciRunId": "45862195011",
+  "ciRunUrl": "https://github.com/revaly-co/Backbone/actions/runs/45862195011",
   "gates": {
     "lint": "pass",
     "bundle": "pass",
-    "breaking": "allowlisted",
+    "breaking": "pass",
     "contractSuite": "pass"
   },
   "checksums": {
-    "openapi.bundled.yaml": "sha256:43f47ef26d5696173c8bb5b0e5e9ef251cbc6975599e26a4fd1071b4ca5e84a1"
+    "openapi.bundled.yaml": "sha256:c8e8c5a7efee972cca00598a5ca8ca8b420b64e6f85cbf5e9d0031eb6400849d"
   }
 }

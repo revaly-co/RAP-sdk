@@ -130,6 +130,13 @@ transaction. A 404 means no payment with this id was ever accepted. Pending inte
 are not returned on the grouped view (`includeAllTransactions=true`), which lists
 only visible transaction records.
 
+**Gateway response payload:** when the payload is switched on for the API key that
+makes this call, the single `TransactionResponse` carries `gatewayResponsePayload`:
+the gateway's answer to the attempt this lookup returns, read again from where it is
+stored and reduced to the listed keys, the same way the payment's own answer was.
+If it cannot be read in time, the lookup still answers `200` without the field. The
+pending answer and the grouped view never carry it.
+
 
 ### Example
 
