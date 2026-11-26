@@ -39,7 +39,7 @@ class RtnDataShippingData(BaseModel):
     city: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="City of the shipping address.", json_schema_extra={"examples": ["Montreal"]})
     region: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="State or province of the shipping address.", json_schema_extra={"examples": ["Quebec"]})
     postal_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Postal or ZIP code of the shipping address.", alias="postalCode", json_schema_extra={"examples": ["H3G 1T1"]})
-    country: Optional[Annotated[str, Field(min_length=2, strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code.", json_schema_extra={"examples": ["CA"]})
+    country: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code.", json_schema_extra={"examples": ["CA"]})
     address_first_used_date: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Date this shipping address was first used. Format YYYYMMDD.", alias="addressFirstUsedDate", json_schema_extra={"examples": ["20250601"]})
     address_first_used_indicator: Optional[StrictStr] = Field(default=None, description="Address age: 01 = first time, 02 = <30 days, 03 = 30–60 days, 04 = >60 days.", alias="addressFirstUsedIndicator", json_schema_extra={"examples": ["04"]})
     is_shipping_name_match: Optional[StrictBool] = Field(default=None, description="True if the shipping name matches the cardholder name.", alias="isShippingNameMatch", json_schema_extra={"examples": [True]})
@@ -48,8 +48,8 @@ class RtnDataShippingData(BaseModel):
     shipping_first_name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="First name of the shipping recipient.", alias="shippingFirstName", json_schema_extra={"examples": ["Adam"]})
     shipping_last_name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Last name of the shipping recipient.", alias="shippingLastName", json_schema_extra={"examples": ["Underhill"]})
     shipping_phone: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Phone number of the shipping recipient. Digits only.", alias="shippingPhone", json_schema_extra={"examples": ["5555552222"]})
-    shipping_address_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Number of shipping addresses on the customer's merchant account.", alias="shippingAddressCount", json_schema_extra={"examples": [2]})
-    days_since_ship_to_address_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last ship-to-address change and the purchase date.", alias="daysSinceShipToAddressChange", json_schema_extra={"examples": [31]})
+    shipping_address_count: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Number of shipping addresses on the customer's merchant account.", alias="shippingAddressCount", json_schema_extra={"examples": [2]})
+    days_since_ship_to_address_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last ship-to-address change and the purchase date.", alias="daysSinceShipToAddressChange", json_schema_extra={"examples": [31]})
     __properties: ClassVar[List[str]] = ["shippingIndicator", "addressLine1", "addressLine2", "addressLine3", "city", "region", "postalCode", "country", "addressFirstUsedDate", "addressFirstUsedIndicator", "isShippingNameMatch", "deliveryEmailAddress", "deliveryTimeframeIndicator", "shippingFirstName", "shippingLastName", "shippingPhone", "shippingAddressCount", "daysSinceShipToAddressChange"]
 
     @field_validator('shipping_indicator')
@@ -60,19 +60,6 @@ class RtnDataShippingData(BaseModel):
         values must never break deserialization on success paths, so unknown wire
         values pass through verbatim instead of raising ValueError.
         """
-        return value
-
-    @field_validator('address_first_used_date')
-    def address_first_used_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
         return value
 
     @field_validator('address_first_used_indicator')

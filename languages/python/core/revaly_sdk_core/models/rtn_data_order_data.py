@@ -34,52 +34,26 @@ class RtnDataOrderData(BaseModel):
     Order and purchase details. All fields optional.
     """ # noqa: E501
     purchase_date: Optional[datetime] = Field(default=None, description="ISO 8601 UTC timestamp of the purchase.", alias="purchaseDate", json_schema_extra={"examples": ["2026-03-31T14:03:22.123Z"]})
-    item_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Total number of items in the order.", alias="itemCount", json_schema_extra={"examples": [2]})
-    highest_price_item_price: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Price of the most expensive item in minor currency units.", alias="highestPriceItemPrice", json_schema_extra={"examples": [9999]})
+    item_count: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Total number of items in the order.", alias="itemCount", json_schema_extra={"examples": [2]})
+    highest_price_item_price: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Price of the most expensive item in minor currency units.", alias="highestPriceItemPrice", json_schema_extra={"examples": [9999]})
     highest_price_item_brand: Optional[StrictStr] = Field(default=None, description="Brand of the most expensive item.", alias="highestPriceItemBrand", json_schema_extra={"examples": ["Apple"]})
     highest_price_item_category: Optional[StrictStr] = Field(default=None, description="Category of the most expensive item.", alias="highestPriceItemCategory", json_schema_extra={"examples": ["Electronics"]})
     is_pre_order_purchase: Optional[StrictBool] = Field(default=None, description="True if the order contains pre-order items.", alias="isPreOrderPurchase", json_schema_extra={"examples": [False]})
     pre_order_date: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Expected availability date for pre-order items. Format YYYYMMDD.", alias="preOrderDate", json_schema_extra={"examples": ["20261201"]})
     is_reorder: Optional[StrictBool] = Field(default=None, description="True if the customer has previously purchased this item.", alias="isReorder", json_schema_extra={"examples": [False]})
-    installment_payment_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Number of installment payments for this transaction.", alias="installmentPaymentCount", json_schema_extra={"examples": [3]})
+    installment_payment_count: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Number of installment payments for this transaction.", alias="installmentPaymentCount", json_schema_extra={"examples": [3]})
     is_recurring_purchase: Optional[StrictBool] = Field(default=None, description="True if this purchase is part of a recurring series.", alias="isRecurringPurchase", json_schema_extra={"examples": [False]})
-    recurring_interval_days: Optional[Annotated[int, Field(strict=True, ge=1)]] = Field(default=None, description="Days between recurring charges.", alias="recurringIntervalDays", json_schema_extra={"examples": [30]})
+    recurring_interval_days: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between recurring charges.", alias="recurringIntervalDays", json_schema_extra={"examples": [30]})
     recurring_end_date: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="End date for recurring charges. Format YYYYMMDD.", alias="recurringEndDate", json_schema_extra={"examples": ["20271231"]})
     alternate_payment_indicator: Optional[StrictStr] = Field(default=None, description="Alternative payment method: 01 = none, 02 = coupon, 03 = gift card, 04 = store credit.", alias="alternatePaymentIndicator", json_schema_extra={"examples": ["01"]})
-    gift_card_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Number of gift cards applied to this order.", alias="giftCardCount", json_schema_extra={"examples": [0]})
-    gift_card_amount: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Total gift card amount in minor currency units.", alias="giftCardAmount", json_schema_extra={"examples": [5000]})
+    gift_card_count: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Number of gift cards applied to this order.", alias="giftCardCount", json_schema_extra={"examples": [0]})
+    gift_card_amount: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Total gift card amount in minor currency units.", alias="giftCardAmount", json_schema_extra={"examples": [5000]})
     gift_card_currency: Optional[StrictStr] = Field(default=None, description="ISO 4217 numeric currency code for gift card amount.", alias="giftCardCurrency", json_schema_extra={"examples": ["840"]})
     installment_payment_data: Optional[StrictStr] = Field(default=None, description="Number of installment payments as a string. String companion to installmentPaymentCount for FIs that expect a string.", alias="installmentPaymentData", json_schema_extra={"examples": ["3"]})
     top_item_categories: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Up to five item-category codes concatenated as four-digit codes.", alias="topItemCategories", json_schema_extra={"examples": ["10002000300040005"]})
     highest_price_item_sku: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="SKU of the most expensive item in the order.", alias="highestPriceItemSku", json_schema_extra={"examples": ["TKDC315U"]})
     is_coupon_used: Optional[StrictStr] = Field(default=None, description="Whether a coupon was used (Amex is_coupon_used). Narrower than alternatePaymentIndicator.", alias="isCouponUsed", json_schema_extra={"examples": ["N"]})
     __properties: ClassVar[List[str]] = ["purchaseDate", "itemCount", "highestPriceItemPrice", "highestPriceItemBrand", "highestPriceItemCategory", "isPreOrderPurchase", "preOrderDate", "isReorder", "installmentPaymentCount", "isRecurringPurchase", "recurringIntervalDays", "recurringEndDate", "alternatePaymentIndicator", "giftCardCount", "giftCardAmount", "giftCardCurrency", "installmentPaymentData", "topItemCategories", "highestPriceItemSku", "isCouponUsed"]
-
-    @field_validator('pre_order_date')
-    def pre_order_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
-        return value
-
-    @field_validator('recurring_end_date')
-    def recurring_end_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
-        return value
 
     @field_validator('alternate_payment_indicator')
     def alternate_payment_indicator_validate_enum(cls, value):

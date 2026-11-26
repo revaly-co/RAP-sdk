@@ -35,7 +35,7 @@ class RtnDataDeviceData(BaseModel):
     ip_address: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="IPv4 or IPv6 address of the device.", alias="ipAddress", json_schema_extra={"examples": ["203.0.113.42"]})
     city: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="City derived from IP geolocation.", json_schema_extra={"examples": ["Montreal"]})
     region: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="State or province derived from IP geolocation.", json_schema_extra={"examples": ["Quebec"]})
-    country: Optional[Annotated[str, Field(min_length=2, strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code from IP geolocation.", json_schema_extra={"examples": ["CA"]})
+    country: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code from IP geolocation.", json_schema_extra={"examples": ["CA"]})
     device_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Device identifier or fingerprint token.", alias="deviceId", json_schema_extra={"examples": ["dev_8f2c1a9b3d4e"]})
     is_javascript_enabled: Optional[StrictBool] = Field(default=None, description="True if JavaScript is enabled in the device browser.", alias="isJavascriptEnabled", json_schema_extra={"examples": [True]})
     is_java_enabled: Optional[StrictBool] = Field(default=None, description="True if Java is enabled in the device browser.", alias="isJavaEnabled", json_schema_extra={"examples": [False]})

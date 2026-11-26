@@ -27,6 +27,23 @@ ALL_LANGS="dotnet java php typescript python go"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# count_matches ERE FILE... : how many times ERE occurs across the FILEs. Zero is an
+# answer; an unreadable FILE is not (cat fails, and pipefail fails the assignment that
+# calls this). Always call it in an assignment: N=$(count_matches ...).
+count_matches() {
+  local re="$1"; shift
+  cat -- "$@" | { grep -o -E -- "$re" || true; } | wc -l | tr -d ' '
+}
+
+# fail_if_found ERE MESSAGE FILE... : print every line of the FILEs that matches ERE
+# (file:line:text, on stderr), then stop generation with MESSAGE. A grep error stops
+# generation too.
+fail_if_found() {
+  local re="$1" msg="$2" rc=0; shift 2
+  grep -n -E -- "$re" "$@" >&2 || rc=$?
+  [ "$rc" -eq 1 ] || die "$msg"
+}
+
 usage() {
   sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
@@ -142,6 +159,45 @@ for LANG_ID in $LANGS; do
     if grep -rnE 'max_length=[0-9]' "$PY_MODELS" > /dev/null; then
       die "max_length survived in $PY_MODELS (ADR-SDK-034); extend the strip pattern."
     fi
+    # ADR-SDK-034 amendment of 2026-11-26 (SC-1018): for the rtnData block (RtnData and its
+    # ten nested models, the only schemas the platform exempts) the SDK never refuses a
+    # value because it breaks a documented pattern, minimum or minLength; the platform
+    # decides. In models/rtn_data*.py only, this step removes `ge=N` and `min_length=N` from
+    # the field annotations (`Field(strict=True, ge=N)` and `Field(min_length=N, strict=True)`
+    # both become `Field(strict=True)`) and deletes each `_validate_regular_expression`
+    # validator together with the blank line before it, which is exactly what the template's
+    # x-regex section prints. `strict=True` (the type check), the datetime type and the enum
+    # validators stay. It runs after the SC-886 step, whose output shape
+    # (`Field(min_length=N, strict=True)`) it matches, inside the same pinned image, and the
+    # program reaches perl on stdin so no host shell or Windows command line rewrites it.
+    # Generation fails if the glob matches no file, if a ge=, gt=, min_length= or regex
+    # validator survives in the family, if the strict=True or enum validator count moves, or
+    # if the family's line count is not the old count less 13 per regex validator. These
+    # checks cannot see an edit that keeps the line count; the tests pin the rest (types on
+    # construction, assignment and from_dict). Re-check the patterns on any generator upgrade.
+    PY_RTN=( "$PY_MODELS"/rtn_data*.py )
+    [ -f "${PY_RTN[0]}" ] || die "no $PY_MODELS/rtn_data*.py: the rtnData family was renamed or moved; fix the SC-1018 step's glob (ADR-SDK-034)."
+    PY_STRICT=$(count_matches 'strict=True' "${PY_RTN[@]}")
+    PY_ENUMS=$(count_matches '_validate_enum\(cls, value\):' "${PY_RTN[@]}")
+    PY_REGEX=$(count_matches '_validate_regular_expression\(cls, value\):' "${PY_RTN[@]}")
+    PY_LINES=$(cat -- "${PY_RTN[@]}" | wc -l | tr -d ' ')
+    # shellcheck disable=SC2086  # DOCKER_USER intentionally word-splits
+    docker run --rm -i $DOCKER_USER --entrypoint perl \
+      -v "$HOST_REPO:/local" -w /local \
+      "$IMAGE_REF" -0777 -i -p - "${PY_RTN[@]}" <<'PERL'
+s/(Annotated\[\w+, )Field\(strict=True, ge=-?[0-9.]+\)\]/${1}Field(strict=True)]/g;
+s/(Annotated\[\w+, )Field\(min_length=[0-9]+, strict=True\)\]/${1}Field(strict=True)]/g;
+s/^\n    \@field_validator\('([a-z_0-9]+)'\)\n    def \1_validate_regular_expression\(cls, value\):\n        """Validates the regular expression"""\n        if value is None:\n            return value\n\n        if not isinstance\(value, str\):\n            value = str\(value\)\n\n        if not re\.match\(r"[^\n]*", value\):\n            raise ValueError\(r"must validate the regular expression [^\n]*"\)\n        return value\n//mg;
+PERL
+    fail_if_found '\bg[et]=|min_length=|_validate_regular_expression' \
+      "a pattern, minimum or minLength check survived in $PY_MODELS/rtn_data*.py (lines above): extend the SC-1018 step's patterns (ADR-SDK-034)." \
+      "${PY_RTN[@]}"
+    N=$(count_matches 'strict=True' "${PY_RTN[@]}")
+    [ "$N" = "$PY_STRICT" ] || die "the SC-1018 step changed the strict=True count in $PY_MODELS/rtn_data*.py from $PY_STRICT to $N: it removed a type check (ADR-SDK-034 keeps types)."
+    N=$(count_matches '_validate_enum\(cls, value\):' "${PY_RTN[@]}")
+    [ "$N" = "$PY_ENUMS" ] || die "the SC-1018 step changed the enum validator count in $PY_MODELS/rtn_data*.py from $PY_ENUMS to $N."
+    N=$(cat -- "${PY_RTN[@]}" | wc -l | tr -d ' ')
+    [ "$N" = "$((PY_LINES - 13 * PY_REGEX))" ] || die "$PY_MODELS/rtn_data*.py has $N lines after the SC-1018 step, expected $((PY_LINES - 13 * PY_REGEX)) ($PY_LINES less 13 for each of the $PY_REGEX regex validators): the step removed or added other lines."
   fi
   FILE_COUNT=$(find "$OUT_DIR" -type f | wc -l | tr -d ' ')
   echo "==> [$LANG_ID] done ($FILE_COUNT files)"

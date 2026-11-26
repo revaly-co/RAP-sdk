@@ -45,12 +45,12 @@ class RtnDataCustomerData(BaseModel):
     account_change_indicator: Optional[StrictStr] = Field(default=None, description="Account change age token: 01 = during transaction, 02 = <30 days, 03 = 30–60 days, 04 = >60 days.", alias="accountChangeIndicator", json_schema_extra={"examples": ["04"]})
     password_last_changed_date: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Last password change date. Format YYYYMMDD.", alias="passwordLastChangedDate", json_schema_extra={"examples": ["20250101"]})
     password_change_indicator: Optional[StrictStr] = Field(default=None, description="Password change age: 01 = never reset, 02 = during transaction, 03 = <30 days, 04 = 30–60 days, 05 = >60 days.", alias="passwordChangeIndicator", json_schema_extra={"examples": ["01"]})
-    transaction_successful_count_last_six_months: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Count of successful purchases in the past 6 months.", alias="transactionSuccessfulCountLastSixMonths", json_schema_extra={"examples": [7]})
-    transaction_attempted_count_last24_hours: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Count of transaction attempts in the past 24 hours.", alias="transactionAttemptedCountLast24Hours", json_schema_extra={"examples": [1]})
-    transaction_attempted_count_last_year: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Count of transaction attempts in the past year.", alias="transactionAttemptedCountLastYear", json_schema_extra={"examples": [12]})
+    transaction_successful_count_last_six_months: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Count of successful purchases in the past 6 months.", alias="transactionSuccessfulCountLastSixMonths", json_schema_extra={"examples": [7]})
+    transaction_attempted_count_last24_hours: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Count of transaction attempts in the past 24 hours.", alias="transactionAttemptedCountLast24Hours", json_schema_extra={"examples": [1]})
+    transaction_attempted_count_last_year: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Count of transaction attempts in the past year.", alias="transactionAttemptedCountLastYear", json_schema_extra={"examples": [12]})
     payment_method_added_date: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Date payment method was added. Format YYYYMMDD.", alias="paymentMethodAddedDate", json_schema_extra={"examples": ["20240115"]})
     payment_method_age_indicator: Optional[StrictStr] = Field(default=None, description="Payment method age token.", alias="paymentMethodAgeIndicator", json_schema_extra={"examples": ["04"]})
-    payment_method_add_attempt_count_last24_hours: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Number of payment method add attempts in the past 24 hours.", alias="paymentMethodAddAttemptCountLast24Hours", json_schema_extra={"examples": [0]})
+    payment_method_add_attempt_count_last24_hours: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Number of payment method add attempts in the past 24 hours.", alias="paymentMethodAddAttemptCountLast24Hours", json_schema_extra={"examples": [0]})
     is_payment_method_on_file: Optional[StrictBool] = Field(default=None, description="True if the payment method is stored on file for the customer.", alias="isPaymentMethodOnFile", json_schema_extra={"examples": [True]})
     is_account_suspicious: Optional[StrictBool] = Field(default=None, description="True if the merchant considers the account suspicious.", alias="isAccountSuspicious", json_schema_extra={"examples": [False]})
     customer_id: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Merchant's internal customer identifier.", alias="customerId", json_schema_extra={"examples": ["cust_0294b7c1"]})
@@ -59,36 +59,23 @@ class RtnDataCustomerData(BaseModel):
     is_email_known_to_customer: Optional[StrictBool] = Field(default=None, description="True if the email address on file is associated with a known customer account.", alias="isEmailKnownToCustomer", json_schema_extra={"examples": [True]})
     is_registered_customer: Optional[StrictStr] = Field(default=None, description="Whether the purchaser is a registered member (Y) or guest (N).", alias="isRegisteredCustomer", json_schema_extra={"examples": ["Y"]})
     is_registration_updated: Optional[StrictStr] = Field(default=None, description="Whether any registration information changed since account creation.", alias="isRegistrationUpdated", json_schema_extra={"examples": ["N"]})
-    registered_account_tenure: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Number of days the customer has been registered with the merchant.", alias="registeredAccountTenure", json_schema_extra={"examples": [720]})
+    registered_account_tenure: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Number of days the customer has been registered with the merchant.", alias="registeredAccountTenure", json_schema_extra={"examples": [720]})
     registered_name: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Customer name as registered with the merchant.", alias="registeredName", json_schema_extra={"examples": ["Jane Smith"]})
     registered_email: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Registered email address with the merchant.", alias="registeredEmail", json_schema_extra={"examples": ["jane@example.com"]})
     registered_postal_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Registered postal code with the merchant.", alias="registeredPostalCode", json_schema_extra={"examples": ["32121"]})
     registered_address: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Registered address with the merchant (no city/state).", alias="registeredAddress", json_schema_extra={"examples": ["400 Maple Court"]})
     registered_phone: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Registered phone number. Digits only.", alias="registeredPhone", json_schema_extra={"examples": ["5555551111"]})
-    days_since_name_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last registered-name change and the purchase date.", alias="daysSinceNameChange", json_schema_extra={"examples": [31]})
-    days_since_email_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last registered-email change and the purchase date.", alias="daysSinceEmailChange", json_schema_extra={"examples": [31]})
-    days_since_password_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last password change and the purchase date.", alias="daysSincePasswordChange", json_schema_extra={"examples": [31]})
-    days_since_postal_code_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last registered-postal-code change and the purchase date.", alias="daysSincePostalCodeChange", json_schema_extra={"examples": [31]})
-    days_since_address_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last registered-address change and the purchase date.", alias="daysSinceAddressChange", json_schema_extra={"examples": [31]})
-    days_since_phone_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last registered-phone change and the purchase date.", alias="daysSincePhoneChange", json_schema_extra={"examples": [31]})
-    days_since_ship_to_name_change: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Days between the last ship-to-name change and the purchase date.", alias="daysSinceShipToNameChange", json_schema_extra={"examples": [31]})
+    days_since_name_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last registered-name change and the purchase date.", alias="daysSinceNameChange", json_schema_extra={"examples": [31]})
+    days_since_email_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last registered-email change and the purchase date.", alias="daysSinceEmailChange", json_schema_extra={"examples": [31]})
+    days_since_password_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last password change and the purchase date.", alias="daysSincePasswordChange", json_schema_extra={"examples": [31]})
+    days_since_postal_code_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last registered-postal-code change and the purchase date.", alias="daysSincePostalCodeChange", json_schema_extra={"examples": [31]})
+    days_since_address_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last registered-address change and the purchase date.", alias="daysSinceAddressChange", json_schema_extra={"examples": [31]})
+    days_since_phone_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last registered-phone change and the purchase date.", alias="daysSincePhoneChange", json_schema_extra={"examples": [31]})
+    days_since_ship_to_name_change: Optional[Annotated[int, Field(strict=True)]] = Field(default=None, description="Days between the last ship-to-name change and the purchase date.", alias="daysSinceShipToNameChange", json_schema_extra={"examples": [31]})
     customer_ani: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="ANI 10-digit phone number used to place a phone order. Digits only.", alias="customerAni", json_schema_extra={"examples": ["5555551111"]})
     customer_ani_digits: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="ANI Information Identifier (II) digits: e.g. cellular = 61–63, payphone = 27, toll-free = 24/25.", alias="customerAniDigits", json_schema_extra={"examples": ["27"]})
     is_email_associated_with_fraud: Optional[StrictBool] = Field(default=None, description="True if the email has been associated with confirmed/suspected fraud (distinct from isAccountSuspicious). Carrier for BofA emailAssociatedWithFraudFlag.", alias="isEmailAssociatedWithFraud", json_schema_extra={"examples": [False]})
     __properties: ClassVar[List[str]] = ["firstName", "lastName", "email", "homePhone", "mobilePhone", "workPhone", "accountOpenedDate", "accountAgeIndicator", "isFreeAccount", "accountLastChangedDate", "accountChangeIndicator", "passwordLastChangedDate", "passwordChangeIndicator", "transactionSuccessfulCountLastSixMonths", "transactionAttemptedCountLast24Hours", "transactionAttemptedCountLastYear", "paymentMethodAddedDate", "paymentMethodAgeIndicator", "paymentMethodAddAttemptCountLast24Hours", "isPaymentMethodOnFile", "isAccountSuspicious", "customerId", "accountAuthenticationMethod", "isTenuredCustomer", "isEmailKnownToCustomer", "isRegisteredCustomer", "isRegistrationUpdated", "registeredAccountTenure", "registeredName", "registeredEmail", "registeredPostalCode", "registeredAddress", "registeredPhone", "daysSinceNameChange", "daysSinceEmailChange", "daysSincePasswordChange", "daysSincePostalCodeChange", "daysSinceAddressChange", "daysSincePhoneChange", "daysSinceShipToNameChange", "customerAni", "customerAniDigits", "isEmailAssociatedWithFraud"]
-
-    @field_validator('account_opened_date')
-    def account_opened_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
-        return value
 
     @field_validator('account_age_indicator')
     def account_age_indicator_validate_enum(cls, value):
@@ -98,19 +85,6 @@ class RtnDataCustomerData(BaseModel):
         values must never break deserialization on success paths, so unknown wire
         values pass through verbatim instead of raising ValueError.
         """
-        return value
-
-    @field_validator('account_last_changed_date')
-    def account_last_changed_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
         return value
 
     @field_validator('account_change_indicator')
@@ -123,19 +97,6 @@ class RtnDataCustomerData(BaseModel):
         """
         return value
 
-    @field_validator('password_last_changed_date')
-    def password_last_changed_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
-        return value
-
     @field_validator('password_change_indicator')
     def password_change_indicator_validate_enum(cls, value):
         """Open vocabulary (RAP ADR-SDK-023 override): accept unknown enum values.
@@ -144,19 +105,6 @@ class RtnDataCustomerData(BaseModel):
         values must never break deserialization on success paths, so unknown wire
         values pass through verbatim instead of raising ValueError.
         """
-        return value
-
-    @field_validator('payment_method_added_date')
-    def payment_method_added_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
         return value
 
     @field_validator('payment_method_age_indicator')
