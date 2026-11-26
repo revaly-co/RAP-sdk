@@ -43,6 +43,7 @@ Every finalized decision from **RFC-046 "RAP Integration SDK"** (internal Conflu
 | OQ-14 | PRD-057 Musts resolved via formal deviation acceptance recorded on the PRD (Charles); approval given ahead as tracked follow-up | 2026-07-10 | Product | ADR-SDK-021 |
 | OQ-15 | Create `rap-sdk` under existing `revaly-co` org (created 2026-06-09, verified); decoupled from org rename; `FlexPay-io` parked permanently | 2026-07-10 | DevOps + Leadership | ADR-SDK-022 |
 | OQ-18 | No client-side refusal for a request body field's `maxLength`: the platform decides (path-parameter checks unchanged); Python and PHP template revision drops the check and gates their release (v2.16.0 ships .NET, Java, TypeScript, Go at 0.9.0); minor bump per package; .NET note states the `merchantTrustLevel` renumbering | 2026-11-05 | SC Eng (Dimitri) | ADR-SDK-034 |
+| OQ-19 | For the `rtnData` block, the Python and PHP SDKs neither refuse nor rewrite a value before sending for a pattern, value list, minimum or `minLength`; types and formats stay checked in every SDK; the Java and .NET value lists are kept; a patch release for Python and PHP | 2026-11-26 | SC Eng (Dimitri) | ADR-SDK-034 amendment |
 
 ## RFC revisions after approval
 

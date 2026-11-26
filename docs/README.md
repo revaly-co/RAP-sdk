@@ -101,7 +101,8 @@ Building *on* the SDK rather than *in* it? The path is shorter:
   and PHP 0.12.1, a patch. All seven tag runs were green, all six registries served the new
   versions by 18:57 UTC, and the release-notes drift check found nothing.
 - **The `rtnData` edge above is now SC-1018 (OQ-19, closed).** The ADR-SDK-034 amendment was
-  accepted on 2026-11-26 (Dimitri, as SDK author); the implementation is pending. It stops the
+  accepted on 2026-11-26 (Dimitri, as SDK author) and is implemented on PR #130; Python 0.11.2
+  and PHP 0.12.2 follow the merge as a patch. It stops the
   Python and PHP SDKs refusing or rewriting an `rtnData` value for a pattern, value list,
   minimum or `minLength`: a Python
   generation step and a PHP revision scoped to the `RtnData` models, released as a patch.

@@ -7,7 +7,9 @@ change: a request the SDK no longer refuses is sent and classified like any othe
 **Amendment:** accepted 2026-11-26 by Dimitri Pankov as RAP SDK author (SC-1018, closes OQ-19):
 decision 2 no longer applies to the `rtnData` block in the Python and PHP SDKs. See
 [Amendment](#amendment--2026-11-26-sc-1018-python-and-php-do-not-refuse-or-rewrite-rtndata-values-before-sending)
-below; the implementation is pending under SC-1018.
+below. Implemented 2026-11-26 under SC-1018 (see
+[Implementation (SC-1018)](#implementation-sc-1018) below); Python and PHP will release it as a
+patch.
 **Source:** spec pins v2.15.0+693a36b (SC-869: the 256-character `description` bound from SC-785)
 and v2.16.0+99cb098 (SC-661: the 45-character `customerIp` bound)
 **Owner:** SC Eng
@@ -117,9 +119,11 @@ OQ-18 asked (a) whether the Python and PHP refusal is acceptable or the platform
   setters, and Python's response models carry the same annotations, so a response with a longer
   value now binds instead of raising: a processed payment can no longer surface as a parse error
   over a length bound. Decision 2's "request body fields" reads "model fields".
-- **A pattern that embeds a length still refuses.** `fraudPreventionPlatform`'s pattern
-  `^[A-Za-z0-9._:-]{1,128}$` still refuses a 129-character value in Python and PHP, because
-  decision 2 keeps patterns.
+- **A pattern that embeds a length kept refusing in SC-886.** As built in SC-886,
+  `fraudPreventionPlatform`'s pattern `^[A-Za-z0-9._:-]{1,128}$` refused a 129-character value
+  in Python and PHP, because decision 2 keeps patterns. The field is in `rtnData`, so since the
+  amendment of 2026-11-26 (SC-1018) the Python and PHP cores send such a value as given. A
+  pattern outside `rtnData` still refuses, for example `PaymentRequest.currency` (`^[A-Z]{3}$`).
 - **Tests:** Python `tests/test_length_bounds.py` (six tests) and
   `test_merchant_transaction_id_over_100_is_left_to_the_platform`, which replaces the test that
   asserted the refusal; PHP `tests/LengthBoundsTest.php` (five tests). Against unmodified `main`
@@ -132,8 +136,9 @@ OQ-18 asked (a) whether the Python and PHP refusal is acceptable or the platform
 ## Amendment — 2026-11-26 (SC-1018): Python and PHP do not refuse or rewrite `rtnData` values before sending
 
 **Status:** Accepted — decided 2026-11-26 by Dimitri Pankov as RAP SDK author (SC-1018, closes
-OQ-19). The implementation is pending under SC-1018 (acceptance criteria 3 to 6); until it is
-released, the published Python and PHP packages keep the checks. No failover-contract change.
+OQ-19). Implemented under SC-1018 (see [Implementation (SC-1018)](#implementation-sc-1018)
+below); until the Python 0.11.2 and PHP 0.12.2 patch release, the published Python 0.11.1 and
+PHP 0.12.1 keep the checks. No failover-contract change.
 
 ### Context
 
@@ -226,3 +231,68 @@ released, the published Python and PHP packages keep the checks. No failover-con
 - No failover classification, error code or reconcile verdict changes. Outside `rtnData`, every
   generated check is as before.
 - The implementation and the release are SC-1018 acceptance criteria 3 to 6.
+
+### Implementation (SC-1018)
+
+Implemented 2026-11-26 on PR #130 by two post-generation steps in `pipeline/generate.sh`, each
+run inside the pinned image and selecting files by name: the `rtnData` family, `RtnData` and its
+ten nested models, eleven files per language. The notes below on PHP types, PHP value lists,
+future spec changes and the way back were ratified at Gate 2 on 2026-11-26 as the way the
+decisions are carried out; they are implementation notes and do not change the decision text.
+
+- **Python: a generation step after the SC-886 step.** In `models/rtn_data*.py` only, it
+  removes 20 `ge=` and 4 `min_length=` annotations and 10 `_validate_regular_expression`
+  validators. 7 of the 11 files change (24 lines added, 154 removed). It keeps the 94
+  `strict=True` type checks, the `datetime` type of `orderData.purchaseDate` and the 23 enum
+  validators. Generation fails if
+  the file pattern matches no file, if a `ge=`, `gt=`, `min_length=` or regex validator
+  survives, if the `strict=True` or enum validator count moves, or if the family's line count is
+  not the old count less 13 for each removed validator.
+- **Python: assignment and `from_dict` follow construction.** `validate_assignment` stays on, so
+  a value assigned to a built model, or read by `from_dict`, meets the same rules as one given to
+  the constructor: a wrong type is refused, and the removed rules are not applied.
+- **PHP: a post-generation step, not a template fork.** The stock template has no per-model
+  switch. The alternative, a second generator pass filtered to the family with its own template,
+  produced byte-identical output but had three ways to fail that still finish without an error:
+  the generated-code banner lost, the `maxLength` checks returning, or a mistyped list of model
+  names writing one file. In `lib/Model/RtnData*.php` only, the step deletes whole lines and
+  inserts none: 34 setter checks (10 pattern, 4 `minLength`, 20 minimum), 23 sentinel coercions
+  (the setter replacing an unlisted value with `unknown_default_open_api`), and the matching 34
+  rule entries and 23 value-list entries in `listInvalidProperties()`. 8 of the 11 files change
+  (537 lines removed, none added). It keeps the 159 non-null guards, the 23
+  `*_UNKNOWN_DEFAULT_OPEN_API` constants, the 23 `get*AllowableValues()` methods, `valid()` and
+  `listInvalidProperties()`. Generation fails if the file pattern matches no file, if a removed
+  check survives, if the non-null guard, constant or getter count moves, or if the family's line
+  count is not the old count less the lines of the removed checks.
+- **Nothing outside the family changed.** 15 generated files differ from `45e360c` in all
+  (7 Python, 8 PHP); the .NET, Java, TypeScript and Go cores are unchanged.
+- **PHP types (decision 1, as carried out).** The PHP setters checked no parameter type before
+  this change and check none after; Python keeps every type check. A few wrong-type values were
+  refused in PHP only as a side effect of the removed checks: an array given to a `minLength`
+  setter, a value whose string form breaks a digit-only pattern, and an integer replaced by the
+  sentinel on a list of text values. They are now sent as given.
+- **PHP value lists (decision 3, as carried out).** The value-list entries also leave
+  `listInvalidProperties()`, so `valid()` no longer reports an unlisted `rtnData` value.
+  `valid()` is public. Nothing in the SDK calls it; whether a merchant calls it is not known.
+- **Future spec changes.** In Python, a new exclusive minimum (`gt=`) or a new list bound on an
+  `rtnData` field (pydantic writes one as `min_length=`) stops generation until the step is
+  extended. In PHP, an exclusive minimum is removed like any minimum. The risk that a future
+  schema named like the family but not part of `rtnData` is matched is recorded in
+  `pipeline/python/config.yaml` and `pipeline/php/config.yaml`.
+- **Tests:** Python `tests/test_rtn_data_values.py` covers each rule type on construction,
+  `from_dict`, assignment and authorize, and proves that a wrong type is still refused on
+  construction, on assignment and in `PaymentRequest.from_dict`. PHP `tests/RtnDataValuesTest.php`
+  covers each rule type and an unlisted value on charge and authorize, and proves that the
+  family's `listInvalidProperties()` is empty for breaking and unlisted values. The two tests
+  that pinned the `not allowed!` refusal (decision 5) are now
+  `test_pattern_outside_rtn_data_is_still_refused` and `testPatternOutsideRtnDataIsStillRefused`
+  and pin the kept refusal on `PaymentRequest.currency`. Log-capture tests in both languages
+  prove that a malformed `fullPan` is sent as given but never appears in a log record, a
+  structured log field, an exception in log context or a trace event. Against the previous cores
+  14 Python and 11 PHP tests fail; with this change all 202 Python and 135 PHP tests pass.
+- **Way back.** There is no runtime switch: the behaviour ships inside the package and changes
+  only when a merchant upgrades. A bad release is fixed by a forward patch, made from a reviewed
+  revert of the tests and both steps together and released through the pipeline. No yank is
+  approved in advance.
+- **Release:** Python 0.11.2 and PHP 0.12.2, a patch (decision 6), cut from `main` after PR #130
+  merges.
