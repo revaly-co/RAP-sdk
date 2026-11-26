@@ -20,6 +20,22 @@
 #     strips only Annotated[str, Field(...)] bounds, leaves api/ untouched (path and query
 #     parameter bounds stay), and fails generation if any max_length survives anywhere in
 #     models/ (a list bound included). Re-check the pattern on any generator upgrade.
+#   pipeline/generate.sh rtnData step (python, 2026-11-26, SC-1018, ADR-SDK-034
+#     amendment) — in revaly_sdk_core/models/rtn_data*.py only (RtnData and its ten
+#     nested models, the only schemas the platform exempts), removes `ge=N` and
+#     `min_length=N` from the field annotations and deletes the generated
+#     `_validate_regular_expression` validators, so the SDK never refuses an rtnData value
+#     for a pattern, minimum or minLength; the platform decides. `strict=True` (the type
+#     check), the datetime type and the enum validators stay. It runs after the SC-886
+#     step, whose output shape it matches, inside the pinned image, and fails generation
+#     if the glob matches no file, if a ge=, gt=, min_length= or regex validator survives
+#     in the family, if the strict=True or enum validator count moves, or if the family's
+#     line count is not the old count less 13 lines per removed validator. Re-check its
+#     patterns on any generator upgrade. Over-match risk (accepted in SC-1018): the glob
+#     selects by file name, so a future schema named rtn_data* that is not part of the
+#     rtnData block would silently lose its checks, and no survival check would flag it;
+#     at every re-pin, check that each file the glob matches is RtnData or one of the
+#     models nested in it.
 #   templates/pyproject.mustache, requirements.mustache, setup.mustache — forked
 #     2026-07-15 solely to bump dependency floors flagged by Dependabot: urllib3
 #     >= 2.7.0 (GHSA-mf9v-mfxr-j63j, GHSA-qccp-gfcp-xxvc — high) in all three, and the

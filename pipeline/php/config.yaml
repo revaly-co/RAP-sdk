@@ -12,8 +12,27 @@
 # stock v7.23.0 template, with only the two maxLength blocks removed (the setter's
 # InvalidArgumentException and the listInvalidProperties() entry), so the SDK never refuses
 # a request, or a response it deserializes through the setters, for a string length bound;
-# the platform decides. minLength, pattern, enum and required checks are stock; the API
-# layer's path-parameter bounds (api.mustache) are untouched.
+# the platform decides. The fork leaves the minLength, pattern, enum and required checks
+# as the stock template prints them; in the rtnData models only, the step below then
+# removes the minLength, pattern, minimum and value-list checks. The API layer's
+# path-parameter bounds (api.mustache) are untouched.
+# pipeline/generate.sh rtnData step — added 2026-11-26 (SC-1018, ADR-SDK-034 amendment).
+# In lib/Model/RtnData*.php only (RtnData and its ten nested models, the only schemas the
+# platform exempts), it deletes, in the setters, the pattern, minimum and minLength throws
+# and the sentinel coercions (an unlisted value replaced with unknown_default_open_api),
+# and the matching listInvalidProperties() entries, the value-list entries included, so the
+# SDK neither refuses an rtnData value for a pattern, minimum or minLength nor replaces an
+# unlisted one; the platform decides. The non-null guards stay, and so do the public
+# *_UNKNOWN_DEFAULT_OPEN_API constants and get*AllowableValues() methods. It is a step,
+# not a template fork, because the stock template has no per-model switch. It runs inside
+# the pinned image, deletes whole lines only, and fails generation if the glob matches no
+# file, if any removed check survives in the family, if the non-null guard, constant or
+# get*AllowableValues() count moves, or if the family's line count is not the old count
+# less the lines of the removed checks. Re-check its patterns on any generator upgrade.
+# Over-match risk (accepted in SC-1018): the glob selects by file name, so a future schema
+# named RtnData* that is not part of the rtnData block would silently lose its checks, and
+# no survival check would flag it; at every re-pin, check that each file the glob matches
+# is RtnData or one of the models nested in it.
 generatorName: php # default guzzle library — the psr-18 library is still beta
 
 additionalProperties:
