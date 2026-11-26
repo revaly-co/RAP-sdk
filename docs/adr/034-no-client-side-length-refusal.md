@@ -4,6 +4,9 @@
 PR #118 by the fresh-context review of 2026-11-03, SC-869) · closes OQ-18 · implemented
 2026-11-05 (SC-886, see Implementation below) · no failover-contract
 change: a request the SDK no longer refuses is sent and classified like any other request
+**Amendment:** proposed 2026-11-26 (SC-1018, OQ-19), not yet ratified: decision 2 would no longer
+apply to the `rtnData` block. See [Amendment](#amendment--2026-11-26-sc-1018-rtndata-values-are-not-refused-or-rewritten-before-sending)
+below; until it is ratified, decision 2 applies unchanged.
 **Source:** spec pins v2.15.0+693a36b (SC-869: the 256-character `description` bound from SC-785)
 and v2.16.0+99cb098 (SC-661: the 45-character `customerIp` bound)
 **Owner:** SC Eng
@@ -124,3 +127,86 @@ OQ-18 asked (a) whether the Python and PHP refusal is acceptable or the platform
   field that is never set was not refused before this change either (nothing calls `valid()`),
   and the platform still answers it.
 - **Decision 4's hold ends with this change:** Python 0.9.0 and PHP 0.10.0 release from it.
+
+## Amendment — 2026-11-26 (SC-1018): `rtnData` values are not refused or rewritten before sending
+
+**Status:** Proposed — drafted 2026-11-26 for ratification by Dimitri Pankov as RAP SDK author
+(SC-1018, tracked as OQ-19). Until it is ratified, decision 2 applies to `rtnData` unchanged.
+No failover-contract change.
+
+### Context
+
+- Spec v2.20.0+92f2191 (Backbone PR #516, owner ruling by Charles Weiss on 2026-11-25), pinned
+  in v2.21.0+66e302b, states that every `rtnData` field is an optional signal and that no
+  `rtnData` value ever refuses the payment that carries it. The documented lengths, formats and
+  value lists describe what the card issuers can use. A value outside them, or of the wrong JSON
+  type, is accepted, and RTN trims, converts, shortens or leaves out that one value. Backbone
+  removed every validation attribute from its ten `rtnData` models. `rtnData` appears only in
+  `PaymentRequest` and `AuthorizeRequest`; no response schema carries it.
+- Decision 2 kept the generated pattern, value-list, minimum and `minLength` checks. On the
+  `rtnData` block the spec documents 10 patterns, 23 value lists, 20 minimums and 4 `minLength`
+  bounds, plus 66 `maxLength` bounds that no SDK enforces since SC-886. The regenerated v2.21.0
+  cores handle them as follows (measured on 2026-11-26: Python and PHP by running probes with
+  synthetic values, the other four by reading the generated code):
+
+  | Core | A value that breaks a pattern, minimum or `minLength` | A value outside a documented list |
+  | --- | --- | --- |
+  | Python | Refused on construction and on `from_dict` (`ValidationError`), so nothing is sent: 10 regular-expression validators, 20 `ge=` and 4 `min_length=` annotations in `models/rtn_data*.py` | Sent as given (the forked enum validator passes it through) |
+  | PHP | Refused by the setter (`InvalidArgumentException`; 34 such checks in `lib/Model/RtnData*.php`); the array constructor checks nothing and sends it | The setter replaces it with `unknown_default_open_api` (`enumUnknownDefaultCase`); the array constructor sends it as given |
+  | Java | Sent | `fromValue` maps an unlisted string to `UNKNOWN_DEFAULT_OPEN_API`, sent as `unknown_default_open_api`; the enum constants cannot express one |
+  | .NET | Sent (`Validate` is never called) | Cannot be expressed: closed enums, and `FromString` throws |
+  | TypeScript, Go | Sent | Sent as given |
+
+- So a Python or PHP caller can still have a payment refused before sending over an `rtnData`
+  value, which the platform no longer does. The PHP and Java replacement turns the caller's
+  value into one RTN drops; it does not affect the payment.
+- Census (SC-1018 comment 28268; Backbone production telemetry, the 30 days to 2026-11-26
+  19:00 UTC): no charge or authorize sent through an SDK carried `rtnData`; about 1,500 charges
+  carrying `rtnData` came from four custom-integration accounts; the only outside account on the
+  Python or PHP SDK is one PHP sandbox account, last seen on 2026-11-11. No merchant is affected
+  today, so the change is preventive.
+- `enumUnknownDefaultCase` exists for forward compatibility on responses (bake-off §A3) and stays
+  as it is. `rtnData` is request-only, so passing an unlisted request value through does not
+  touch that rule.
+
+### Decision (proposed)
+
+1. **For the `rtnData` block, no SDK refuses a request or replaces a value before sending**
+   because the value breaks a documented pattern, value list, minimum or `minLength`. The
+   platform's own rule decides, as decision 1 does for `maxLength`. The scope is `RtnData` and
+   its ten nested models, the only schemas the platform exempts. Outside `rtnData`, decision 2
+   stands: patterns, value lists, ranges, `minLength`, required fields and non-null guards keep
+   their generated checks.
+2. **Python: a generation step**, as SC-886 did. In `models/rtn_data*.py` only, it removes `ge=`
+   and `min_length=` from the field annotations and removes the generated
+   `_validate_regular_expression` validators. Generation fails if any of them survives in those
+   files. The enum validators already pass values through and are untouched.
+3. **PHP: a generation step or a template fork, scoped to the `RtnData*` models.** The stock
+   template has no per-model switch, so the build chooses the mechanism under ADR-SDK-023. The
+   setters stop throwing for a pattern, minimum or `minLength`, `listInvalidProperties()` drops
+   those entries, and an unlisted value is stored as given instead of the sentinel. The
+   non-null guards stay.
+4. **Java and .NET: unchanged by this amendment.** Neither refuses a request over an `rtnData`
+   value. Opening their value lists means typing the 23 `rtnData` lists as plain strings, which
+   changes public model types: a source-breaking change and a minor release. That is left for a
+   separate decision if a merchant needs to send an unlisted value.
+5. **Tests.** Each changed language gets tests proving that a value breaking each rule type is
+   sent as given; they fail against today's cores. The two tests that pin today's pattern
+   refusal of a 129-character `fraudPreventionPlatform` (Python `tests/test_length_bounds.py`,
+   PHP `tests/LengthBoundsTest.php`, kept by the implementation note above) change with the
+   revision, as `test_merchant_transaction_id_max_length_100` did in SC-886.
+6. **Release.** Python and PHP are released as a patch: the SDK was stricter than the API it
+   calls, which is a fix (`pipeline-and-release.md` §4). The other four packages are unchanged.
+   The release notes state the handling rule neutrally.
+
+### Consequences
+
+- A Python or PHP caller's `rtnData` reaches the platform as the caller built it, and RTN
+  normalizes it, as already happens in TypeScript and Go.
+- A caller loses the local error for a malformed signal. By its own contract the platform does
+  not report one either, and RTN drops the value without telling anyone.
+- Java and .NET keep typed value lists. A Java caller who converts its own strings through
+  `fromValue` still sends the sentinel for an unknown one.
+- No failover classification, error code or reconcile verdict changes. Outside `rtnData`, every
+  generated check is as before.
+- The implementation and the release are SC-1018 acceptance criteria 3 to 6.

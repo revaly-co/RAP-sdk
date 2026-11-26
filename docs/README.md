@@ -97,6 +97,16 @@ Building *on* the SDK rather than *in* it? The path is shorter:
   ADR-SDK-034 to `rtnData` patterns, value lists and minimums: a Python generation step and a PHP
   template revision under ADR-SDK-023, as SC-886 did for `maxLength`, plus open value lists in
   the Java and .NET cores if value lists are in scope.
+- **Released 2026-11-26 off `45e360c` (PR #129):** .NET, Java, TypeScript, Python and Go 0.11.1
+  and PHP 0.12.1, a patch. All seven tag runs were green, all six registries served the new
+  versions by 18:57 UTC, and the release-notes drift check found nothing.
+- **The `rtnData` edge above is now SC-1018 (OQ-19).** An amendment to ADR-SDK-034 is proposed
+  and awaits the owner's ratification. It would stop the SDKs refusing or rewriting an `rtnData`
+  value, for the `rtnData` block only: a Python generation step and a PHP revision scoped to
+  the `RtnData` models, released as a patch, with the Java and .NET value lists unchanged. The
+  production census (SC-1018 comment 28268, the 30 days to 2026-11-26) found no SDK charge or
+  authorize carrying `rtnData`. The only outside account on the Python or PHP SDK is one PHP
+  sandbox account, so no merchant is affected today.
 
 ## Status snapshot (2026-11-25)
 
