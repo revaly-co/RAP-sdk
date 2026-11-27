@@ -2,6 +2,11 @@
 
 **Status:** Accepted — decided 2026-07-14 (OQ-1 closure); ratification = SC Eng review + merge
 of this ADR's PR
+**Amendment:** accepted 2026-11-27 by Dimitri Pankov as RAP SDK author (SC-1020): a
+post-generation step in `pipeline/generate.sh` is a third sanctioned way to adjust a generated
+core, beside generator flags and template overrides, under the rules in
+[Amendment](#amendment--2026-11-27-sc-1020-post-generation-steps) below. Text only: no generated
+file, pipeline script or SDK behaviour changes.
 **Source:** RFC-046 §11 OQ-1 (build gate confirmed at the approval walk); evidence:
 [`../generator-bakeoff.md`](../generator-bakeoff.md) (2026-07-14 — hands-on generation of all
 six cores + July-2026 market research verified against primary sources)
@@ -32,7 +37,9 @@ machinery that is not excludable from any generated core. **Speakeasy** remains 
   zero-egress and account-free — "checksum-pinned like any release tooling"
   (`../pipeline-and-release.md` §6).
 - **Pinned per-language generation configs** (all mitigations are generator-flag or
-  template-partial level — the spec artifact is never edited, ADR-SDK-006):
+  template-partial level — the spec artifact is never edited, ADR-SDK-006; amended 2026-11-27: a
+  post-generation step is a third level, under the rules in the
+  [Amendment](#amendment--2026-11-27-sc-1020-post-generation-steps) below):
 
 | Language | Generator / library | Required flags & overrides |
 | --- | --- | --- |
@@ -104,3 +111,62 @@ machinery that is not excludable from any generated core. **Speakeasy** remains 
   template partial, or `restsharp` library at the cost of a Newtonsoft dependency).
 - A generator *change* (version bump or vendor switch) is an ADR-SDK-023 revision — never a
   quiet pipeline edit (repo rule: [Decided] items reverse only by ADR revision).
+
+## Amendment — 2026-11-27 (SC-1020): post-generation steps
+
+**Status:** Accepted — decided 2026-11-27 by Dimitri Pankov as RAP SDK author (SC-1020). Text
+only: it records how the cores are already produced; no generated file, pipeline script or SDK
+behaviour changes.
+
+### Context
+
+The Decision above says every mitigation is a generator flag or a template partial. That has not
+been true since 2026-11-05. `pipeline/generate.sh` also runs post-generation steps: after the
+generator writes a core, a step edits a named set of the generated files, inside the same pinned
+image. Three steps exist:
+
+| Step | Added | Files it edits | What it removes | Recorded in |
+| --- | --- | --- | --- | --- |
+| Python length step (`generate.sh`, the SC-886 block) | 2026-11-05, SC-886 | `revaly_sdk_core/models/*.py` | `max_length=N` on string fields | ADR-SDK-034: decision 1 decides the change; its Implementation (2026-11-05, SC-886) section records the step, used for Python in place of decision 3's template revision |
+| Python `rtnData` step (the first SC-1018 block) | 2026-11-26, SC-1018 | `revaly_sdk_core/models/rtn_data*.py` | `ge=N`, `min_length=N` and the `_validate_regular_expression` validators | ADR-SDK-034 amendment of 2026-11-26 |
+| PHP `rtnData` step (the second SC-1018 block) | 2026-11-26, SC-1018 | `lib/Model/RtnData*.php` | the setter pattern, minimum and `minLength` checks, the setter sentinel replacements, and the matching `listInvalidProperties()` entries | ADR-SDK-034 amendment of 2026-11-26 |
+
+Two reasons for using a step are on record: the Python generator hands the model template each
+field's whole declaration as one precomputed string, so a template cannot drop one constraint
+(the SC-886 comment in `generate.sh`, and ADR-SDK-034's SC-886 implementation record); the stock
+PHP template has no per-model switch (the PHP `rtnData` comment). The Python `rtnData` step's
+comment states no reason of its own: its annotation edits fall under the SC-886 reason, and its
+validator deletion is limited to the `rtn_data*.py` files, which a template cannot select per
+model.
+SC-886's PHP change was a template fork (`pipeline/php/templates/model_generic.mustache`), which
+the Decision already allows.
+
+### Decision
+
+1. A post-generation step is a sanctioned third way to adjust a generated core. The order of
+   preference stays: a generator flag first, then a template override, and a step only where
+   neither can make the change. A new step's comment states that reason.
+2. Every step follows these rules, as the three existing steps do:
+   - Its edit runs inside the pinned generator image (`generator-pin.yaml`, by digest), never with
+     host tools, so its output is the same on every host and in CI. Its checks may run on the
+     host, because they only read.
+   - It edits only a named set of generated files (a directory or a file glob). It never edits
+     the spec artifact (ADR-SDK-006) or hand-written runtime code.
+   - It fails generation when its target files are missing and when a construct it removes
+     survives. The two SC-1018 steps also fail when the count of a construct they must keep
+     moves, or when the family's line count is not the expected one; a new step that removes
+     only part of what its patterns could match should do the same.
+   - It is named in an ADR, its comment cites that ADR, and it is added to the table above. The
+     existing steps are named in ADR-SDK-034 (the SC-886 step in its implementation record, the
+     SC-1018 steps in its amendment); a new step is decided in an ADR or an ADR amendment.
+3. A step's output is generated code like any other: the stage-2 regeneration diff covers it,
+   and `languages/*/core/` is still never hand-edited (ADR-SDK-001).
+
+### Consequences
+
+- Each step matches the generator's output shape, so a generator upgrade (an ADR-SDK-023
+  revision, Consequences above) re-checks every step's patterns in the same PR, where the
+  stage-2 regeneration diff shows any change. A step whose pattern no longer matches fails
+  generation rather than passing silently.
+- Like a forked template, each step is a standing liability: the Consequences rule above ("prefer
+  flags") applies to steps as well.
