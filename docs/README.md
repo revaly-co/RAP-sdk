@@ -52,6 +52,24 @@ Building *on* the SDK rather than *in* it? The path is shorter:
 4. `failover-contract.md` — the normative contract, when a boundary question comes up.
 5. `../AGENTS.md` — the whole contract on one page, for AI coding agents (and fast skimmers).
 
+## Status snapshot (2026-11-27)
+
+- **Released 2026-11-27 off `716aa01` (PR #130, SC-1018):** Python 0.11.2 and PHP 0.12.2, a
+  patch; .NET, Java, TypeScript and Go stay at 0.11.1 (no change since `45e360c`). Both tag runs
+  were green through stage 6, PyPI and Packagist served the new versions by 14:52 UTC, and the
+  release-notes drift check found nothing. The published wheel and PHP package carry none of the
+  removed `rtnData` checks and keep the type checks (Python) and non-null guards (PHP); a probe
+  that sends an out-of-rule `rtnData` value as given on the new versions is refused on 0.11.1 and
+  0.12.1 (SC-1018 comment 28297).
+- **ADR-SDK-023 amended (SC-1020).** A post-generation step in `pipeline/generate.sh` is a third
+  sanctioned way to adjust a generated core, after a generator flag and a template override, under
+  the rules the amendment names. It records the three existing steps (SC-886 Python; SC-1018
+  Python and PHP). Text only: no generated file, pipeline script or SDK behaviour changes.
+- **Registry runbook corrected.** The Packagist auto-update webhook on the `rap-sdk-php` mirror
+  has existed since 2026-08-07 (active, last delivery accepted, verified 2026-11-27), so
+  `registry-provisioning.md` no longer lists it as open. Replacing the mirror-push fine-grained
+  PAT with an org GitHub App (OQ-17) stays open.
+
 ## Status snapshot (2026-11-26)
 
 - **Spec re-pinned v2.19.0 → v2.21.0+66e302b (fifteenth pin, EI-117).** Two platform artifacts
