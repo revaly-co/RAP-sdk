@@ -8,8 +8,8 @@ change: a request the SDK no longer refuses is sent and classified like any othe
 decision 2 no longer applies to the `rtnData` block in the Python and PHP SDKs. See
 [Amendment](#amendment--2026-11-26-sc-1018-python-and-php-do-not-refuse-or-rewrite-rtndata-values-before-sending)
 below. Implemented 2026-11-26 under SC-1018 (see
-[Implementation (SC-1018)](#implementation-sc-1018) below); Python and PHP will release it as a
-patch.
+[Implementation (SC-1018)](#implementation-sc-1018) below); released 2026-11-27 as Python 0.11.2
+and PHP 0.12.2, a patch.
 **Source:** spec pins v2.15.0+693a36b (SC-869: the 256-character `description` bound from SC-785)
 and v2.16.0+99cb098 (SC-661: the 45-character `customerIp` bound)
 **Owner:** SC Eng
@@ -137,8 +137,8 @@ OQ-18 asked (a) whether the Python and PHP refusal is acceptable or the platform
 
 **Status:** Accepted — decided 2026-11-26 by Dimitri Pankov as RAP SDK author (SC-1018, closes
 OQ-19). Implemented under SC-1018 (see [Implementation (SC-1018)](#implementation-sc-1018)
-below); until the Python 0.11.2 and PHP 0.12.2 patch release, the published Python 0.11.1 and
-PHP 0.12.1 keep the checks. No failover-contract change.
+below) and released 2026-11-27 as Python 0.11.2 and PHP 0.12.2, a patch; Python 0.11.1 and PHP
+0.12.1 and earlier keep the checks. No failover-contract change.
 
 ### Context
 
@@ -294,5 +294,10 @@ decisions are carried out; they are implementation notes and do not change the d
   only when a merchant upgrades. A bad release is fixed by a forward patch, made from a reviewed
   revert of the tests and both steps together and released through the pipeline. No yank is
   approved in advance.
-- **Release:** Python 0.11.2 and PHP 0.12.2, a patch (decision 6), cut from `main` after PR #130
-  merges.
+- **Release:** Python 0.11.2 and PHP 0.12.2, a patch (decision 6), released 2026-11-27 from the
+  PR #130 merge commit `716aa01`, one tag at a time. Both tag runs were green through stage 6,
+  PyPI and Packagist served the new versions by 14:52 UTC, and the published wheel and PHP
+  package were checked: none of the removed `rtnData` checks is left, the type checks (Python) and
+  non-null guards (PHP) are kept, and a probe that sends an out-of-rule `rtnData` value as given
+  on the new versions is refused on 0.11.1 and 0.12.1. The release-notes drift check found
+  nothing.

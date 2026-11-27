@@ -7,8 +7,8 @@ The rule-3 embargo is retired; publishing now follows ADR-SDK-013 steady state: 
 a release tag on `main` — publishes through the gated pipeline's protected `publish`
 environment. Remaining items are **post-flip custody closures**, tracked in the open-items
 table below (PyPI org transfer on approval; Maven `packages@` Portal account; NuGet
-leadership-account policy recreation; Packagist webhook / OQ-17 GitHub App).
-**Last updated:** 2026-08-07
+leadership-account policy recreation; the Packagist mirror-push credential / OQ-17 GitHub App).
+**Last updated:** 2026-11-27 (the Packagist webhook recorded as done)
 **Owner:** Leadership (custody) + SC squad (execution), per ADR-SDK-011 / OQ-3
 **Source of truth:** ADR-SDK-011 (accounts leadership-owned), ADR-SDK-013 (publish gate),
 ADR-SDK-019 (license), ADR-SDK-022 (GitHub namespace), ADR-SDK-030 (final names). This runbook
@@ -326,12 +326,13 @@ Done and dated: ✅ names final (ADR-SDK-030, 2026-07-30) · ✅ `security@` mai
 (2026-07-29) · ✅ npm / NuGet / Maven / Packagist namespaces held (2026-07-17) · ✅ NuGet
 `Revaly.*` ID-prefix reserved (2026-08-03) · ✅ Maven GPG signing key vaulted (2026-08-06) ·
 ✅ **Apache-2.0 Legal-ratified in writing** (recorded 2026-08-06 — ADR-SDK-019
-§ Ratification record).
+§ Ratification record) · ✅ Packagist auto-update webhook on the `rap-sdk-php` mirror
+(2026-08-07, push events; verified 2026-11-27: active, last delivery accepted).
 
 | Item | Owner | Gate |
 | --- | --- | --- |
 | **PyPI org transfer**: when the `revaly` org application is approved, transfer the `revaly-sdk` project + trusted publisher to the org and demote the individual anchoring account (closes the 2026-08-07 pending-publisher deviation) | SC squad | PyPI org approval (external queue) |
 | **Maven Portal custody closure**: group-mailbox Portal account → support-add/transfer on `co.revaly` → rotate `maven-central-token` → individual accounts to break-glass (closes the 2026-08-06 custody deviation) | Leadership + SC squad | Post-flip, per the custody deviation record |
 | **NuGet policy re-anchor**: recreate the trusted-publishing policy from a leadership org account and swap `NUGET_TRUSTED_PUBLISHING_USER` (the flip-day policy was created by an SC-squad collaborator account — ADR-SDK-011 nuance; policies + variable rotate freely) | Leadership + SC squad | Convenience, with the other custody closures |
-| **Packagist auto-update webhook** on the `rap-sdk-php` mirror (vendor-account API token or GitHub integration); longer term, replace the mirror-push fine-grained PAT (expires 2027-08-08) with an org GitHub App — same credential family as OQ-17 | SC squad + DevOps | Before the next php release (until then, "Update" is a manual click on packagist.org) |
+| **Packagist mirror-push credential**: replace the mirror-push fine-grained PAT (expires 2027-08-08) with an org GitHub App — same credential family as OQ-17. (The auto-update webhook on the `rap-sdk-php` mirror is done: see Done and dated above.) | SC squad + DevOps | Longer term (the PAT expires 2027-08-08) |
 | **Quickstart drift check** (ADR-SDK-013): arm the drift check for the new registry bindings; `RAP-sdk-integration-tests` gains the registry-install variant and the `@revaly/sdk` import | SC squad | Post-flip sweep follow-up |
