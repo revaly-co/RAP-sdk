@@ -347,19 +347,6 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        $allowedValues = $this->getMerchantAccountAgeIndicatorAllowableValues();
-        if (!is_null($this->container['merchant_account_age_indicator']) && !in_array($this->container['merchant_account_age_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'merchant_account_age_indicator', must be one of '%s'",
-                $this->container['merchant_account_age_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['merchant_account_opened_date']) && !preg_match("/^\\d{8}$/", $this->container['merchant_account_opened_date'])) {
-            $invalidProperties[] = "invalid value for 'merchant_account_opened_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
         return $invalidProperties;
     }
 
@@ -542,10 +529,6 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($merchant_account_age_indicator)) {
             throw new \InvalidArgumentException('non-nullable merchant_account_age_indicator cannot be null');
         }
-        $allowedValues = $this->getMerchantAccountAgeIndicatorAllowableValues();
-        if (!in_array($merchant_account_age_indicator, $allowedValues, true)) {
-            $merchant_account_age_indicator = self::MERCHANT_ACCOUNT_AGE_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['merchant_account_age_indicator'] = $merchant_account_age_indicator;
 
         return $this;
@@ -574,9 +557,6 @@ class RtnDataMerchantData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable merchant_account_opened_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($merchant_account_opened_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$merchant_account_opened_date when calling RtnDataMerchantData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['merchant_account_opened_date'] = $merchant_account_opened_date;
 

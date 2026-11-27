@@ -42,7 +42,7 @@ class RtnDataAdditionalTransactionData(BaseModel):
     card_brand: Optional[StrictStr] = Field(default=None, description="Card product brand.", alias="cardBrand", json_schema_extra={"examples": ["VISA"]})
     message_category: Optional[StrictStr] = Field(default=None, description="Message type: 1 = Pre-Auth Approved, 2 = Pre-Auth Declined, 3 = Pre-Auth Test.", alias="messageCategory", json_schema_extra={"examples": ["1"]})
     fraud_prevention_platform: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Name of the fraud prevention platform whose score or decision this rtnData carries, as the platform is known in your own system. RTN calibrates a score by its source, so it requires the name: Revaly submits rtnData to RTN only when this field is present, and otherwise processes the payment without an RTN submission. 1 to 128 characters: letters, digits, '.', '_', ':' and '-'.", alias="fraudPreventionPlatform", json_schema_extra={"examples": ["KOUNT"]})
-    full_pan: Optional[Annotated[str, Field(min_length=13, strict=True)]] = Field(default=None, description="Full card Primary Account Number (cardholder data / CHD). Optional. Forwarded to RTN in-flight only — never persisted or logged at rest by RAP. Sending this field transmits cardholder data; ensure your integration is authorized under your PCI-DSS obligations.", alias="fullPan", json_schema_extra={"examples": ["4147202000001234"]})
+    full_pan: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Full card Primary Account Number (cardholder data / CHD). Optional. Forwarded to RTN in-flight only — never persisted or logged at rest by RAP. Sending this field transmits cardholder data; ensure your integration is authorized under your PCI-DSS obligations.", alias="fullPan", json_schema_extra={"examples": ["4147202000001234"]})
     dpan: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Device Primary Account Number (tokenized card number from a digital wallet).", json_schema_extra={"examples": ["4761739001010010"]})
     __properties: ClassVar[List[str]] = ["providerAuthDecision", "providerAuthDecisionCode", "paymentRail", "posEntryMode", "retrievalReferenceNumber", "merchantTrustLevel", "merchantTrustData", "cardBrand", "messageCategory", "fraudPreventionPlatform", "fullPan", "dpan"]
 
@@ -104,32 +104,6 @@ class RtnDataAdditionalTransactionData(BaseModel):
         values must never break deserialization on success paths, so unknown wire
         values pass through verbatim instead of raising ValueError.
         """
-        return value
-
-    @field_validator('fraud_prevention_platform')
-    def fraud_prevention_platform_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^[A-Za-z0-9._:-]{1,128}$", value):
-            raise ValueError(r"must validate the regular expression /^[A-Za-z0-9._:-]{1,128}$/")
-        return value
-
-    @field_validator('full_pan')
-    def full_pan_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{13,19}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{13,19}$/")
         return value
 
     model_config = ConfigDict(

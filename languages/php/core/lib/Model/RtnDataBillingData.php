@@ -321,10 +321,6 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['country']) && (mb_strlen($this->container['country']) < 2)) {
-            $invalidProperties[] = "invalid value for 'country', the character length must be bigger than or equal to 2.";
-        }
-
         return $invalidProperties;
     }
 
@@ -537,9 +533,6 @@ class RtnDataBillingData implements ModelInterface, ArrayAccess, \JsonSerializab
             throw new \InvalidArgumentException('non-nullable country cannot be null');
         }
 
-        if ((mb_strlen($country) < 2)) {
-            throw new \InvalidArgumentException('invalid length for $country when calling RtnDataBillingData., must be bigger than or equal to 2.');
-        }
 
         $this->container['country'] = $country;
 

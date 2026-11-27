@@ -722,133 +722,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['account_opened_date']) && !preg_match("/^\\d{8}$/", $this->container['account_opened_date'])) {
-            $invalidProperties[] = "invalid value for 'account_opened_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        $allowedValues = $this->getAccountAgeIndicatorAllowableValues();
-        if (!is_null($this->container['account_age_indicator']) && !in_array($this->container['account_age_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'account_age_indicator', must be one of '%s'",
-                $this->container['account_age_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['account_last_changed_date']) && !preg_match("/^\\d{8}$/", $this->container['account_last_changed_date'])) {
-            $invalidProperties[] = "invalid value for 'account_last_changed_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        $allowedValues = $this->getAccountChangeIndicatorAllowableValues();
-        if (!is_null($this->container['account_change_indicator']) && !in_array($this->container['account_change_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'account_change_indicator', must be one of '%s'",
-                $this->container['account_change_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['password_last_changed_date']) && !preg_match("/^\\d{8}$/", $this->container['password_last_changed_date'])) {
-            $invalidProperties[] = "invalid value for 'password_last_changed_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        $allowedValues = $this->getPasswordChangeIndicatorAllowableValues();
-        if (!is_null($this->container['password_change_indicator']) && !in_array($this->container['password_change_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'password_change_indicator', must be one of '%s'",
-                $this->container['password_change_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['transaction_successful_count_last_six_months']) && ($this->container['transaction_successful_count_last_six_months'] < 0)) {
-            $invalidProperties[] = "invalid value for 'transaction_successful_count_last_six_months', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['transaction_attempted_count_last24_hours']) && ($this->container['transaction_attempted_count_last24_hours'] < 0)) {
-            $invalidProperties[] = "invalid value for 'transaction_attempted_count_last24_hours', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['transaction_attempted_count_last_year']) && ($this->container['transaction_attempted_count_last_year'] < 0)) {
-            $invalidProperties[] = "invalid value for 'transaction_attempted_count_last_year', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['payment_method_added_date']) && !preg_match("/^\\d{8}$/", $this->container['payment_method_added_date'])) {
-            $invalidProperties[] = "invalid value for 'payment_method_added_date', must be conform to the pattern /^\\d{8}$/.";
-        }
-
-        $allowedValues = $this->getPaymentMethodAgeIndicatorAllowableValues();
-        if (!is_null($this->container['payment_method_age_indicator']) && !in_array($this->container['payment_method_age_indicator'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'payment_method_age_indicator', must be one of '%s'",
-                $this->container['payment_method_age_indicator'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['payment_method_add_attempt_count_last24_hours']) && ($this->container['payment_method_add_attempt_count_last24_hours'] < 0)) {
-            $invalidProperties[] = "invalid value for 'payment_method_add_attempt_count_last24_hours', must be bigger than or equal to 0.";
-        }
-
-        $allowedValues = $this->getAccountAuthenticationMethodAllowableValues();
-        if (!is_null($this->container['account_authentication_method']) && !in_array($this->container['account_authentication_method'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'account_authentication_method', must be one of '%s'",
-                $this->container['account_authentication_method'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getIsRegisteredCustomerAllowableValues();
-        if (!is_null($this->container['is_registered_customer']) && !in_array($this->container['is_registered_customer'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'is_registered_customer', must be one of '%s'",
-                $this->container['is_registered_customer'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        $allowedValues = $this->getIsRegistrationUpdatedAllowableValues();
-        if (!is_null($this->container['is_registration_updated']) && !in_array($this->container['is_registration_updated'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'is_registration_updated', must be one of '%s'",
-                $this->container['is_registration_updated'],
-                implode("', '", $allowedValues)
-            );
-        }
-
-        if (!is_null($this->container['registered_account_tenure']) && ($this->container['registered_account_tenure'] < 0)) {
-            $invalidProperties[] = "invalid value for 'registered_account_tenure', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_name_change']) && ($this->container['days_since_name_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_name_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_email_change']) && ($this->container['days_since_email_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_email_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_password_change']) && ($this->container['days_since_password_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_password_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_postal_code_change']) && ($this->container['days_since_postal_code_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_postal_code_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_address_change']) && ($this->container['days_since_address_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_address_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_phone_change']) && ($this->container['days_since_phone_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_phone_change', must be bigger than or equal to 0.";
-        }
-
-        if (!is_null($this->container['days_since_ship_to_name_change']) && ($this->container['days_since_ship_to_name_change'] < 0)) {
-            $invalidProperties[] = "invalid value for 'days_since_ship_to_name_change', must be bigger than or equal to 0.";
-        }
-
         return $invalidProperties;
     }
 
@@ -1061,9 +934,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable account_opened_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($account_opened_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$account_opened_date when calling RtnDataCustomerData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['account_opened_date'] = $account_opened_date;
 
@@ -1091,10 +961,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($account_age_indicator)) {
             throw new \InvalidArgumentException('non-nullable account_age_indicator cannot be null');
-        }
-        $allowedValues = $this->getAccountAgeIndicatorAllowableValues();
-        if (!in_array($account_age_indicator, $allowedValues, true)) {
-            $account_age_indicator = self::ACCOUNT_AGE_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['account_age_indicator'] = $account_age_indicator;
 
@@ -1151,9 +1017,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable account_last_changed_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($account_last_changed_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$account_last_changed_date when calling RtnDataCustomerData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['account_last_changed_date'] = $account_last_changed_date;
 
@@ -1181,10 +1044,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($account_change_indicator)) {
             throw new \InvalidArgumentException('non-nullable account_change_indicator cannot be null');
-        }
-        $allowedValues = $this->getAccountChangeIndicatorAllowableValues();
-        if (!in_array($account_change_indicator, $allowedValues, true)) {
-            $account_change_indicator = self::ACCOUNT_CHANGE_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['account_change_indicator'] = $account_change_indicator;
 
@@ -1214,9 +1073,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable password_last_changed_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($password_last_changed_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$password_last_changed_date when calling RtnDataCustomerData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['password_last_changed_date'] = $password_last_changed_date;
 
@@ -1244,10 +1100,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($password_change_indicator)) {
             throw new \InvalidArgumentException('non-nullable password_change_indicator cannot be null');
-        }
-        $allowedValues = $this->getPasswordChangeIndicatorAllowableValues();
-        if (!in_array($password_change_indicator, $allowedValues, true)) {
-            $password_change_indicator = self::PASSWORD_CHANGE_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['password_change_indicator'] = $password_change_indicator;
 
@@ -1277,9 +1129,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable transaction_successful_count_last_six_months cannot be null');
         }
 
-        if (($transaction_successful_count_last_six_months < 0)) {
-            throw new \InvalidArgumentException('invalid value for $transaction_successful_count_last_six_months when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['transaction_successful_count_last_six_months'] = $transaction_successful_count_last_six_months;
 
@@ -1309,9 +1158,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable transaction_attempted_count_last24_hours cannot be null');
         }
 
-        if (($transaction_attempted_count_last24_hours < 0)) {
-            throw new \InvalidArgumentException('invalid value for $transaction_attempted_count_last24_hours when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['transaction_attempted_count_last24_hours'] = $transaction_attempted_count_last24_hours;
 
@@ -1341,9 +1187,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable transaction_attempted_count_last_year cannot be null');
         }
 
-        if (($transaction_attempted_count_last_year < 0)) {
-            throw new \InvalidArgumentException('invalid value for $transaction_attempted_count_last_year when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['transaction_attempted_count_last_year'] = $transaction_attempted_count_last_year;
 
@@ -1373,9 +1216,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable payment_method_added_date cannot be null');
         }
 
-        if ((!preg_match("/^\\d{8}$/", ObjectSerializer::toString($payment_method_added_date)))) {
-            throw new \InvalidArgumentException("invalid value for \$payment_method_added_date when calling RtnDataCustomerData., must conform to the pattern /^\\d{8}$/.");
-        }
 
         $this->container['payment_method_added_date'] = $payment_method_added_date;
 
@@ -1403,10 +1243,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($payment_method_age_indicator)) {
             throw new \InvalidArgumentException('non-nullable payment_method_age_indicator cannot be null');
-        }
-        $allowedValues = $this->getPaymentMethodAgeIndicatorAllowableValues();
-        if (!in_array($payment_method_age_indicator, $allowedValues, true)) {
-            $payment_method_age_indicator = self::PAYMENT_METHOD_AGE_INDICATOR_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['payment_method_age_indicator'] = $payment_method_age_indicator;
 
@@ -1436,9 +1272,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable payment_method_add_attempt_count_last24_hours cannot be null');
         }
 
-        if (($payment_method_add_attempt_count_last24_hours < 0)) {
-            throw new \InvalidArgumentException('invalid value for $payment_method_add_attempt_count_last24_hours when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['payment_method_add_attempt_count_last24_hours'] = $payment_method_add_attempt_count_last24_hours;
 
@@ -1550,10 +1383,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($account_authentication_method)) {
             throw new \InvalidArgumentException('non-nullable account_authentication_method cannot be null');
         }
-        $allowedValues = $this->getAccountAuthenticationMethodAllowableValues();
-        if (!in_array($account_authentication_method, $allowedValues, true)) {
-            $account_authentication_method = self::ACCOUNT_AUTHENTICATION_METHOD_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['account_authentication_method'] = $account_authentication_method;
 
         return $this;
@@ -1635,10 +1464,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
         if (is_null($is_registered_customer)) {
             throw new \InvalidArgumentException('non-nullable is_registered_customer cannot be null');
         }
-        $allowedValues = $this->getIsRegisteredCustomerAllowableValues();
-        if (!in_array($is_registered_customer, $allowedValues, true)) {
-            $is_registered_customer = self::IS_REGISTERED_CUSTOMER_UNKNOWN_DEFAULT_OPEN_API;
-        }
         $this->container['is_registered_customer'] = $is_registered_customer;
 
         return $this;
@@ -1665,10 +1490,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
     {
         if (is_null($is_registration_updated)) {
             throw new \InvalidArgumentException('non-nullable is_registration_updated cannot be null');
-        }
-        $allowedValues = $this->getIsRegistrationUpdatedAllowableValues();
-        if (!in_array($is_registration_updated, $allowedValues, true)) {
-            $is_registration_updated = self::IS_REGISTRATION_UPDATED_UNKNOWN_DEFAULT_OPEN_API;
         }
         $this->container['is_registration_updated'] = $is_registration_updated;
 
@@ -1698,9 +1519,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable registered_account_tenure cannot be null');
         }
 
-        if (($registered_account_tenure < 0)) {
-            throw new \InvalidArgumentException('invalid value for $registered_account_tenure when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['registered_account_tenure'] = $registered_account_tenure;
 
@@ -1875,9 +1693,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_name_change cannot be null');
         }
 
-        if (($days_since_name_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_name_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_name_change'] = $days_since_name_change;
 
@@ -1907,9 +1722,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_email_change cannot be null');
         }
 
-        if (($days_since_email_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_email_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_email_change'] = $days_since_email_change;
 
@@ -1939,9 +1751,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_password_change cannot be null');
         }
 
-        if (($days_since_password_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_password_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_password_change'] = $days_since_password_change;
 
@@ -1971,9 +1780,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_postal_code_change cannot be null');
         }
 
-        if (($days_since_postal_code_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_postal_code_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_postal_code_change'] = $days_since_postal_code_change;
 
@@ -2003,9 +1809,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_address_change cannot be null');
         }
 
-        if (($days_since_address_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_address_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_address_change'] = $days_since_address_change;
 
@@ -2035,9 +1838,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_phone_change cannot be null');
         }
 
-        if (($days_since_phone_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_phone_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_phone_change'] = $days_since_phone_change;
 
@@ -2067,9 +1867,6 @@ class RtnDataCustomerData implements ModelInterface, ArrayAccess, \JsonSerializa
             throw new \InvalidArgumentException('non-nullable days_since_ship_to_name_change cannot be null');
         }
 
-        if (($days_since_ship_to_name_change < 0)) {
-            throw new \InvalidArgumentException('invalid value for $days_since_ship_to_name_change when calling RtnDataCustomerData., must be bigger than or equal to 0.');
-        }
 
         $this->container['days_since_ship_to_name_change'] = $days_since_ship_to_name_change;
 

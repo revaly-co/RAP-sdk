@@ -27,6 +27,23 @@ ALL_LANGS="dotnet java php typescript python go"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# count_matches ERE FILE... : how many times ERE occurs across the FILEs. Zero is an
+# answer; an unreadable FILE is not (cat fails, and pipefail fails the assignment that
+# calls this). Always call it in an assignment: N=$(count_matches ...).
+count_matches() {
+  local re="$1"; shift
+  cat -- "$@" | { grep -o -E -- "$re" || true; } | wc -l | tr -d ' '
+}
+
+# fail_if_found ERE MESSAGE FILE... : print every line of the FILEs that matches ERE
+# (file:line:text, on stderr), then stop generation with MESSAGE. A grep error stops
+# generation too.
+fail_if_found() {
+  local re="$1" msg="$2" rc=0; shift 2
+  grep -n -E -- "$re" "$@" >&2 || rc=$?
+  [ "$rc" -eq 1 ] || die "$msg"
+}
+
 usage() {
   sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
@@ -142,6 +159,97 @@ for LANG_ID in $LANGS; do
     if grep -rnE 'max_length=[0-9]' "$PY_MODELS" > /dev/null; then
       die "max_length survived in $PY_MODELS (ADR-SDK-034); extend the strip pattern."
     fi
+    # ADR-SDK-034 amendment of 2026-11-26 (SC-1018): for the rtnData block (RtnData and its
+    # ten nested models, the only schemas the platform exempts) the SDK never refuses a
+    # value because it breaks a documented pattern, minimum or minLength; the platform
+    # decides. In models/rtn_data*.py only, this step removes `ge=N` and `min_length=N` from
+    # the field annotations (`Field(strict=True, ge=N)` and `Field(min_length=N, strict=True)`
+    # both become `Field(strict=True)`) and deletes each `_validate_regular_expression`
+    # validator together with the blank line before it, which is exactly what the template's
+    # x-regex section prints. `strict=True` (the type check), the datetime type and the enum
+    # validators stay. It runs after the SC-886 step, whose output shape
+    # (`Field(min_length=N, strict=True)`) it matches, inside the same pinned image, and the
+    # program reaches perl on stdin so no host shell or Windows command line rewrites it.
+    # Generation fails if the glob matches no file, if a ge=, gt=, min_length= or regex
+    # validator survives in the family, if the strict=True or enum validator count moves, or
+    # if the family's line count is not the old count less 13 per regex validator. These
+    # checks cannot see an edit that keeps the line count; the tests pin the rest (types on
+    # construction, assignment and from_dict). Re-check the patterns on any generator upgrade.
+    PY_RTN=( "$PY_MODELS"/rtn_data*.py )
+    [ -f "${PY_RTN[0]}" ] || die "no $PY_MODELS/rtn_data*.py: the rtnData family was renamed or moved; fix the SC-1018 step's glob (ADR-SDK-034)."
+    PY_STRICT=$(count_matches 'strict=True' "${PY_RTN[@]}")
+    PY_ENUMS=$(count_matches '_validate_enum\(cls, value\):' "${PY_RTN[@]}")
+    PY_REGEX=$(count_matches '_validate_regular_expression\(cls, value\):' "${PY_RTN[@]}")
+    PY_LINES=$(cat -- "${PY_RTN[@]}" | wc -l | tr -d ' ')
+    # shellcheck disable=SC2086  # DOCKER_USER intentionally word-splits
+    docker run --rm -i $DOCKER_USER --entrypoint perl \
+      -v "$HOST_REPO:/local" -w /local \
+      "$IMAGE_REF" -0777 -i -p - "${PY_RTN[@]}" <<'PERL'
+s/(Annotated\[\w+, )Field\(strict=True, ge=-?[0-9.]+\)\]/${1}Field(strict=True)]/g;
+s/(Annotated\[\w+, )Field\(min_length=[0-9]+, strict=True\)\]/${1}Field(strict=True)]/g;
+s/^\n    \@field_validator\('([a-z_0-9]+)'\)\n    def \1_validate_regular_expression\(cls, value\):\n        """Validates the regular expression"""\n        if value is None:\n            return value\n\n        if not isinstance\(value, str\):\n            value = str\(value\)\n\n        if not re\.match\(r"[^\n]*", value\):\n            raise ValueError\(r"must validate the regular expression [^\n]*"\)\n        return value\n//mg;
+PERL
+    fail_if_found '\bg[et]=|min_length=|_validate_regular_expression' \
+      "a pattern, minimum or minLength check survived in $PY_MODELS/rtn_data*.py (lines above): extend the SC-1018 step's patterns (ADR-SDK-034)." \
+      "${PY_RTN[@]}"
+    N=$(count_matches 'strict=True' "${PY_RTN[@]}")
+    [ "$N" = "$PY_STRICT" ] || die "the SC-1018 step changed the strict=True count in $PY_MODELS/rtn_data*.py from $PY_STRICT to $N: it removed a type check (ADR-SDK-034 keeps types)."
+    N=$(count_matches '_validate_enum\(cls, value\):' "${PY_RTN[@]}")
+    [ "$N" = "$PY_ENUMS" ] || die "the SC-1018 step changed the enum validator count in $PY_MODELS/rtn_data*.py from $PY_ENUMS to $N."
+    N=$(cat -- "${PY_RTN[@]}" | wc -l | tr -d ' ')
+    [ "$N" = "$((PY_LINES - 13 * PY_REGEX))" ] || die "$PY_MODELS/rtn_data*.py has $N lines after the SC-1018 step, expected $((PY_LINES - 13 * PY_REGEX)) ($PY_LINES less 13 for each of the $PY_REGEX regex validators): the step removed or added other lines."
+  fi
+  if [ "$LANG_ID" = "php" ]; then
+    # ADR-SDK-034 amendment of 2026-11-26 (SC-1018): for the rtnData block (RtnData and its
+    # ten nested models, the only schemas the platform exempts) the setters neither refuse a
+    # value that breaks a documented pattern, minimum or minLength nor replace an unlisted
+    # value with the *_UNKNOWN_DEFAULT_OPEN_API sentinel; the platform decides. The stock
+    # template has no per-model switch, so this step edits lib/Model/RtnData*.php only,
+    # inside the pinned image, and only deletes whole lines: each setter check whose message
+    # reads "must be bigger than" or "must conform to the pattern" (3 lines: the minLength,
+    # minimum and pattern checks), each setter sentinel coercion (4 lines), and each
+    # listInvalidProperties() pattern, minLength and minimum entry (4 lines) and value-list
+    # entry (9 lines), each with the blank line after it. The blank lines around a setter's
+    # validation section stay: the shape the SC-886 maxLength removal already leaves. The
+    # non-null guards, the *_UNKNOWN_DEFAULT_OPEN_API constants, the get*AllowableValues()
+    # methods, valid() and every file outside the family stay. Generation fails if the glob
+    # matches no file, if any of those checks survives in the family, if the non-null guard,
+    # constant or get*AllowableValues() count moves, or if the family's line count is not the
+    # old count less the lines of the removed checks. These checks cannot see an edit that
+    # keeps the line count; the tests pin the rest. Re-check the patterns on any generator
+    # upgrade.
+    PHP_MODELS="$OUT_DIR/lib/Model"
+    PHP_RTN=( "$PHP_MODELS"/RtnData*.php )
+    [ -f "${PHP_RTN[0]}" ] || die "no $PHP_MODELS/RtnData*.php: the rtnData family was renamed or moved; fix the SC-1018 step's glob (ADR-SDK-034)."
+    PHP_GUARDS=$(count_matches 'non-nullable [a-z_0-9]+ cannot be null' "${PHP_RTN[@]}")
+    PHP_CONSTS=$(count_matches 'const [A-Z0-9_]+_UNKNOWN_DEFAULT_OPEN_API =' "${PHP_RTN[@]}")
+    PHP_GETTERS=$(count_matches 'public function get[A-Za-z0-9]+AllowableValues\(\)' "${PHP_RTN[@]}")
+    PHP_THROWS=$(count_matches 'when calling [A-Za-z0-9_]+\.[A-Za-z0-9_]*, must (be bigger than|conform to the pattern)' "${PHP_RTN[@]}")
+    PHP_COERCE=$(count_matches '= self::[A-Z0-9_]+_UNKNOWN_DEFAULT_OPEN_API;' "${PHP_RTN[@]}")
+    PHP_ENTRIES=$(count_matches '\$invalidProperties\[\] = "invalid value for [^,]+, (must be conform to the pattern|the character length must be bigger than|must be bigger than)' "${PHP_RTN[@]}")
+    PHP_ENUMS=$(count_matches '"invalid value .%s. for [^,]+, must be one of .%s.",' "${PHP_RTN[@]}")
+    PHP_LINES=$(cat -- "${PHP_RTN[@]}" | wc -l | tr -d ' ')
+    # shellcheck disable=SC2086  # DOCKER_USER intentionally word-splits
+    docker run --rm -i $DOCKER_USER --entrypoint perl \
+      -v "$HOST_REPO:/local" -w /local \
+      "$IMAGE_REF" -0777 -i -p - "${PHP_RTN[@]}" <<'PERL'
+s/^        if \([^\n]*\) \{\n            throw new \\InvalidArgumentException\(['"]invalid (?:value|length) for \\?\$[a-z_0-9]+ when calling \w+\.\w*, must (?:be bigger than|conform to the pattern) [^\n]*\);\n        \}\n//mg;
+s/^        \$allowedValues = \$this->get\w+AllowableValues\(\);\n        if \((?:!is_null\(\$[a-z_0-9]+\) && )?!in_array\(\$([a-z_0-9]+), \$allowedValues, true\)\) \{\n            \$\1 = self::\w+_UNKNOWN_DEFAULT_OPEN_API;\n        \}\n//mg;
+s/^        if \([^\n]*\) \{\n            \$invalidProperties\[\] = "invalid value for '[a-z_0-9]+', (?:must be conform to the pattern|the character length must be bigger than|must be bigger than) [^\n]*";\n        \}\n\n//mg;
+s/^        \$allowedValues = \$this->get\w+AllowableValues\(\);\n        if \(!is_null\(\$this->container\['([a-z_0-9]+)'\]\) && !in_array\(\$this->container\['\1'\], \$allowedValues, true\)\) \{\n            \$invalidProperties\[\] = sprintf\(\n                "invalid value '%s' for '\1', must be one of '%s'",\n                \$this->container\['\1'\],\n                implode\("', '", \$allowedValues\)\n            \);\n        \}\n\n//mg;
+PERL
+    fail_if_found 'preg_match\(|mb_strlen\(|must be bigger than|conform to the pattern|_UNKNOWN_DEFAULT_OPEN_API;|"Invalid value|must be one of' \
+      "a pattern, minimum, minLength or value-list check survived in $PHP_MODELS/RtnData*.php (lines above): extend the SC-1018 step's patterns (ADR-SDK-034)." \
+      "${PHP_RTN[@]}"
+    N=$(count_matches 'non-nullable [a-z_0-9]+ cannot be null' "${PHP_RTN[@]}")
+    [ "$N" = "$PHP_GUARDS" ] || die "the SC-1018 step changed the non-null guard count in $PHP_MODELS/RtnData*.php from $PHP_GUARDS to $N (ADR-SDK-034 keeps them)."
+    N=$(count_matches 'const [A-Z0-9_]+_UNKNOWN_DEFAULT_OPEN_API =' "${PHP_RTN[@]}")
+    [ "$N" = "$PHP_CONSTS" ] || die "the SC-1018 step changed the *_UNKNOWN_DEFAULT_OPEN_API constant count in $PHP_MODELS/RtnData*.php from $PHP_CONSTS to $N (public API)."
+    N=$(count_matches 'public function get[A-Za-z0-9]+AllowableValues\(\)' "${PHP_RTN[@]}")
+    [ "$N" = "$PHP_GETTERS" ] || die "the SC-1018 step changed the get*AllowableValues() count in $PHP_MODELS/RtnData*.php from $PHP_GETTERS to $N (public API)."
+    EXPECT=$((PHP_LINES - 3 * PHP_THROWS - 4 * PHP_COERCE - 4 * PHP_ENTRIES - 9 * PHP_ENUMS))
+    N=$(cat -- "${PHP_RTN[@]}" | wc -l | tr -d ' ')
+    [ "$N" = "$EXPECT" ] || die "$PHP_MODELS/RtnData*.php has $N lines after the SC-1018 step, expected $EXPECT ($PHP_LINES less 3 x $PHP_THROWS setter checks, 4 x $PHP_COERCE coercions, 4 x $PHP_ENTRIES rule entries, 9 x $PHP_ENUMS value-list entries): the step removed or added other lines."
   fi
   FILE_COUNT=$(find "$OUT_DIR" -type f | wc -l | tr -d ' ')
   echo "==> [$LANG_ID] done ($FILE_COUNT files)"

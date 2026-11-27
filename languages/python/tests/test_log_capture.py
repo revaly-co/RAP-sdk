@@ -4,7 +4,9 @@ present on error paths."""
 
 from __future__ import annotations
 
+import json
 import logging
+import re
 
 import pytest
 
@@ -18,13 +20,69 @@ from conftest import (
 )
 from revaly_sdk import RapOutcomeUnknown, RapTransientFailure, ReconcilePolicy
 from revaly_sdk.testing import RapMockTransport, synthetic_data
+from revaly_sdk_core.models.authorize_request import AuthorizeRequest
+from revaly_sdk_core.models.payment_request import PaymentRequest
+from revaly_sdk_core.models.rtn_data import RtnData
+from revaly_sdk_core.models.rtn_data_additional_transaction_data import (
+    RtnDataAdditionalTransactionData,
+)
+from revaly_sdk_core.models.rtn_data_customer_data import RtnDataCustomerData
 
 SENSITIVE = (SYNTHETIC_PAN, SYNTHETIC_CVV, SYNTHETIC_API_KEY, "Cardholder", "Synthetic")
+# The documentation test number in the spaced form a merchant might store (it breaks the
+# documented fullPan pattern), and a synthetic customer email.
+SPACED_PAN = " ".join(SYNTHETIC_PAN[i : i + 4] for i in range(0, len(SYNTHETIC_PAN), 4))
+SYNTHETIC_EMAIL = "customer@synthetic.test"
+# PCI DSS lets a PAN be shown with at most its first six and last four digits, so seven digits
+# of the test number in a row (space or dash separators dropped) show more than any permitted
+# rendering. It catches a value cut below the 15 characters the prefix needle covers; six would
+# flag the six-digit BIN that PCI permits.
+PAN_DIGIT_WINDOW = 7
+PAN_WINDOWS = frozenset(
+    SYNTHETIC_PAN[i : i + PAN_DIGIT_WINDOW]
+    for i in range(len(SYNTHETIC_PAN) - PAN_DIGIT_WINDOW + 1)
+)
+DIGIT_RUN = re.compile(r"\d(?:[ -]?\d)*")
+# What the logging module itself sets on every record: timestamps, thread and process ids and
+# the source location. The runtime cannot write these (logging refuses an `extra` key naming
+# one), and they hold arbitrary digits, so only the full-value needles search them.
+LOGGING_BOOKKEEPING = frozenset(vars(logging.makeLogRecord({}))) - {
+    "msg",
+    "args",
+    "exc_info",
+    "exc_text",
+    "stack_info",
+}
 
 
 def _assert_values_free(text: str) -> None:
     for sentinel in SENSITIVE:
         assert sentinel not in text
+
+
+def _record_texts(record: logging.LogRecord) -> tuple[list[str], list[str]]:
+    """Every attribute of a captured record as text (str and repr of each, the exception
+    formatted with its chain), and the part of that text the runtime supplied: the message,
+    its arguments, `extra` fields, the exception and the stack, without logging's bookkeeping."""
+    every, supplied = [record.getMessage()], [record.getMessage()]
+    for name, value in vars(record).items():
+        texts = [str(value), repr(value)]
+        if name == "exc_info" and value:
+            texts.append(logging.Formatter().formatException(value))
+        every += texts
+        if name not in LOGGING_BOOKKEEPING:
+            supplied += texts
+    return every, supplied
+
+
+def _pan_digit_runs(texts: list[str]) -> int:
+    """How many digit runs in texts hold PAN_DIGIT_WINDOW digits of the test number in a row."""
+    return sum(
+        1
+        for text in texts
+        for run in DIGIT_RUN.findall(text)
+        if any(window in re.sub(r"[ -]", "", run) for window in PAN_WINDOWS)
+    )
 
 
 def test_default_level_success_is_values_free(caplog):
@@ -142,6 +200,58 @@ def test_reconcile_trace_hook_receives_scrubbed_bodies():
     body = events[0].scrubbed_response_body or ""
     assert "[scrubbed]" in body
     assert SYNTHETIC_MTX in body  # allowlisted identifier passes
+
+
+@pytest.mark.parametrize("operation", ["charge", "authorize"])
+def test_rtn_data_card_material_is_sent_but_never_logged_or_traced(caplog, operation):
+    # SC-1018 (AppSec M1): once the core sends rtnData values as given, a malformed fullPan
+    # built through the public constructor reaches the runtime, and the key-based scrubber
+    # is the only control on that path. Built through the constructor (never
+    # model_construct), so the request reaches the wire only when the core sends the value.
+    caplog.set_level(logging.DEBUG, logger="revaly_sdk")
+    events = []
+    mock = RapMockTransport()
+    getattr(mock, operation)().returns_approved()
+    request_type = PaymentRequest if operation == "charge" else AuthorizeRequest
+    request = request_type(
+        amount=2500,
+        merchant_transaction_id=SYNTHETIC_MTX,
+        currency="USD",
+        rtn_data=RtnData(
+            additional_transaction_data=RtnDataAdditionalTransactionData(full_pan=SPACED_PAN),
+            customer_data=RtnDataCustomerData(email=SYNTHETIC_EMAIL),
+        ),
+    )
+
+    getattr(make_client(mock, wire_trace_hook=events.append), operation)(request)
+
+    # The wire carries the value as given ...
+    sent = json.loads(mock.recorded_requests[-1].body)["rtnData"]
+    assert sent["additionalTransactionData"]["fullPan"] == SPACED_PAN
+    assert sent["customerData"]["email"] == SYNTHETIC_EMAIL
+    # ... the trace carries it only as [scrubbed] ...
+    assert "rap.request payload" in caplog.text
+    assert len(events) == 1
+    scrubbed = json.loads(events[0].scrubbed_request_body)["rtnData"]
+    assert scrubbed["additionalTransactionData"]["fullPan"] == "[scrubbed]"
+    assert scrubbed["customerData"]["email"] == "[scrubbed]"
+    # ... and no record or event holds the value, its digit run or its 15-character prefix.
+    surfaces = [caplog.text] + [record.getMessage() for record in caplog.records]
+    surfaces += [events[0].scrubbed_request_body or "", events[0].scrubbed_response_body or ""]
+    for text in surfaces:
+        for needle in (SPACED_PAN, SPACED_PAN[:15], SYNTHETIC_PAN, SYNTHETIC_EMAIL):
+            assert needle not in text
+        _assert_values_free(text)
+    # Not only the message: every attribute of every record (arguments, `extra` fields, the
+    # exception and the stack) is searched, and no text the runtime supplied holds seven digits
+    # of the test number in a row, the shape a value cut below 15 characters leaves.
+    records = [_record_texts(record) for record in caplog.records]
+    for text in (text for every, _ in records for text in every):
+        for needle in (SPACED_PAN, SPACED_PAN[:15], SYNTHETIC_PAN, SYNTHETIC_EMAIL):
+            assert needle not in text
+        assert SYNTHETIC_API_KEY not in text
+    supplied = surfaces + [text for _, given in records for text in given]
+    assert _pan_digit_runs(supplied) == 0, "seven digits of the test number in a row were logged"
 
 
 def test_silent_by_default_without_app_configuration(caplog):

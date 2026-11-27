@@ -52,19 +52,6 @@ class RtnDataMerchantData(BaseModel):
         """
         return value
 
-    @field_validator('merchant_account_opened_date')
-    def merchant_account_opened_date_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if value is None:
-            return value
-
-        if not isinstance(value, str):
-            value = str(value)
-
-        if not re.match(r"^\d{8}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{8}$/")
-        return value
-
     model_config = ConfigDict(
         validate_by_name=True,
         validate_by_alias=True,

@@ -22,9 +22,12 @@ notes: >-
   lengths, formats and value lists describe what the card issuers can use; a value outside them,
   or of the wrong JSON type, is accepted and RTN trims, converts, shortens or leaves out that one
   value. `rtnData.customerData.email` maxLength rises from 30 to 256. No SDK refuses a longer
-  string before sending (ADR-SDK-034), so the raised bound changes no SDK behaviour; the
-  patterns, value lists and minimums that the spec keeps on rtnData are still checked by the
-  cores that generate those checks (ADR-SDK-034 §2). (2) v2.21.0+66e302b (EI-117, Backbone PRs
+  string before sending (ADR-SDK-034), so the raised bound changes no SDK behaviour. At
+  this pin, the patterns, value lists and minimums that the spec keeps on rtnData were
+  checked by the cores that generate those checks (ADR-SDK-034 §2); since SC-1018 (the
+  ADR-SDK-034 amendment of 2026-11-26), the Python and PHP cores no longer check them on
+  rtnData and send a value of the right type as given, and the other four cores are
+  unchanged (the amendment's decisions 4 and 6). (2) v2.21.0+66e302b (EI-117, Backbone PRs
   #509, #515 and #520): prose only. The lookup by merchant transaction ID
   (`GET /transactions/merchant/{merchantTransactionId}`) returns `gatewayResponsePayload` on its
   single TransactionResponse when the payload is switched on for the calling API key, for the

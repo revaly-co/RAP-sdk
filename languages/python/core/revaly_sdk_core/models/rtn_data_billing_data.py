@@ -38,7 +38,7 @@ class RtnDataBillingData(BaseModel):
     city: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="City of the billing address.", json_schema_extra={"examples": ["Montreal"]})
     region: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="State or province name.", json_schema_extra={"examples": ["Quebec"]})
     postal_code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Postal or ZIP code of the billing address.", alias="postalCode", json_schema_extra={"examples": ["H3G 1T1"]})
-    country: Optional[Annotated[str, Field(min_length=2, strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code.", json_schema_extra={"examples": ["CA"]})
+    country: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="ISO 3166-1 alpha-2 country code.", json_schema_extra={"examples": ["CA"]})
     __properties: ClassVar[List[str]] = ["addressLine1", "addressLine2", "addressLine3", "city", "region", "postalCode", "country"]
 
     model_config = ConfigDict(

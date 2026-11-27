@@ -6,18 +6,24 @@ namespace Revaly\Sdk\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Revaly\Sdk\Core\Model\CaptureRequest;
+use Revaly\Sdk\Core\Model\PaymentRequest;
 use Revaly\Sdk\Core\Model\PendingTransactionResponse;
-use Revaly\Sdk\Core\Model\RtnDataAdditionalTransactionData;
+use Revaly\Sdk\Core\Model\RefundCancelRequest;
 use Revaly\Sdk\Core\ObjectSerializer;
 use Revaly\Sdk\Testing\RapMockTransport;
+use Revaly\Sdk\Testing\SyntheticData;
 use Revaly\Sdk\Tests\Support\TestClients;
 
 /**
  * ADR-SDK-034 (OQ-18, SC-886): the SDK never refuses a request because a model field is
  * longer than the spec's maxLength; the platform decides (it truncates a description over
  * 256 characters, and records or refuses other bounds). The forked model_generic.mustache
- * drops the stock maxLength checks from the setters and listInvalidProperties(). Every
- * other check stays: required fields, patterns, and the API layer's path-parameter bounds.
+ * drops the stock maxLength checks from the setters and listInvalidProperties(). The
+ * amendment of 2026-11-26 (SC-1018, OQ-19) adds the rtnData block: there the setters
+ * neither refuse a value that breaks a documented pattern, minimum or minLength nor replace
+ * an unlisted value (RtnDataValuesTest). Every other check stays: required fields and
+ * non-null guards, the patterns, minimums, minLengths and value-list coercions outside
+ * rtnData, and the API layer's path-parameter bounds.
  */
 final class LengthBoundsTest extends TestCase
 {
@@ -64,11 +70,66 @@ final class LengthBoundsTest extends TestCase
         TestClients::chargeRequest()->setMerchantTransactionId(null);
     }
 
-    public function testPatternViolationIsStillRefused(): void
+    public function testPatternOutsideRtnDataIsStillRefused(): void
     {
-        // AC3: the pattern check is kept (this pattern also caps the value at 128).
+        // SC-1018 (D5): the kept pattern check, on a field outside rtnData (^[A-Z]{3}$). A
+        // change that removes checks beyond lib/Model/RtnData*.php fails here. The rtnData
+        // pattern case this test held before moved to RtnDataValuesTest, where it is sent.
         $this->expectException(\InvalidArgumentException::class);
-        (new RtnDataAdditionalTransactionData())->setFraudPreventionPlatform('not allowed!');
+        $this->expectExceptionMessage('must conform to the pattern');
+        TestClients::chargeRequest()->setCurrency('usd');
+    }
+
+    public function testMinimumOutsideRtnDataIsStillRefused(): void
+    {
+        // SC-1018 (X1): the kept minimum check outside rtnData (amount, minimum 0).
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be bigger than or equal to 0');
+        TestClients::chargeRequest()->setAmount(-1);
+    }
+
+    public function testMinLengthOutsideRtnDataIsStillRefused(): void
+    {
+        // SC-1018 (X1): the kept minLength check outside rtnData (customerId, minLength 1).
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be bigger than or equal to 1');
+        (new RefundCancelRequest())->setCustomerId('');
+    }
+
+    public function testListInvalidPropertiesOutsideRtnDataStillReportsTheRules(): void
+    {
+        // SC-1018 (X1): the array constructor runs no check, so listInvalidProperties() is
+        // where these rules read a model built that way; outside rtnData they all stay.
+        $payment = new PaymentRequest([
+            'amount' => -1,
+            'merchant_transaction_id' => SyntheticData::DEFAULT_MERCHANT_TRANSACTION_ID,
+            'currency' => 'usd',
+            'payment_method_type' => 'unlisted_synthetic_value',
+        ]);
+        $refundCancel = new RefundCancelRequest([
+            'merchant_transaction_id' => SyntheticData::DEFAULT_MERCHANT_TRANSACTION_ID,
+            'customer_id' => '',
+        ]);
+
+        $invalid = $payment->listInvalidProperties();
+        self::assertContains('invalid value for \'amount\', must be bigger than or equal to 0.', $invalid);
+        self::assertContains('invalid value for \'currency\', must be conform to the pattern /^[A-Z]{3}$/.', $invalid);
+        self::assertCount(1, preg_grep('/^invalid value \'unlisted_synthetic_value\' for \'payment_method_type\', must be one of /', $invalid));
+        self::assertFalse($payment->valid());
+        self::assertContains(
+            'invalid value for \'customer_id\', the character length must be bigger than or equal to 1.',
+            $refundCancel->listInvalidProperties(),
+        );
+    }
+
+    public function testUnlistedValueOutsideRtnDataStillReadsBackTheSentinel(): void
+    {
+        // SC-1018 (X1): the open-vocabulary coercion stays outside rtnData (bake-off §A3), the
+        // request-side twin of ModelSerializationTest's ErrorResponse code pin.
+        $request = TestClients::chargeRequest();
+        $request->setPaymentMethodType('unlisted_synthetic_value');
+
+        self::assertSame(PaymentRequest::PAYMENT_METHOD_TYPE_UNKNOWN_DEFAULT_OPEN_API, $request->getPaymentMethodType());
     }
 
     public function testOverLongPathParameterIsStillRefusedBeforeSending(): void
