@@ -35,7 +35,8 @@
 #     selects by file name, so a future schema named rtn_data* that is not part of the
 #     rtnData block would silently lose its checks, and no survival check would flag it;
 #     at every re-pin, check that each file the glob matches is RtnData or one of the
-#     models nested in it.
+#     models nested in it, and the reverse: that every model nested under RtnData is
+#     named rtn_data*, because a nested model named otherwise would keep its checks.
 #   templates/pyproject.mustache, requirements.mustache, setup.mustache — forked
 #     2026-07-15 solely to bump dependency floors flagged by Dependabot: urllib3
 #     >= 2.7.0 (GHSA-mf9v-mfxr-j63j, GHSA-qccp-gfcp-xxvc — high) in all three, and the

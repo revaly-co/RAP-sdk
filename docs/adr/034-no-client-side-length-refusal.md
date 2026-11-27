@@ -288,8 +288,8 @@ decisions are carried out; they are implementation notes and do not change the d
   `test_pattern_outside_rtn_data_is_still_refused` and `testPatternOutsideRtnDataIsStillRefused`
   and pin the kept refusal on `PaymentRequest.currency`. Log-capture tests in both languages
   prove that a malformed `fullPan` is sent as given but never appears in a log record, a
-  structured log field, an exception in log context or a trace event. Against the previous cores
-  14 Python and 11 PHP tests fail; with this change all 202 Python and 135 PHP tests pass.
+  structured log field or a trace event of an approved charge or authorize. Against the previous
+  cores 14 Python and 11 PHP tests fail; with this change all 202 Python and 135 PHP tests pass.
 - **Way back.** There is no runtime switch: the behaviour ships inside the package and changes
   only when a merchant upgrades. A bad release is fixed by a forward patch, made from a reviewed
   revert of the tests and both steps together and released through the pipeline. No yank is

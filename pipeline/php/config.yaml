@@ -32,7 +32,9 @@
 # Over-match risk (accepted in SC-1018): the glob selects by file name, so a future schema
 # named RtnData* that is not part of the rtnData block would silently lose its checks, and
 # no survival check would flag it; at every re-pin, check that each file the glob matches
-# is RtnData or one of the models nested in it.
+# is RtnData or one of the models nested in it, and the reverse: that every model nested
+# under RtnData is named RtnData*, because a nested model named otherwise would keep its
+# checks.
 generatorName: php # default guzzle library — the psr-18 library is still beta
 
 additionalProperties:
